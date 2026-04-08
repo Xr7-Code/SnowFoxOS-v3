@@ -1,0 +1,122 @@
+{
+    "layer": "top",
+    "position": "top",
+    "height": 36,
+    "spacing": 4,
+    "exclusive": true,
+
+    "modules-left": [
+        "custom/menu",
+        "sway/workspaces"
+    ],
+
+    "modules-center": [
+        "clock"
+    ],
+
+    "modules-right": [
+        "cpu",
+        "memory",
+        "temperature",
+        "backlight",
+        "battery",
+        "network",
+        "pulseaudio",
+        "tray"
+    ],
+
+    "custom/menu": {
+        "format": "🦊",
+        "tooltip": false,
+        "on-click": "pkill wofi || wofi --show drun --prompt 'Suchen...'"
+    },
+
+    "sway/workspaces": {
+        "disable-scroll": false,
+        "all-outputs": false,
+        "format": "{name}",
+        "persistent_workspaces": {
+            "1": [],
+            "2": [],
+            "3": [],
+            "4": [],
+            "5": []
+        }
+    },
+
+    "clock": {
+        "format": "{:%H:%M}",
+        "format-alt": "{:%H:%M  %a %d.%m.%Y}",
+        "tooltip-format": "<big>{:%A, %d. %B %Y}</big>",
+        "on-click": "toggle"
+    },
+
+    "cpu": {
+        "interval": 5,
+        "format": " {usage}%",
+        "tooltip": false,
+        "on-click": "kitty --title btop btop"
+    },
+
+    "memory": {
+        "interval": 5,
+        "format": " {percentage}%",
+        "tooltip-format": "{used:0.1f}GB / {total:0.1f}GB",
+        "on-click": "kitty --title btop btop"
+    },
+
+    "temperature": {
+        "interval": 10,
+        "critical-threshold": 80,
+        "format": "{icon} {temperatureC}°",
+        "format-icons": ["", "", ""],
+        "tooltip": false
+    },
+
+    "backlight": {
+        "format": "{icon} {percent}%",
+        "format-icons": ["", "", "", "", "", "", "", "", ""],
+        "on-scroll-up": "brightnessctl set +5%",
+        "on-scroll-down": "brightnessctl set 5%-",
+        "tooltip": false
+    },
+
+    "battery": {
+        "states": {
+            "warning": 30,
+            "critical": 15
+        },
+        "format": "{icon} {capacity}%",
+        "format-charging": " {capacity}%",
+        "format-plugged": " {capacity}%",
+        "format-icons": ["", "", "", "", ""],
+        "tooltip-format": "{timeTo} — {power:.1f}W"
+    },
+
+    "network": {
+        "interval": 10,
+        "format-wifi": " {essid}",
+        "format-ethernet": " Ethernet",
+        "format-disconnected": " Getrennt",
+        "tooltip-format-wifi": "{essid} ({signalStrength}%)\n{ipaddr}",
+        "tooltip-format-ethernet": "{ipaddr}",
+        "on-click": "~/.config/sway/snowfox-network.sh"
+    },
+
+    "pulseaudio": {
+        "format": "{icon} {volume}%",
+        "format-muted": " stumm",
+        "format-icons": {
+            "default": ["", "", ""]
+        },
+        "on-click": "pavucontrol",
+        "on-scroll-up": "pactl set-sink-volume @DEFAULT_SINK@ +2%",
+        "on-scroll-down": "pactl set-sink-volume @DEFAULT_SINK@ -2%",
+        "tooltip": false
+    },
+
+    "tray": {
+        "icon-size": 18,
+        "spacing": 8
+    }
+}

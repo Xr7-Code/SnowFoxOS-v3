@@ -1,0 +1,59 @@
+/* SnowFoxOS — Wofi Style */
+
+window {
+    background-color: #141414;
+    border: 1px solid rgba(155, 89, 182, 0.5);
+    border-radius: 10px;
+    font-family: "Inter", sans-serif;
+    font-size: 13px;
+}
+
+#input {
+    background-color: #1a1a1a;
+    border: 1px solid rgba(155, 89, 182, 0.3);
+    border-radius: 6px;
+    color: #e8e8e8;
+    padding: 8px 12px;
+    margin: 8px;
+    outline: none;
+}
+
+#input:focus {
+    border-color: #9B59B6;
+}
+
+#inner-box {
+    background: transparent;
+    padding: 4px 8px;
+}
+
+#outer-box {
+    padding: 4px;
+}
+
+#scroll {
+    margin: 0 4px 8px 4px;
+}
+
+#text {
+    color: #e8e8e8;
+    padding: 2px 8px;
+}
+
+#entry {
+    border-radius: 6px;
+    padding: 6px 4px;
+}
+
+#entry:selected {
+    background-color: rgba(155, 89, 182, 0.2);
+    border: 1px solid rgba(155, 89, 182, 0.4);
+}
+
+#entry:selected #text {
+    color: #e8e8e8;
+}
+
+image {
+    margin-right: 6px;
+}

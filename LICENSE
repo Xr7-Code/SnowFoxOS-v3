@@ -1,0 +1,94 @@
+SnowFox Public License (SFL) v1.1
+Copyright (c) 2026 Alexander Valentin Ludwig (Xr7-Code)
+
+This License defines the terms under which SnowFoxOS and its derivatives may be used, modified, and distributed.
+
+
+───────────────────────────────────────────────────────────────
+1. PERMITTED USE
+───────────────────────────────────────────────────────────────
+
+You are free to:
+
+- Use this software for personal, educational, or commercial purposes
+- Study the source code
+- Modify the software for your own needs
+- Distribute the original or modified versions, provided that all conditions of this license are met
+
+
+───────────────────────────────────────────────────────────────
+2. DISTRIBUTION REQUIREMENTS
+───────────────────────────────────────────────────────────────
+
+If you distribute this software (original or modified), you must:
+
+- Include this license in full
+- Retain all copyright and attribution notices
+- Clearly state any modifications made to the original software
+- Distribute derivative works under the same license (SFL v1.1)
+- Ensure that recipients receive the same rights granted to you under this license
+
+
+───────────────────────────────────────────────────────────────
+3. BRAND AND NAME USAGE
+───────────────────────────────────────────────────────────────
+
+- The name "SnowFoxOS" may only be used for distributions that remain faithful to the original intent of the project, including its focus on user control and privacy.
+- Derivative works must not misrepresent themselves as the original SnowFoxOS if they have been modified in a way that significantly alters these principles.
+- The use of the name "SnowFoxOS" should not be used in a misleading way to imply endorsement by the original author without permission.
+
+This section is intended as a brand and identity guideline and may be enforced separately from the code license where applicable.
+
+
+───────────────────────────────────────────────────────────────
+4. PRIVACY AND USER RESPECT
+───────────────────────────────────────────────────────────────
+
+Derivatives of this software should respect user privacy and autonomy.
+
+- No inclusion of unauthorized telemetry, tracking, analytics, or hidden data collection
+- Any data collection must be transparent and require explicit user consent
+- Software should not intentionally harm, exploit, or deceive its users
+
+These terms reflect the intended purpose of the project and the expectations for responsible derivatives.
+
+
+───────────────────────────────────────────────────────────────
+5. RESTRICTIONS
+───────────────────────────────────────────────────────────────
+
+You must not:
+
+- Remove or alter this license when distributing the software
+- Redistribute the software without preserving attribution
+- Misrepresent the origin of the software
+- Claim exclusive authorship of the original work
+- Use the software in a way that intentionally harms users or violates applicable laws
+
+
+───────────────────────────────────────────────────────────────
+6. NO WARRANTY
+───────────────────────────────────────────────────────────────
+
+This software is provided "as is", without warranty of any kind, express or implied.
+
+The author is not responsible for any damages, losses, or issues arising from the use of this software.
+
+
+───────────────────────────────────────────────────────────────
+7. TERMINATION
+───────────────────────────────────────────────────────────────
+
+Any violation of the terms of this license will result in an immediate termination of the rights granted herein.
+
+
+───────────────────────────────────────────────────────────────
+8. FINAL STATEMENT
+───────────────────────────────────────────────────────────────
+
+This software is intended to serve its users, not exploit them.
+
+Users retain control over their systems, their data, and their computing environment.
+
+"Your computer belongs to you."
+— Alexander Valentin Ludwig
