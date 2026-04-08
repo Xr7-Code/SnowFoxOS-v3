@@ -1,0 +1,15 @@
+configuration {
+    modi:                   "drun,run,window";
+    show-icons:             true;
+    icon-theme:             "Adwaita";
+    display-drun:           "";
+    display-run:            "";
+    display-window:         "";
+    drun-display-format:    "{name}";
+    font:                   "Noto Sans 12";
+    scroll-method:          0;
+    disable-history:        false;
+    sidebar-mode:           false;
+}
+
+@theme "snowfox"
