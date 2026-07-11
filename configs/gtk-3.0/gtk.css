@@ -1,0 +1,326 @@
+/* ============================================================
+   SnowFox — GTK3 Color Override
+   Wird über Arc-Dark geladen. Nur Farben + kleine Korrekturen.
+   Ablegen unter: ~/.config/gtk-3.0/gtk.css
+   ============================================================ */
+
+/* ── Palette ───────────────────────────────────────────────── */
+@define-color bg_color          #1e1e2e;
+@define-color bg_alt_color      #252538;
+@define-color bg_hover_color    #2e2e45;
+@define-color fg_color          #cdd6f4;
+@define-color fg_dim_color      #6c7086;
+@define-color selected_bg_color #8139e8;
+@define-color selected_fg_color #ffffff;
+@define-color purple_hover      #9b5ef0;
+@define-color purple_active     #6a2fc0;
+@define-color error_color       #e05555;
+@define-color success_color     #5faf5f;
+@define-color warning_color     #ff9f5e;
+@define-color border_color      #3d2a5c;
+
+/* Arc-Dark interne Tokens überschreiben */
+@define-color theme_bg_color        #1e1e2e;
+@define-color theme_fg_color        #cdd6f4;
+@define-color theme_base_color      #252538;
+@define-color theme_text_color      #cdd6f4;
+@define-color theme_selected_bg_color   #8139e8;
+@define-color theme_selected_fg_color   #ffffff;
+@define-color theme_tooltip_bg_color    #252538;
+@define-color theme_tooltip_fg_color    #cdd6f4;
+@define-color insensitive_bg_color  #1e1e2e;
+@define-color insensitive_fg_color  #6c7086;
+@define-color insensitive_base_color #252538;
+@define-color borders               #3d2a5c;
+@define-color alt_borders           #3d2a5c;
+@define-color borders_edge          #3d2a5c;
+@define-color link_color            #9b5ef0;
+@define-color link_visited_color    #6a2fc0;
+@define-color warning_color         #ff9f5e;
+@define-color error_color           #e05555;
+@define-color success_color         #5faf5f;
+@define-color sidebar_bg_color      #252538;
+@define-color sidebar_fg_color      #cdd6f4;
+@define-color sidebar_border_color  #3d2a5c;
+@define-color wm_title_focused_bg   #252538;
+@define-color wm_title_unfocused_bg #1e1e2e;
+@define-color wm_title_focused_fg   #cdd6f4;
+@define-color wm_title_unfocused_fg #6c7086;
+@define-color wm_button_hover_bg    #8139e8;
+@define-color wm_button_close_bg    #e05555;
+
+/* ── Basis-Flächen ─────────────────────────────────────────── */
+* {
+    color:            @fg_color;
+    background-color: @bg_color;
+    border-color:     @border_color;
+    outline-color:    @selected_bg_color;
+}
+
+window, .background, .app-background {
+    background-color: @bg_color;
+    color:            @fg_color;
+}
+
+/* ── Headerbar ─────────────────────────────────────────────── */
+headerbar, .titlebar {
+    background-color: @bg_alt_color;
+    color:            @fg_color;
+    border-bottom:    1px solid @border_color;
+}
+
+headerbar:backdrop, .titlebar:backdrop {
+    background-color: @bg_color;
+    color:            @fg_dim_color;
+}
+
+/* ── Buttons ───────────────────────────────────────────────── */
+button {
+    background-color: @bg_alt_color;
+    color:            @fg_color;
+    border-color:     @border_color;
+    border-radius:    5px;
+}
+
+button:hover {
+    background-color: @bg_hover_color;
+    color:            @fg_color;
+    border-color:     @selected_bg_color;
+}
+
+button:active, button:checked {
+    background-color: @purple_active;
+    color:            @selected_fg_color;
+    border-color:     @selected_bg_color;
+}
+
+button:disabled {
+    background-color: @bg_color;
+    color:            @fg_dim_color;
+}
+
+button.suggested-action {
+    background-color: @selected_bg_color;
+    color:            @selected_fg_color;
+    border-color:     @selected_bg_color;
+}
+
+button.suggested-action:hover {
+    background-color: @purple_hover;
+    border-color:     @purple_hover;
+}
+
+button.destructive-action {
+    background-color: @error_color;
+    color:            @selected_fg_color;
+    border-color:     @error_color;
+}
+
+/* ── Eingabefelder ─────────────────────────────────────────── */
+entry, spinbutton {
+    background-color: @bg_alt_color;
+    color:            @fg_color;
+    border-color:     @border_color;
+    border-radius:    5px;
+    caret-color:      @selected_bg_color;
+}
+
+entry:focus, spinbutton:focus {
+    border-color:     @selected_bg_color;
+}
+
+entry selection {
+    background-color: @selected_bg_color;
+    color:            @selected_fg_color;
+}
+
+/* ── Menü ──────────────────────────────────────────────────── */
+menubar {
+    background-color: @bg_color;
+    color:            @fg_color;
+}
+
+menubar > menuitem:hover {
+    background-color: @bg_hover_color;
+    color:            @fg_color;
+}
+
+menu, .menu {
+    background-color: @bg_alt_color;
+    color:            @fg_color;
+    border-color:     @border_color;
+}
+
+menuitem {
+    color:            @fg_color;
+}
+
+menuitem:hover {
+    background-color: @selected_bg_color;
+    color:            @selected_fg_color;
+}
+
+menuitem:disabled {
+    color:            @fg_dim_color;
+}
+
+/* ── Sidebar & TreeView ────────────────────────────────────── */
+.sidebar, placessidebar, .placessidebar {
+    background-color: @bg_alt_color;
+    color:            @fg_color;
+    border-color:     @border_color;
+}
+
+.sidebar row:hover, placessidebar row:hover {
+    background-color: @bg_hover_color;
+}
+
+.sidebar row:selected, placessidebar row:selected {
+    background-color: @selected_bg_color;
+    color:            @selected_fg_color;
+}
+
+treeview, treeview.view {
+    background-color: @bg_color;
+    color:            @fg_color;
+}
+
+treeview:selected, treeview row:selected {
+    background-color: @selected_bg_color;
+    color:            @selected_fg_color;
+}
+
+treeview:hover {
+    background-color: @bg_hover_color;
+}
+
+/* ── Notebook (Tabs) ───────────────────────────────────────── */
+notebook > header {
+    background-color: @bg_alt_color;
+    border-color:     @border_color;
+}
+
+notebook > header > tabs > tab {
+    background-color: transparent;
+    color:            @fg_dim_color;
+}
+
+notebook > header > tabs > tab:checked {
+    background-color: @bg_color;
+    color:            @fg_color;
+}
+
+notebook > header > tabs > tab:hover {
+    background-color: @bg_hover_color;
+    color:            @fg_color;
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────── */
+scrollbar trough {
+    background-color: @bg_alt_color;
+}
+
+scrollbar slider {
+    background-color: @fg_dim_color;
+    border-radius:    8px;
+}
+
+scrollbar slider:hover {
+    background-color: @selected_bg_color;
+}
+
+/* ── Tooltip ───────────────────────────────────────────────── */
+tooltip {
+    background-color: @bg_alt_color;
+    color:            @fg_color;
+    border-color:     @border_color;
+    border-radius:    5px;
+}
+
+tooltip label {
+    color: @fg_color;
+}
+
+/* ── Popover ───────────────────────────────────────────────── */
+popover {
+    background-color: @bg_alt_color;
+    border-color:     @border_color;
+    border-radius:    8px;
+}
+
+/* ── Listbox ───────────────────────────────────────────────── */
+list, listbox {
+    background-color: @bg_color;
+    color:            @fg_color;
+}
+
+list row:hover, listbox row:hover {
+    background-color: @bg_hover_color;
+}
+
+list row:selected, listbox row:selected {
+    background-color: @selected_bg_color;
+    color:            @selected_fg_color;
+}
+
+/* ── Check & Radio ─────────────────────────────────────────── */
+check:checked, radio:checked {
+    background-color: @selected_bg_color;
+    border-color:     @selected_bg_color;
+    color:            @selected_fg_color;
+}
+
+/* ── Switch ────────────────────────────────────────────────── */
+switch:checked {
+    background-color: @selected_bg_color;
+    border-color:     @selected_bg_color;
+}
+
+/* ── Progressbar ───────────────────────────────────────────── */
+progressbar progress {
+    background-color: @selected_bg_color;
+}
+
+progressbar trough {
+    background-color: @bg_alt_color;
+}
+
+/* ── Scale ─────────────────────────────────────────────────── */
+scale trough highlight {
+    background-color: @selected_bg_color;
+}
+
+scale slider {
+    background-color: @selected_bg_color;
+    border-color:     @selected_bg_color;
+}
+
+/* ── Paned ─────────────────────────────────────────────────── */
+paned > separator {
+    background-color: @bg_hover_color;
+}
+
+paned > separator:hover {
+    background-color: @selected_bg_color;
+}
+
+/* ── Statusbar ─────────────────────────────────────────────── */
+statusbar {
+    background-color: @bg_color;
+    color:            @fg_dim_color;
+}
+
+/* ── Label ─────────────────────────────────────────────────── */
+label { color: @fg_color; }
+label.dim-label { color: @fg_dim_color; }
+label:disabled { color: @fg_dim_color; }
+
+/* ── Links ─────────────────────────────────────────────────── */
+*:link    { color: @purple_hover; }
+*:visited { color: @purple_active; }
+
+/* ── Abgerundete Ecken ─────────────────────────────────────── */
+button, entry, menu, menuitem, popover,
+notebook > header > tabs > tab {
+    border-radius: 5px;
+}

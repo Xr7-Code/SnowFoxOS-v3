@@ -1,0 +1,89 @@
+/* ============================================================
+   SnowFoxOS — Rofi Theme (SnowFox Palette)
+   ============================================================ */
+
+configuration {
+    modi:        "drun,run";
+    show-icons:  false;
+    icon-theme:  "Papirus-Dark";
+}
+
+* {
+    font:             "Inter 11";
+    bg:               #1e1e2e;
+    bg-alt:           #252538;
+    fg:               #cdd6f4;
+    fg-alt:           #6c7086;
+    purple:           #8139e8;
+    orange:           #ff79c6;
+    border-color:     rgba(129, 57, 232, 0.5); /* 8139e8 mit 50% Deckkraft */
+    background-color: transparent;
+}
+
+window {
+    background-color: @bg;
+    border:           1px solid;
+    border-color:     @border-color;
+    border-radius:    5px; /* Border Radius 5 aus deinem Design */
+    width:            500px;
+    padding:          8px;
+}
+
+mainbox {
+    background-color: transparent;
+    children: [inputbar, listview];
+}
+
+inputbar {
+    background-color: @bg-alt;
+    border-radius:    5px; /* Konsistent 5px */
+    padding:          8px 12px;
+    margin:           0 0 8px 0;
+    children:         [prompt, entry];
+}
+
+prompt {
+    background-color: transparent;
+    text-color:       @purple;
+    padding:          0 8px 0 0;
+}
+
+entry {
+    background-color: transparent;
+    text-color:       @fg;
+    placeholder:      "Suchen...";
+    placeholder-color: @fg-alt;
+}
+
+listview {
+    background-color: transparent;
+    lines:            8;
+    spacing:          4px;
+}
+
+element {
+    background-color: transparent;
+    border-radius:    5px; /* Konsistent 5px */
+    padding:          6px 8px;
+}
+
+element selected {
+    background-color: rgba(129, 57, 232, 0.2); /* Selektion mit leichtem lila Schimmer */
+    border:           1px solid;
+    border-color:     rgba(129, 57, 232, 0.4);
+}
+
+element-icon {
+    size:   22px;
+    margin: 0 8px 0 0;
+}
+
+element-text {
+    background-color: transparent;
+    text-color:       @fg;
+    vertical-align:   0.5;
+}
+
+element selected element-text {
+    text-color: @fg;
+}

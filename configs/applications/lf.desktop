@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Dateien
+Exec=kitty -e lf
+Icon=system-file-manager
+Type=Application
+Categories=System;FileManager;

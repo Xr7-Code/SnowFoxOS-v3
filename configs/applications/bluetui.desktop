@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Bluetooth
+Exec=kitty -e bluetui
+Icon=bluetooth
+Type=Application
+Categories=System;

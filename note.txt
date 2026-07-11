@@ -1,0 +1,16 @@
+SnowFoxOS ist ein krypto-autarkes, ressourcenschonendes Betriebssystem, das für dezentrale Mesh-Kommunikation und absolute Offline-Sicherheit optimiert ist. Es läuft unter 600 MB RAM, hat ein vollwertiges CLI-Ökosystem und kann sich ohne Internet mit anderen Geräten über Funk vernetzen.
+
+1. Air-Gapped / Sovereign-First (Souverän & Isoliert)
+Bedeutung: Das System bricht im Offline-Modus Funk- und Netzwerkverbindungen so tief im Kernel/Treiber-Level ab, dass es physisch isoliert ist. Es ist darauf ausgelegt, die absolute Datensouveränität des Nutzers zu garantieren – ohne Telemetrie, ohne Cloud-Abhängigkeit.
+
+2. Zero-Infrastructure-Capable (Infrastruktur-unabhängig)
+Bedeutung: Durch Features wie den integrierten "WLAN-Draht" (snowfox share mit lokalem DHCP/Webserver) und das Reticulum-Protokoll kann SnowFoxOS voll funktionsfähig kommunizieren, Daten austauschen und Netzwerke bilden, ohne dass ein Router, ein ISP oder das globale Internet existieren.
+
+3. Mesh-Native / Peer-to-Peercentric (Dezentral vernetzt)
+Bedeutung: Netzwerkverbindungen werden nicht starr hierarchisch (PC zu Router zu Server) gedacht, sondern auf Augenhöhe von Gerät zu Gerät. Jedes installierte SnowFoxOS ist ab v3 von Haus aus ein Relais-Knoten, der Daten kryptografisch und dezentral für andere weitertransportieren kann.
+
+4. Hyper-Resilient / Apocalypse-Ready (Krisensicher)
+Bedeutung: Das System bringt sein eigenes Offline-Wissen (die geplante Wikipedia-Einbindung) und seine eigenen Core-Werkzeuge mit. Fällt die weltweite IT-Infrastruktur aus, bleibt SnowFoxOS ein voll einsatzbereites Werkzeug für Analyse, Kommunikation, Krypto-Verwaltung und Automatisierung.
+
+5. Ultra-Low-Resource Footprint (Extrem ressourcenschonend)
+Bedeutung: Mit dem Ziel, in v4 unter 300 MB RAM im Idle zu fallen (durch die eigenen geforkten Tools), läuft das System auf minimaler Hardwareflamme. Das bedeutet im Umkehrschluss: maximal verlängerte Akkulaufzeit und minimale Watt-Zahl bei Solar- oder Powerbank-Betrieb.

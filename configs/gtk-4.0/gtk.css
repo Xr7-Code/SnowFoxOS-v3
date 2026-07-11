@@ -1,0 +1,58 @@
+/* ============================================================
+   SnowFox — GTK4 / Libadwaita Color Override
+   Ablegen unter: ~/.config/gtk-4.0/gtk.css
+   ============================================================ */
+
+/* ── Libadwaita Farb-Tokens ────────────────────────────────── */
+:root {
+    --accent-bg-color:       #8139e8;
+    --accent-fg-color:       #ffffff;
+    --accent-color:          #9b5ef0;
+
+    --destructive-bg-color:  #e05555;
+    --destructive-fg-color:  #ffffff;
+    --destructive-color:     #e05555;
+
+    --success-bg-color:      #5faf5f;
+    --success-fg-color:      #ffffff;
+    --success-color:         #5faf5f;
+
+    --warning-bg-color:      #ff9f5e;
+    --warning-fg-color:      #1e1e2e;
+    --warning-color:         #ff9f5e;
+
+    --error-bg-color:        #e05555;
+    --error-fg-color:        #ffffff;
+    --error-color:           #e05555;
+
+    --window-bg-color:       #1e1e2e;
+    --window-fg-color:       #cdd6f4;
+
+    --view-bg-color:         #252538;
+    --view-fg-color:         #cdd6f4;
+
+    --headerbar-bg-color:    #252538;
+    --headerbar-fg-color:    #cdd6f4;
+    --headerbar-border-color:#3d2a5c;
+    --headerbar-shade-color: rgba(0,0,0,0.2);
+
+    --sidebar-bg-color:      #252538;
+    --sidebar-fg-color:      #cdd6f4;
+    --sidebar-border-color:  #3d2a5c;
+
+    --card-bg-color:         #252538;
+    --card-fg-color:         #cdd6f4;
+    --card-shade-color:      rgba(0,0,0,0.15);
+
+    --dialog-bg-color:       #1e1e2e;
+    --dialog-fg-color:       #cdd6f4;
+
+    --popover-bg-color:      #252538;
+    --popover-fg-color:      #cdd6f4;
+
+    --shade-color:           rgba(0,0,0,0.25);
+    --scrollbar-outline-color: rgba(0,0,0,0.3);
+
+    --thumbnail-bg-color:    #2e2e45;
+    --thumbnail-fg-color:    #cdd6f4;
+}

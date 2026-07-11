@@ -1,0 +1,93 @@
+# ============================================================
+#   SnowFox — GTK2 Override
+#   Ablegen unter: ~/.gtkrc-2.0
+# ============================================================
+
+gtk-theme-name      = "Arc-Dark"
+gtk-icon-theme-name = "Papirus-Dark"
+gtk-font-name       = "Inter 10"
+gtk-cursor-theme-name = "Bibata-Modern-Classic"
+gtk-cursor-theme-size = 24
+
+gtk-color-scheme =
+"bg_color:#1e1e2e\n"
+"bg_alt_color:#252538\n"
+"fg_color:#cdd6f4\n"
+"base_color:#252538\n"
+"text_color:#cdd6f4\n"
+"selected_bg_color:#8139e8\n"
+"selected_fg_color:#ffffff\n"
+"tooltip_bg_color:#252538\n"
+"tooltip_fg_color:#cdd6f4\n"
+
+style "snowfox" {
+    base[NORMAL]      = "#252538"
+    base[ACTIVE]      = "#2e2e45"
+    base[PRELIGHT]    = "#2e2e45"
+    base[SELECTED]    = "#8139e8"
+    base[INSENSITIVE] = "#1e1e2e"
+
+    bg[NORMAL]        = "#1e1e2e"
+    bg[ACTIVE]        = "#252538"
+    bg[PRELIGHT]      = "#2e2e45"
+    bg[SELECTED]      = "#8139e8"
+    bg[INSENSITIVE]   = "#1e1e2e"
+
+    fg[NORMAL]        = "#cdd6f4"
+    fg[ACTIVE]        = "#cdd6f4"
+    fg[PRELIGHT]      = "#ffffff"
+    fg[SELECTED]      = "#ffffff"
+    fg[INSENSITIVE]   = "#6c7086"
+
+    text[NORMAL]      = "#cdd6f4"
+    text[ACTIVE]      = "#cdd6f4"
+    text[PRELIGHT]    = "#ffffff"
+    text[SELECTED]    = "#ffffff"
+    text[INSENSITIVE] = "#6c7086"
+}
+
+style "snowfox-sidebar" inherits "snowfox" {
+    base[NORMAL]  = "#252538"
+    bg[NORMAL]    = "#252538"
+    text[NORMAL]  = "#cdd6f4"
+    fg[NORMAL]    = "#cdd6f4"
+}
+
+style "snowfox-tooltip" inherits "snowfox" {
+    bg[NORMAL]    = "#252538"
+    fg[NORMAL]    = "#cdd6f4"
+    xthickness    = 8
+    ythickness    = 4
+}
+
+style "snowfox-menu" inherits "snowfox" {
+    bg[NORMAL]    = "#252538"
+    bg[PRELIGHT]  = "#8139e8"
+    fg[NORMAL]    = "#cdd6f4"
+    fg[PRELIGHT]  = "#ffffff"
+    text[NORMAL]  = "#cdd6f4"
+    text[PRELIGHT]= "#ffffff"
+}
+
+style "snowfox-bar" inherits "snowfox" {
+    bg[NORMAL]    = "#1e1e2e"
+    bg[ACTIVE]    = "#252538"
+    bg[PRELIGHT]  = "#2e2e45"
+    fg[NORMAL]    = "#cdd6f4"
+}
+
+class  "GtkWidget"           style "snowfox"
+widget_class "*"             style "snowfox"
+
+widget_class "*<GtkTreeView>*"   style "snowfox-sidebar"
+widget_class "*<GtkCList>*"      style "snowfox-sidebar"
+widget_class "*<GtkSidePane>*"   style "snowfox-sidebar"
+widget_class "*<GtkFileChooser>*" style "snowfox-sidebar"
+
+widget_class "*<GtkMenuBar>*"    style "snowfox-bar"
+widget_class "*<GtkToolbar>*"    style "snowfox-bar"
+
+widget_class "*<GtkMenu>*"       style "snowfox-menu"
+widget_class "*<GtkMenuItem>*"   style "snowfox-menu"
+
+widget "gtk-tooltip*"            style "snowfox-tooltip"

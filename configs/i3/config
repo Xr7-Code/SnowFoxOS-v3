@@ -1,0 +1,144 @@
+# ============================================================
+#   SnowFoxOS v2.1 — i3 Konfiguration (SnowFox Palette)
+# ============================================================
+
+set $mod Mod4
+set $term kitty
+
+# ── Farben (Exakt nach Canva-Design) ────────────────────────
+set $purple   #8139e8
+set $bg       #1e1e2e
+set $bg2      #252538
+set $fg       #cdd6f4
+set $gray     #6c7086
+set $orange   #ff79c6
+
+# ── Schrift ─────────────────────────────────────────────────
+font pango:JetBrainsMono Nerd Font 10
+
+# ── Fenster-Dekoration ──────────────────────────────────────
+# class                 border  backgr. text    indicator child_border
+client.focused          $purple $purple $fg     $purple   $purple
+client.focused_inactive $bg2    $bg     $gray   $bg2      $bg2
+client.unfocused        $bg2    $bg     $gray   $bg2      $bg2
+client.urgent           $orange $bg2    $fg     $orange   $orange
+
+default_border pixel 2
+default_floating_border pixel 2
+
+# Gaps für den schwebenden Look mit abgerundeten Ecken erhöht
+gaps inner 10
+gaps outer 5
+smart_gaps on
+smart_borders on
+
+# ── Autostart ───────────────────────────────────────────────
+exec_always --no-startup-id ~/.fehbg
+exec --no-startup-id picom --config ~/.config/picom.conf
+exec --no-startup-id ~/.config/polybar/launch.sh
+exec --no-startup-id dunst
+exec --no-startup-id lxpolkit
+exec --no-startup-id xsettingsd
+exec --no-startup-id nm-applet --no-agent
+exec --no-startup-id redshift
+# exec --no-startup-id diodon # Deaktiviert wegen Systembereinigung
+exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork -c 1e1e2e
+
+# ── Keyboard Shortcuts ──────────────────────────────────────
+bindsym $mod+Return exec $term
+bindsym $mod+space  exec rofi -show drun -show-icons -theme ~/.config/rofi/config.rasi
+bindsym $mod+Tab    exec rofi -show window -theme ~/.config/rofi/config.rasi
+bindsym $mod+e      exec pcmanfm
+bindsym $mod+n      exec ~/.config/snowfox-network.sh
+bindsym $mod+w      exec ~/.config/snowfox-wallpaper.sh
+bindsym $mod+l      exec i3lock -c 1e1e2e
+bindsym $mod+p      exec ~/.config/snowfox-display.sh
+
+bindsym Print exec scrot ~/Pictures/screenshot_%Y%m%d_%H%M%S.png && \
+    notify-send "SnowFox" "Screenshot gespeichert"
+bindsym $mod+Print exec scrot -s ~/Pictures/screenshot_%Y%m%d_%H%M%S.png && \
+    notify-send "SnowFox" "Ausschnitt gespeichert"
+
+bindsym XF86AudioRaiseVolume exec wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+
+bindsym XF86AudioLowerVolume exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-
+bindsym XF86AudioMute        exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
+
+bindsym XF86MonBrightnessUp   exec brightnessctl set +5%
+bindsym XF86MonBrightnessDown exec brightnessctl set 5%-
+
+bindsym XF86AudioPlay  exec playerctl play-pause
+bindsym XF86AudioNext  exec playerctl next
+bindsym XF86AudioPrev  exec playerctl previous
+
+bindsym $mod+q        kill
+bindsym $mod+Shift+r reload
+bindsym $mod+Shift+e exec ~/.config/powermenu.sh
+bindsym XF86PowerOff exec --no-startup-id ~/.config/powermenu.sh
+
+# ── Fensterverwaltung ───────────────────────────────────────
+bindsym $mod+Left  focus left
+bindsym $mod+Right focus right
+bindsym $mod+Up    focus up
+bindsym $mod+Down  focus down
+
+bindsym $mod+Shift+Left  move left
+bindsym $mod+Shift+Right move right
+bindsym $mod+Shift+Up    move up
+bindsym $mod+Shift+Down  move down
+
+bindsym $mod+h split h
+bindsym $mod+v split v
+bindsym $mod+f fullscreen toggle
+bindsym $mod+s layout stacking
+bindsym $mod+t layout toggle split
+
+bindsym $mod+Shift+space floating toggle
+bindsym $mod+d            focus mode_toggle
+floating_modifier $mod
+
+# ── Workspaces ──────────────────────────────────────────────
+set $ws1 "1"
+set $ws2 "2"
+set $ws3 "3"
+set $ws4 "4"
+set $ws5 "5"
+
+bindsym $mod+1 workspace $ws1
+bindsym $mod+2 workspace $ws2
+bindsym $mod+3 workspace $ws3
+bindsym $mod+4 workspace $ws4
+bindsym $mod+5 workspace $ws5
+
+bindsym $mod+Shift+1 move container to workspace $ws1
+bindsym $mod+Shift+2 move container to workspace $ws2
+bindsym $mod+Shift+3 move container to workspace $ws3
+bindsym $mod+Shift+4 move container to workspace $ws4
+bindsym $mod+Shift+5 move container to workspace $ws5
+
+# ── Floating Regeln ─────────────────────────────────────────
+for_window [class="Pavucontrol"]           floating enable, resize set 600 400
+for_window [class=".*"] tiling enable
+for_window [class="Nm-connection-editor"]  floating enable
+for_window [class="System-config-printer"] floating enable
+for_window [window_role="dialog"]          floating enable
+for_window [window_role="pop-up"]          floating enable
+for_window [class="jetbrains-toolbox"]     floating enable, move position center
+for_window [class="MEGAsync"]              floating enable, move position center
+for_window [title="MEGAsync"]              floating enable, move position center
+no_focus [class="MEGAsync"]
+
+# ── Resize Mode ─────────────────────────────────────────────
+mode "resize" {
+    bindsym Left  resize shrink width  20px
+    bindsym Right resize grow   width  20px
+    bindsym Up    resize shrink height 20px
+    bindsym Down  resize grow   height 20px
+    bindsym Return mode "default"
+    bindsym Escape mode "default"
+}
+bindsym $mod+r mode "resize"
+
+# Polybar — kein i3bar
+bar {
+    i3bar_command :
+}

@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Netzwerk
+Exec=kitty -e nmtui
+Icon=network-wireless
+Type=Application
+Categories=Network;System;

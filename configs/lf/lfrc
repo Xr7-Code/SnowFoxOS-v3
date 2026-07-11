@@ -1,0 +1,20 @@
+set previewer ~/.config/lf/preview.sh
+set cleaner ~/.config/lf/cleaner.sh
+set preview true
+set icons true
+set drawbox true
+set ratios 1:2:3
+set pager false
+
+cmd open &{{
+    case "$(file -bL --mime-type "$f")" in
+        image/*)         kitty +kitten icat "$f" ;;
+        video/*|audio/*) mpv "$f" ;;
+        application/pdf) xdg-open "$f" ;;
+        text/*)          $EDITOR "$f" ;;
+        *)               xdg-open "$f" ;;
+    esac
+}}
+
+map gm cd /media/$USER
+map gh cd ~
