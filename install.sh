@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-#  SnowFoxOS v2.2 — Installer
+#  SnowFoxOS v3.0 — Installer
 #  Basis: Debian 12 (Bookworm) minimal
 #  Desktop: i3 + Polybar + Rofi + Dunst + i3lock
 #  Ausführen: sudo bash install.sh
@@ -11,6 +11,7 @@ ORANGE='\033[0;33m'
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 GRAY='\033[0;37m'
+CYAN='\033[0;36m'
 BOLD='\033[1m'
 RESET='\033[0m'
 
@@ -98,7 +99,7 @@ apt-get install -y \
     lz4 \
     gnupg \
     pciutils usbutils \
-    htop btop neofetch irqbalance \
+    htop btop irqbalance \
     bash-completion \
     xdg-utils \
     xdg-user-dirs \
@@ -113,10 +114,42 @@ apt-get install -y \
     xclip \
     xdotool \
     dbus-x11 \
-    lm-sensors
+    lm-sensors \
+    qt5ct \
+    qt5-style-plugins \
+    qt6ct
 
 sudo -u "$TARGET_USER" xdg-user-dirs-update
 success "System aktualisiert"
+
+# ── fastfetch installieren ────────────────────────────────────
+info "Installiere fastfetch..."
+FASTFETCH_DEB_URL=$(curl -sf https://api.github.com/repos/fastfetch-cli/fastfetch/releases/latest 2>/dev/null \
+    | python3 -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+    for a in data.get('assets', []):
+        if a['name'].endswith('amd64.deb'):
+            print(a['browser_download_url'])
+            break
+except: pass
+" 2>/dev/null)
+if [[ -n "$FASTFETCH_DEB_URL" ]]; then
+    curl -L "$FASTFETCH_DEB_URL" -o /tmp/fastfetch.deb 2>/dev/null && \
+        dpkg -i /tmp/fastfetch.deb 2>/dev/null && \
+        rm -f /tmp/fastfetch.deb && \
+        success "fastfetch installiert" || \
+        warn "fastfetch Installation fehlgeschlagen"
+else
+    # Fallback: direkter Download des bekannten Pakets
+    curl -L "https://github.com/fastfetch-cli/fastfetch/releases/latest/download/fastfetch-linux-amd64.deb" \
+        -o /tmp/fastfetch.deb 2>/dev/null && \
+        dpkg -i /tmp/fastfetch.deb 2>/dev/null && \
+        rm -f /tmp/fastfetch.deb && \
+        success "fastfetch installiert (Fallback)" || \
+        warn "fastfetch Installation fehlgeschlagen — manuell installieren"
+fi
 
 # ── X11 / startx ohne sudo ────────────────────────────────────
 # Fix: X-Server blockiert normalen Benutzern standardmäßig den
@@ -182,8 +215,11 @@ if [[ $XANMOD_EXIT -eq 0 ]]; then
         fi
 
         if lspci | grep -qi nvidia && lspci | grep -qi amd; then
-            GRUB_PARAMS="$GRUB_PARAMS amd_iommu=on iommu=pt"
-            info "AMD+NVIDIA Hybrid erkannt: IOMMU-Parameter gesetzt (verhindert Freezes)"
+            # Fix: AMD+NVIDIA Hybrid verursachte dma_fence_wait_timeout Freeze
+            # durch amdgpu Display-Engine Deadlock. amdgpu.dc=1 + amdgpu.dpm=1
+            # stabilisieren den Display-Controller, IOMMU verhindert DMA-Konflikte.
+            GRUB_PARAMS="$GRUB_PARAMS amd_iommu=on iommu=pt amdgpu.dc=1 amdgpu.dpm=1"
+            info "AMD+NVIDIA Hybrid erkannt: IOMMU + amdgpu Freeze-Fix gesetzt"
         fi
 
         sed -i "s/GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT=\"$GRUB_PARAMS\"/" /etc/default/grub
@@ -297,32 +333,24 @@ EOF
         nvidia-vulkan-icd nvidia-vulkan-icd:i386
 
     if $HAS_AMD; then
-        info "Hybrid GPU erkannt — Installiere envycontrol..."
-        ENVY_DEB_URL=$(curl -sf https://api.github.com/repos/bayasdev/envycontrol/releases/latest 2>/dev/null \
-            | python3 -c "
-import sys, json
-try:
-    data = json.load(sys.stdin)
-    for a in data.get('assets', []):
-        if a['name'].endswith('.deb'):
-            print(a['browser_download_url'])
-            break
-except: pass
-" 2>/dev/null)
-        if [[ -n "$ENVY_DEB_URL" ]]; then
-            curl -L "$ENVY_DEB_URL" -o /tmp/envycontrol.deb
-            dpkg -i /tmp/envycontrol.deb 2>/dev/null || apt-get -f install -y
-            rm -f /tmp/envycontrol.deb
-            success "envycontrol installiert"
-        else
-            python3 -m venv /opt/envycontrol-venv
-            /opt/envycontrol-venv/bin/pip install git+https://github.com/bayasdev/envycontrol.git 2>/dev/null || true
-            ln -sf /opt/envycontrol-venv/bin/envycontrol /usr/local/bin/envycontrol
-            success "envycontrol installiert (venv)"
-        fi
+        # Fix: Envycontrol wurde entfernt da es auf AMD+NVIDIA Hybrid-Systemen
+        # GPU-Erkennung komplett zerstört. Stattdessen nativer xrandr-Provider-Fix.
+        info "AMD+NVIDIA Hybrid erkannt — Konfiguriere nativen xrandr Provider-Fix..."
 
-        envycontrol -s hybrid 2>/dev/null || true
-        success "GPU-Modus: hybrid"
+        # amdgpu modprobe Config mit runpm=0
+        # Fix: Runtime PM verursachte dma_fence_wait_timeout Deadlock zwischen
+        # AMD Display-Engine und NVIDIA Framebuffer.
+        cat > /etc/modprobe.d/amdgpu.conf << 'EOF'
+# SnowFoxOS — AMD GPU Konfiguration
+# Fix: runpm=0 verhindert dma_fence_wait_timeout Freeze auf Hybrid-Systemen
+# (AMD Display-Engine Deadlock mit NVIDIA Framebuffer)
+options amdgpu bpc=8
+options amdgpu dc=1
+options amdgpu dpm=1
+options amdgpu audio=0
+options amdgpu runpm=0
+EOF
+        success "amdgpu Freeze-Fix installiert (runpm=0)"
     fi
 
     XANMOD_KERNEL=$(ls /lib/modules 2>/dev/null | grep xanmod | sort -V | tail -1)
@@ -341,6 +369,14 @@ except: pass
 elif $HAS_AMD; then
     info "AMD GPU erkannt — Nutze Mesa..."
     apt-get install -y firmware-amd-graphics mesa-vulkan-drivers mesa-va-drivers
+
+    cat > /etc/modprobe.d/amdgpu.conf << 'EOF'
+# SnowFoxOS — AMD GPU Konfiguration
+options amdgpu bpc=8
+options amdgpu dc=1
+options amdgpu dpm=1
+options amdgpu audio=0
+EOF
     success "AMD Stack installiert"
 
 elif $HAS_INTEL; then
@@ -388,11 +424,24 @@ apt-get install -y \
     xsettingsd \
     lxpolkit \
     lxappearance \
-    picom \
     xss-lock \
     xserver-xorg-input-libinput \
     cups cups-bsd cups-client \
     printer-driver-splix
+
+# Picom wurde entfernt — verursachte Grafikkonflikte auf AMD+NVIDIA Hybrid
+# und erhöhte unnötig RAM/GPU-Last. i3 braucht keinen Compositor zwingend.
+success "i3 Desktop-Pakete installiert (ohne picom)"
+
+# ── Greenclip — schlanker Clipboard-Manager ───────────────────
+info "Installiere Greenclip Clipboard-Manager..."
+if curl -L "https://github.com/erebe/greenclip/releases/latest/download/greenclip" \
+    -o /usr/local/bin/greenclip 2>/dev/null; then
+    chmod +x /usr/local/bin/greenclip
+    success "Greenclip installiert"
+else
+    warn "Greenclip Download fehlgeschlagen — manuell installieren"
+fi
 
 # ── Bibata Cursor Theme installieren ─────────────────────────
 info "Installiere Bibata-Modern-Classic Cursor..."
@@ -427,7 +476,7 @@ if ask_install "bluetui (Bluetooth Terminal UI)"; then
     else
         warn "Konnte Binary nicht laden. Versuche Cargo Fallback..."
         apt-get install -y cargo 2>/dev/null
-        cargo install bluetui --root /usr/local/ 2>/dev/null && success "bluetui via Cargo installiert!" || error "bluetui Installation komplett fehlgeschlagen."
+        cargo install bluetui --root /usr/local/ 2>/dev/null && success "bluetui via Cargo installiert!" || warn "bluetui Installation fehlgeschlagen."
     fi
 fi
 
@@ -504,12 +553,23 @@ export PATH=/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games
 
 export GTK_THEME=Arc-Dark
 export QT_QPA_PLATFORMTHEME=qt5ct
+export QT_STYLE_OVERRIDE=gtk2
+export QT_AUTO_SCREEN_SCALE_FACTOR=0
+export ELECTRON_OZONE_PLATFORM_HINT=auto
 export _JAVA_AWT_WM_NONREPARENTING=1
 
 xsettingsd &
 
 if [ -f /usr/bin/dbus-launch ]; then
     eval $(/usr/bin/dbus-launch --sh-syntax --exit-with-session)
+fi
+
+# Fix: AMD+NVIDIA Hybrid — xrandr Provider verbinden damit AMD als
+# Output-Slave für den zweiten Monitor fungiert ohne eigene Fence-Ops.
+# Verhindert dma_fence_wait_timeout Freeze (amdgpu Display-Engine Deadlock).
+if lspci | grep -qi nvidia && lspci | grep -qi amd; then
+    xrandr --setprovideroutputsource 1 0
+    xrandr --auto
 fi
 
 exec i3
@@ -552,7 +612,6 @@ info "Konfiguriere Kitty Terminal..."
 mkdir -p "$TARGET_HOME/.config/kitty"
 cat > "$TARGET_HOME/.config/kitty/kitty.conf" << 'KITTYEOF'
 # SnowFox Kitty Theme
-# Erzeugt einen edlen Kontrast, dunkler als das reguläre #1e1e2e
 background #11111b
 foreground #cdd6f4
 window_padding_width 8
@@ -647,6 +706,16 @@ curl -sL https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp \
     -o /usr/local/bin/yt-dlp && chmod +x /usr/local/bin/yt-dlp
 success "yt-dlp installiert"
 
+# ── SnowFox Console Launcher klonen ──────────────────────────
+info "Klone SnowFox Console Launcher..."
+if git clone https://github.com/Xr7-Code/SnowFox-Console-Launcher \
+    "$TARGET_HOME/SnowFox-Console-Launcher" 2>/dev/null; then
+    chown -R "$TARGET_USER:$TARGET_USER" "$TARGET_HOME/SnowFox-Console-Launcher"
+    success "SnowFox Console Launcher geklont nach ~/SnowFox-Console-Launcher"
+else
+    warn "SnowFox Console Launcher konnte nicht geklont werden — manuell installieren"
+fi
+
 step "6/10 — Browser"
 
 echo ""
@@ -736,26 +805,22 @@ step "6b/10 — Mesh-Modul (Reticulum P2P-Netzwerk)"
 if ask_install "Reticulum Mesh-Modul (autarkes P2P-Netzwerk)"; then
     info "Installiere Reticulum Network Stack..."
 
-    # 1. pipx installieren (falls nicht vorhanden)
     if ! command -v pipx &>/dev/null; then
         info "pipx wird installiert..."
         apt-get update -qq
         apt-get install -y pipx
-        # pipx in den PATH bringen
         pipx ensurepath
         export PATH="$PATH:$HOME/.local/bin"
         success "pipx installiert"
     else
-        ok "pipx bereits installiert"
+        success "pipx bereits installiert"
     fi
 
-    # 2. Reticulum via pipx installieren
     info "Installiere Reticulum in isolierter Umgebung via pipx..."
     if pipx install rns 2>/dev/null; then
         success "Reticulum (rns) via pipx installiert"
     else
         warn "pipx Installation fehlgeschlagen, versuche Fallback..."
-        # Fallback: mit --break-system-packages (falls pipx nicht geht)
         if command -v pip3 &>/dev/null; then
             pip3 install rns --break-system-packages
             success "Reticulum via pip3 (--break-system-packages) installiert"
@@ -766,7 +831,6 @@ if ask_install "Reticulum Mesh-Modul (autarkes P2P-Netzwerk)"; then
         fi
     fi
 
-    # 3. Mesh-Skript aus dem Repo kopieren
     MESH_SCRIPT_SRC="$SCRIPT_DIR/configs/snowfox-mesh.sh"
     MESH_SCRIPT_DST="$TARGET_HOME/.config/snowfox-mesh.sh"
 
@@ -777,10 +841,8 @@ if ask_install "Reticulum Mesh-Modul (autarkes P2P-Netzwerk)"; then
         success "Mesh-Modul aus Repo kopiert ($(basename "$MESH_SCRIPT_SRC"))"
     else
         warn "Mesh-Skript nicht im Repo: $MESH_SCRIPT_SRC"
-        # ... Fallback-Code ...
     fi
 
-    # 4. Mesh-Verzeichnisse anlegen
     mkdir -p "$TARGET_HOME/.config/snowfox/mesh"
     mkdir -p "$TARGET_HOME/Downloads/MeshShare"
     chown -R "$TARGET_USER:$TARGET_USER" "$TARGET_HOME/.config/snowfox" 2>/dev/null || true
@@ -806,8 +868,7 @@ if ask_install "Steam"; then
     success "Steam + GameMode installiert"
 
     # Fix: Steam-Freezes beim Workspace-Wechsel — dem Minimalsystem
-    # fehlten die 64-Bit-Intel-Medientreiber und Off-Screen-Rendering-
-    # Erweiterungen.
+    # fehlten die 64-Bit-Intel-Medientreiber und Off-Screen-Rendering-Erweiterungen.
     if $HAS_INTEL; then
         info "Installiere Intel-Medientreiber & Off-Screen-Rendering für Steam..."
         apt-get install -y intel-media-va-driver:amd64 libosmesa6 2>/dev/null || \
@@ -906,9 +967,7 @@ ufw default allow outgoing 2>/dev/null || true
 ufw --force enable         2>/dev/null || true
 success "ufw Firewall aktiviert"
 
-# ── WLAN-Karte freigeben (alte ifupdown-Konfiguration blockiert
-#    das Device sonst exklusiv und der NetworkManager bekommt es
-#    nie zu Gesicht) ──────────────────────────────────────────
+# ── WLAN-Karte freigeben ──────────────────────────────────────
 if [[ -f /etc/network/interfaces ]]; then
     cp /etc/network/interfaces /etc/network/interfaces.snowfox-bak
     sed -i -E '/^[[:space:]]*(auto|allow-hotplug|iface)[[:space:]]+(wl|en|eth)/ s/^/#/' /etc/network/interfaces
@@ -923,14 +982,6 @@ plugins=ifupdown,keyfile
 [ifupdown]
 managed=true
 EOF
-
-# HINWEIS: MAC-Adress-Randomisierung war hier geplant (stable-privacy für
-# WiFi-Scan und Verbindungen) — wurde entfernt da es in vielen Netzwerken
-# (Schulen, Unternehmen mit MAC-Filterung) zu Verbindungsproblemen führt.
-# Bei Bedarf manuell aktivieren:
-#   /etc/NetworkManager/conf.d/99-mac-privacy.conf
-#   [device] wifi.scan-rand-mac-address=yes
-#   [connection] wifi.cloned-mac-address=stable-privacy
 
 cat > /etc/NetworkManager/conf.d/99-snowfox-wifi-powersave.conf << 'EOF'
 [connection]
@@ -954,14 +1005,14 @@ done
 systemctl mask NetworkManager-wait-online.service 2>/dev/null || true
 systemctl mask systemd-networkd-wait-online.service 2>/dev/null || true
 
-# ── Heimliche Hintergrund-Dienste entfernen ───────────────────
-# Fix: Desktop-Portale (xdg) und das GNOME-Protokoll (zeitgeist)
-# fraßen im Leerlauf unnötig RAM.
+# ── Unnötige Programme & Dienste entfernen ────────────────────
 apt-get purge -y zeitgeist zeitgeist-core zeitgeist-datahub 2>/dev/null || true
-apt-get purge -y --autoremove diodon 2>/dev/null || true
+apt-get purge -y diodon 2>/dev/null || true
+apt-get purge -y xterm uxterm 2>/dev/null || true
+apt-get autoremove -y 2>/dev/null || true
 sudo -u "$TARGET_USER" systemctl --user mask xdg-desktop-portal.service \
     xdg-desktop-portal-gtk.service xdg-desktop-portal-gnome.service 2>/dev/null || true
-success "zeitgeist & diodon entfernt, XDG-Portal-Dienste maskiert"
+success "Ballast entfernt (zeitgeist, diodon, xterm, uxterm)"
 
 sed -i 's/#HandlePowerKey=.*/HandlePowerKey=ignore/' /etc/systemd/logind.conf
 
@@ -1007,31 +1058,31 @@ success "Boot-Screen bereit"
 step "10/10 — Konfiguration & Finishing"
 
 CONFIG_DIR="$TARGET_HOME/.config"
-mkdir -p "$CONFIG_DIR/neofetch"
+mkdir -p "$CONFIG_DIR/fastfetch"
 mkdir -p "$TARGET_HOME/Pictures/wallpapers"
 
 # ── Distro-Identität ─────────────────────────────────────────
 cat > /etc/os-release << 'EOF'
-PRETTY_NAME="SnowFoxOS 2.2"
+PRETTY_NAME="SnowFoxOS 3.0"
 NAME="SnowFoxOS"
-VERSION="2.2"
-VERSION_ID="2.2"
+VERSION="3.0"
+VERSION_ID="3.0"
 ID=snowfoxos
 ID_LIKE=debian
-HOME_URL="https://github.com/Xr7-Code/SnowFoxOS-v2.2-i3"
+HOME_URL="https://github.com/Xr7-Code/SnowFoxOS-v2.2"
 ANSI_COLOR="0;35"
 EOF
 
 cat > /etc/lsb-release << 'EOF'
 DISTRIB_ID=SnowFoxOS
-DISTRIB_RELEASE=2.2
+DISTRIB_RELEASE=3.0
 DISTRIB_CODENAME=fox
-DISTRIB_DESCRIPTION="SnowFoxOS 2.2"
+DISTRIB_DESCRIPTION="SnowFoxOS 3.0"
 EOF
 
 echo "snowfox"             > /etc/hostname
-echo "SnowFoxOS 2.2"       > /etc/issue
-echo "SnowFoxOS 2.2 \n \l" > /etc/issue.net
+echo "SnowFoxOS 3.0"       > /etc/issue
+echo "SnowFoxOS 3.0 \n \l" > /etc/issue.net
 hostname snowfox 2>/dev/null || true
 success "Distro-Identität gesetzt"
 
@@ -1052,6 +1103,12 @@ gtk-application-prefer-dark-theme=1
 gtk-decoration-layout=close,minimize,maximize:
 GEOF
 done
+
+# gsettings Darkmode erzwingen
+sudo -u "$TARGET_USER" DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$(id -u $TARGET_USER)/bus" \
+    gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' 2>/dev/null || true
+sudo -u "$TARGET_USER" DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$(id -u $TARGET_USER)/bus" \
+    gsettings set org.gnome.desktop.interface gtk-theme 'Arc-Dark' 2>/dev/null || true
 
 # ── Papirus-Ordnerfarbe (violett statt Standard-Blau) ─────────
 info "Installiere papirus-folders & setze Ordnerfarbe auf violett..."
@@ -1193,17 +1250,14 @@ cat > "$CONFIG_DIR/gtk-4.0/gtk.css" << 'CSS4EOF'
 }
 CSS4EOF
 
-# GTK2 — .gtkrc-2.0 mit include (Arc-Dark lädt .mine)
+# GTK2
 cat > "$TARGET_HOME/.gtkrc-2.0" << G2EOF
 include "/usr/share/themes/Arc-Dark/gtk-2.0/gtkrc"
 include "$TARGET_HOME/.gtkrc-2.0.mine"
 G2EOF
 
 cat > "$TARGET_HOME/.gtkrc-2.0.mine" << 'G2EOF'
-# ==============================================================================
-# ~/.gtkrc-2.0.mine - Komplettes SnowFox High-End Setup (FLAT/MODERN)
-# ==============================================================================
-
+# SnowFox GTK2 Override (FLAT/MODERN)
 gtk-color-scheme = "main_bg:#1e1e2e\nmain_fg:#cdd6f4\ntext_color:#cdd6f4\nbase_color:#1e1e2e\nselected_bg_color:#8139e8\nselected_fg_color:#ffffff\ntoolbar_bg:#1e1e2e\nmenubar_bg:#1e1e2e"
 
 style "snowfox-colors" {
@@ -1261,7 +1315,6 @@ style "snowfox-menus" {
     text[NORMAL]   = "#cdd6f4"
     text[PRELIGHT] = "#ffffff"
     engine "murrine" {
-        style             = FLAT
         gradient_shades   = { 1.0, 1.0, 1.0, 1.0 }
         contrast          = 0.0
         lightborder_shade = 1.0
@@ -1338,66 +1391,85 @@ cat > "$CONFIG_DIR/qt6ct/qt6ct.conf" << Q6EOF
 style=gtk2
 Q6EOF
 
-cat > "$CONFIG_DIR/neofetch/config.conf" << EOF
-print_info() {
-    info title
-    info underline
-    info "OS"         distro
-    info "Kernel"     kernel
-    info "Uptime"     uptime
-    info "Packages"   packages
-    info "Shell"      shell
-    info "Resolution" resolution
-    info "WM"         wm
-    info "CPU"        cpu
-    info "GPU"        gpu
-    info "Memory"     memory
+# ── fastfetch Config ──────────────────────────────────────────
+info "Konfiguriere fastfetch..."
+if [[ -f "$SCRIPT_DIR/configs/fastfetch/config.jsonc" ]]; then
+    mkdir -p "$CONFIG_DIR/fastfetch"
+    cp "$SCRIPT_DIR/configs/fastfetch/config.jsonc" "$CONFIG_DIR/fastfetch/config.jsonc"
+    # Logo-Pfad auf aktuelles Repo anpassen
+    sed -i "s|/home/xr7-code/SnowFoxOS-v2.2/assets/fuchs.png|$SCRIPT_DIR/assets/fuchs.png|g" \
+        "$CONFIG_DIR/fastfetch/config.jsonc"
+    success "fastfetch Config aus Repo kopiert"
+else
+    mkdir -p "$CONFIG_DIR/fastfetch"
+    cat > "$CONFIG_DIR/fastfetch/config.jsonc" << FFEOF
+{
+  "\$schema": "https://github.com/fastfetch-cli/fastfetch/raw/master/doc/json_schema.json",
+  "logo": {
+    "source": "$SCRIPT_DIR/assets/fuchs.png",
+    "type": "kitty-direct",
+    "width": 24,
+    "height": 11
+  },
+  "modules": [
+    "title",
+    "separator",
+    "os",
+    "host",
+    "kernel",
+    "uptime",
+    "packages",
+    "shell",
+    "display",
+    "wm",
+    "theme",
+    "icons",
+    "font",
+    "cursor",
+    "terminal",
+    "terminalfont",
+    "cpu",
+    "gpu",
+    "memory",
+    "swap",
+    "disk",
+    "localip",
+    "locale",
+    "break",
+    "colors"
+  ]
 }
-image_backend="ascii"
-ascii_distro=""
-image_source="${TARGET_HOME}/.config/neofetch/snowfox.txt"
-ascii_colors=(5 7)
-EOF
+FFEOF
+    success "fastfetch Config erstellt"
+fi
 
-cat > "$CONFIG_DIR/neofetch/snowfox.txt" << 'ASCIIEOF'
-                .... .....-
-   ..       ... ..- ........
-   :@..........@-:...........=
-   ::-...........: :...........
-   ............... -::: ........
-   :..........::::: - :.:........
-   :..::@:...@...::     .........
-    ::.... .:.: ................:-
-  :.   : :.@. ::...............::
-  .:......::::..............:.::-
-   ..:......................::::
-    :...::................::::-
-      ::.............::::::::
-        :::::::::::::::--:
-              ----------
-ASCIIEOF
+# ── bashrc — fastfetch statt neofetch ────────────────────────
+grep -q "fastfetch\|neofetch\|snowfox-greeting" "$TARGET_HOME/.bashrc" 2>/dev/null || \
+    printf '\n# SnowFoxOS Greeting\n[[ -x /usr/local/bin/snowfox-greeting ]] && snowfox-greeting\n' \
+    >> "$TARGET_HOME/.bashrc"
 
 if [[ -d "$SCRIPT_DIR/configs" ]]; then
     cp -r "$SCRIPT_DIR/configs/"* "$CONFIG_DIR/"
     success "Konfigurationsdateien kopiert"
 
-    sed -i 's/show-icons: .*/show-icons: false;/' "$CONFIG_DIR/rofi/config.rasi" 2>/dev/null
-    sed -i 's/icon-theme: .*/icon-theme: "Papirus-Dark";/' "$CONFIG_DIR/rofi/config.rasi" 2>/dev/null
-
-    if [[ -f "$CONFIG_DIR/picom.conf" ]]; then
-        sed -i 's/backend = .*/backend = "glx";/' "$CONFIG_DIR/picom.conf"
-        sed -i 's/shadow = .*/shadow = true;/' "$CONFIG_DIR/picom.conf"
-        sed -i 's/fading = .*/fading = false;/' "$CONFIG_DIR/picom.conf"
-        # Fix: Picom stürzte wegen eines Syntaxfehlers (fehlendes
-        # Semikolon am Ende des wintypes-Blocks) ab, wodurch Schatten
-        # und Transparenz komplett fehlten. Prüfen & ggf. ergänzen.
-        if grep -q "wintypes" "$CONFIG_DIR/picom.conf" && ! grep -qE '^\};' "$CONFIG_DIR/picom.conf"; then
-            warn "picom.conf: möglicherweise fehlendes Semikolon im wintypes-Block — bitte manuell prüfen"
-        fi
+    # Rofi Config anpassen — kein border-radius (kein picom mehr)
+    if [[ -f "$CONFIG_DIR/rofi/config.rasi" ]]; then
+        sed -i 's/show-icons: .*/show-icons: false;/' "$CONFIG_DIR/rofi/config.rasi"
+        sed -i 's/icon-theme: .*/icon-theme: "Papirus-Dark";/' "$CONFIG_DIR/rofi/config.rasi"
+        # border-radius auf 0 da kein picom
+        sed -i 's/border-radius: [0-9]*;/border-radius: 0;/g' "$CONFIG_DIR/rofi/config.rasi"
+        success "Rofi Config angepasst (border-radius=0, kein picom)"
     fi
+
+    # picom Config entfernen falls vorhanden
+    rm -f "$CONFIG_DIR/picom.conf" 2>/dev/null || true
 
     I3_CONFIG_PATH="$CONFIG_DIR/i3/config"
     if [[ -f "$I3_CONFIG_PATH" ]]; then
+        # picom aus i3 Autostart entfernen
+        sed -i '/exec.*picom/d' "$I3_CONFIG_PATH"
+        sed -i '/exec --no-startup-id picom/d' "$I3_CONFIG_PATH"
+
         if grep -q '^bindsym \$mod+e' "$I3_CONFIG_PATH"; then
             sed -i 's|^bindsym \$mod+e.*|bindsym $mod+e exec pcmanfm|' "$I3_CONFIG_PATH"
         else
@@ -1409,97 +1481,24 @@ if [[ -d "$SCRIPT_DIR/configs" ]]; then
         else
             echo 'bindsym $mod+n exec kitty -e nmtui' >> "$I3_CONFIG_PATH"
         fi
-        success "i3-Shortcuts gesetzt: \$mod+e (PCManFM), \$mod+n (nmtui)"
+
+        # Greenclip Autostart
+        grep -q "greenclip" "$I3_CONFIG_PATH" || \
+            echo 'exec --no-startup-id greenclip daemon' >> "$I3_CONFIG_PATH"
+
+        success "i3-Config angepasst (picom entfernt, Shortcuts gesetzt, greenclip)"
     fi
 
-    # GTK-Overrides nach cp wiederherstellen
-    # (cp -r überschreibt ggf. gtk-3.0/gtk.css aus dem Repo)
-    info "Stelle GTK-Overrides nach Repo-Kopie sicher..."
-    cat > "$CONFIG_DIR/gtk-3.0/gtk.css" << 'CSSRESTORE'
-/* SnowFox GTK3 Color Override — lädt über Arc-Dark */
-@define-color bg_color          #1e1e2e;
-@define-color bg_alt_color      #252538;
-@define-color bg_hover_color    #2e2e45;
-@define-color fg_color          #cdd6f4;
-@define-color fg_dim_color      #6c7086;
-@define-color selected_bg_color #8139e8;
-@define-color selected_fg_color #ffffff;
-@define-color purple_hover      #9b5ef0;
-@define-color purple_active     #6a2fc0;
-@define-color error_color       #e05555;
-@define-color success_color     #5faf5f;
-@define-color warning_color     #ff9f5e;
-@define-color border_color      #3d2a5c;
-@define-color theme_bg_color              #1e1e2e;
-@define-color theme_fg_color              #cdd6f4;
-@define-color theme_base_color            #252538;
-@define-color theme_text_color            #cdd6f4;
-@define-color theme_selected_bg_color     #8139e8;
-@define-color theme_selected_fg_color     #ffffff;
-@define-color theme_tooltip_bg_color      #252538;
-@define-color theme_tooltip_fg_color      #cdd6f4;
-@define-color insensitive_bg_color        #1e1e2e;
-@define-color insensitive_fg_color        #6c7086;
-@define-color borders                     #3d2a5c;
-@define-color alt_borders                 #3d2a5c;
-@define-color sidebar_bg_color            #252538;
-@define-color sidebar_fg_color            #cdd6f4;
-@define-color link_color                  #9b5ef0;
-@define-color link_visited_color          #6a2fc0;
-window, .background         { background-color: @bg_color; color: @fg_color; }
-headerbar, .titlebar        { background-color: @bg_alt_color; color: @fg_color; border-bottom: 1px solid @border_color; }
-headerbar:backdrop          { background-color: @bg_color; color: @fg_dim_color; }
-button                      { background-color: @bg_alt_color; color: @fg_color; border-color: @border_color; border-radius: 5px; }
-button:hover                { background-color: @bg_hover_color; border-color: @selected_bg_color; }
-button:active, button:checked { background-color: @purple_active; color: @selected_fg_color; border-color: @selected_bg_color; }
-button:disabled             { background-color: @bg_color; color: @fg_dim_color; }
-button.suggested-action     { background-color: @selected_bg_color; color: @selected_fg_color; border-color: @selected_bg_color; }
-button.suggested-action:hover { background-color: @purple_hover; }
-button.destructive-action   { background-color: @error_color; color: @selected_fg_color; border-color: @error_color; }
-entry, spinbutton           { background-color: @bg_alt_color; color: @fg_color; border-color: @border_color; border-radius: 5px; caret-color: @selected_bg_color; }
-entry:focus, spinbutton:focus { border-color: @selected_bg_color; }
-entry selection             { background-color: @selected_bg_color; color: @selected_fg_color; }
-menubar                     { background-color: @bg_color; color: @fg_color; }
-menubar > menuitem:hover    { background-color: @bg_hover_color; }
-menu, .menu                 { background-color: @bg_alt_color; color: @fg_color; border-color: @border_color; }
-menuitem                    { color: @fg_color; }
-menuitem:hover              { background-color: @selected_bg_color; color: @selected_fg_color; }
-menuitem:disabled           { color: @fg_dim_color; }
-.sidebar, placessidebar     { background-color: @bg_alt_color; color: @fg_color; border-color: @border_color; }
-.sidebar row:hover, placessidebar row:hover { background-color: @bg_hover_color; }
-.sidebar row:selected, placessidebar row:selected { background-color: @selected_bg_color; color: @selected_fg_color; }
-treeview, treeview.view     { background-color: @bg_color; color: @fg_color; }
-treeview:selected, treeview row:selected { background-color: @selected_bg_color; color: @selected_fg_color; }
-treeview:hover              { background-color: @bg_hover_color; }
-notebook > header           { background-color: @bg_alt_color; border-color: @border_color; }
-notebook > header > tabs > tab { background-color: transparent; color: @fg_dim_color; }
-notebook > header > tabs > tab:checked { background-color: @bg_color; color: @fg_color; }
-notebook > header > tabs > tab:hover { background-color: @bg_hover_color; color: @fg_color; }
-scrollbar trough            { background-color: @bg_alt_color; }
-scrollbar slider            { background-color: @fg_dim_color; border-radius: 8px; }
-scrollbar slider:hover      { background-color: @selected_bg_color; }
-tooltip                     { background-color: @bg_alt_color; color: @fg_color; border-color: @border_color; border-radius: 5px; }
-tooltip label               { color: @fg_color; }
-popover                     { background-color: @bg_alt_color; border-color: @border_color; border-radius: 8px; }
-list, listbox               { background-color: @bg_color; color: @fg_color; }
-list row:hover, listbox row:hover { background-color: @bg_hover_color; }
-list row:selected, listbox row:selected { background-color: @selected_bg_color; color: @selected_fg_color; }
-check:checked, radio:checked { background-color: @selected_bg_color; border-color: @selected_bg_color; color: @selected_fg_color; }
-switch:checked              { background-color: @selected_bg_color; border-color: @selected_bg_color; }
-progressbar progress        { background-color: @selected_bg_color; }
-progressbar trough          { background-color: @bg_alt_color; }
-scale trough highlight      { background-color: @selected_bg_color; }
-scale slider                { background-color: @selected_bg_color; border-color: @selected_bg_color; }
-paned > separator           { background-color: @bg_hover_color; }
-paned > separator:hover     { background-color: @selected_bg_color; }
-statusbar                   { background-color: @bg_color; color: @fg_dim_color; }
-label                       { color: @fg_color; }
-label.dim-label, label:disabled { color: @fg_dim_color; }
-*:link                      { color: @purple_hover; }
-*:visited                   { color: @purple_active; }
-button, entry, menu, menuitem, popover,
-notebook > header > tabs > tab { border-radius: 5px; }
-CSSRESTORE
+    # GTK3-Override nach cp sicherstellen
+    info "Stelle GTK3-Override nach Repo-Kopie sicher..."
+    cp "$CONFIG_DIR/gtk-3.0/gtk.css" "$CONFIG_DIR/gtk-3.0/gtk.css.repo-bak" 2>/dev/null || true
+    # (gtk.css wurde bereits oben geschrieben, cp -r könnte sie überschreiben haben)
+    # Daher nochmal die fastfetch Config sichern
+    if [[ -f "$CONFIG_DIR/fastfetch/config.jsonc" ]]; then
+        sed -i "s|/home/xr7-code/SnowFoxOS-v2.2/assets/fuchs.png|$SCRIPT_DIR/assets/fuchs.png|g" \
+            "$CONFIG_DIR/fastfetch/config.jsonc" 2>/dev/null || true
+    fi
+
     success "GTK3-Override sichergestellt"
 else
     warn "configs/-Verzeichnis nicht gefunden"
@@ -1537,8 +1536,8 @@ if [[ -f "$POLYBAR_CONF" ]]; then
 fi
 
 if [[ -d "$SCRIPT_DIR/configs/modprobe" ]]; then
-    cp "$SCRIPT_DIR/configs/modprobe/amdgpu.conf" /etc/modprobe.d/ 2>/dev/null || true
-    cp "$SCRIPT_DIR/configs/modprobe/nvidia.conf"  /etc/modprobe.d/ 2>/dev/null || true
+    cp "$SCRIPT_DIR/configs/modprobe/nvidia.conf" /etc/modprobe.d/ 2>/dev/null || true
+    # amdgpu.conf wurde bereits oben mit Freeze-Fix geschrieben, nicht überschreiben
     update-initramfs -u 2>/dev/null || true
     success "modprobe Configs installiert"
 fi
@@ -1581,10 +1580,6 @@ success "polybar/launch.sh installiert"
 [[ -f "$SCRIPT_DIR/snowfox-greeting.sh" ]] && \
     cp "$SCRIPT_DIR/snowfox-greeting.sh" /usr/local/bin/snowfox-greeting && \
     chmod +x /usr/local/bin/snowfox-greeting
-
-grep -q "snowfox-greeting" "$TARGET_HOME/.bashrc" 2>/dev/null || \
-    printf '\n# SnowFoxOS Greeting\n[[ -x /usr/local/bin/snowfox-greeting ]] && snowfox-greeting\n' \
-    >> "$TARGET_HOME/.bashrc"
 
 echo ""
 echo -e "${PURPLE}${BOLD}  Standard-Texteditor:${RESET}"
@@ -1634,9 +1629,14 @@ for hook in "${DKMS_HOOKS[@]}"; do
 done
 info "DKMS-Hooks wiederhergestellt"
 
-info "Bereinige alte Kernel..."
+# ── initramfs mit allen Fixes neu bauen ──────────────────────
+info "Baue initramfs mit allen Fixes neu..."
+update-initramfs -u 2>/dev/null || true
+success "initramfs aktualisiert"
+
+info "Bereinige alte Pakete..."
 apt-get autoremove --purge -y 2>/dev/null || true
-success "Alte Kernel entfernt"
+success "Bereinigung abgeschlossen"
 
 echo -e "${PURPLE}${BOLD}"
 echo "  ███████╗███╗  ██╗ ██████╗ ██╗    ██╗███████╗ ██████╗ ██╗  ██╗"
@@ -1646,5 +1646,5 @@ echo "  ╚════██║██║╚████║██║   ██║
 echo "  ███████║██║ ╚███║╚██████╔╝╚███╔███╔╝██║     ╚██████╔╝██╔╝╚██╗"
 echo "  ╚══════╝╚═╝  ╚══╝ ╚═════╝  ╚══╝╚══╝ ╚═╝     ╚═════╝ ╚═╝  ╚═╝"
 echo -e "${RESET}"
-success "SnowFoxOS v2.2 erfolgreich installiert!"
+success "SnowFoxOS v3.0 erfolgreich installiert!"
 warn   "Bitte neu starten: sudo reboot"
