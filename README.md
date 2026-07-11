@@ -2,7 +2,7 @@
 
 <img src="assets/fuchs.png" width="120" alt="SnowFox Logo"/>
 
-# SnowFoxOS v2.2
+# SnowFoxOS v3
 
 **Ein schlankes, privacy-orientiertes i3-Desktop auf Basis von Debian 12**
 
