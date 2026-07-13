@@ -73,7 +73,7 @@ SnowFoxOS ist darauf ausgelegt nicht im Weg zu stehen und so wenig Ressourcen wi
 
 | Zustand | RAM (ungefähr) |
 |---|---|
-| Desktop ohne offene Apps | ~400–500 MB |
+| Desktop ohne offene Apps | ~300–400 MB |
 | + Zen Browser (1–5 Tabs) | ~900 MB – 1,3 GB |
 | + Zen Browser (viele Tabs) | 1,5–2,5 GB |
 | + OnlyOffice geöffnet | +500 MB |
