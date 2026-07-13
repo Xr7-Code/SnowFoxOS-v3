@@ -48,7 +48,6 @@ Dieses System ist für Menschen die ihre Hardware zurückhaben wollen. Es telefo
 - **Zen Browser** — privacy-fokussierter Browser auf Firefox-Basis, keine Telemetrie
 - **PipeWire** — moderner Audio-Stack, PulseAudio entfernt
 - **Dunst** — schlanker Notification-Daemon
-- **Picom** — minimaler Compositor: nur abgerundete Ecken und Transparenz, kein Overhead
 - **zram** — komprimierter Swap im RAM (lz4, 50%), Swappiness auf 10 gesetzt
 - **tlp** — automatische Akku-Optimierung, aktiv bei jedem Boot
 - **earlyoom** — verhindert System-Freeze bei sehr geringem freiem RAM
