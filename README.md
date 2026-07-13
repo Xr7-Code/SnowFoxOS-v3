@@ -86,7 +86,7 @@ Zum Vergleich:
 | Windows 11 | ~3,5 GB |
 | Ubuntu (GNOME) | ~1,5 GB |
 | KDE Plasma | ~900 MB |
-| **SnowFoxOS** | **~400–500 MB** |
+| **SnowFoxOS** | **~300–400 MB** |
 
 > **Hinweis:** Linux nutzt freien RAM automatisch als Dateisystem-Cache. Das ist normal und kein Problem — der Cache wird sofort freigegeben sobald ein Programm ihn braucht. `free -h` zeigt in der Spalte `verfügbar` den tatsächlich nutzbaren Speicher.
 
