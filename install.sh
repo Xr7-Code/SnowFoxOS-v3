@@ -333,24 +333,24 @@ EOF
         nvidia-vulkan-icd nvidia-vulkan-icd:i386
 
     if $HAS_AMD; then
-        # Fix: Envycontrol wurde entfernt da es auf AMD+NVIDIA Hybrid-Systemen
-        # GPU-Erkennung komplett zerstört. Stattdessen nativer xrandr-Provider-Fix.
-        info "AMD+NVIDIA Hybrid erkannt — Konfiguriere nativen xrandr Provider-Fix..."
+        info "AMD+NVIDIA Hybrid erkannt — Konfiguriere Freeze-Fix..."
 
-        # amdgpu modprobe Config mit runpm=0
-        # Fix: Runtime PM verursachte dma_fence_wait_timeout Deadlock zwischen
-        # AMD Display-Engine und NVIDIA Framebuffer.
+        # Fix: dcfeaturemask=0x8 deaktiviert PSR (Panel Self Refresh)
+        # PSR war die Ursache aller dma_fence_wait_timeout Freezes auf
+        # AMD+NVIDIA Hybrid-Systemen. Beim Aufwachen aus PSR blockiert der
+        # Fence-Mechanismus den gesamten X11-Server.
+        # runpm=0 deaktiviert zusätzlich Runtime Power Management.
         cat > /etc/modprobe.d/amdgpu.conf << 'EOF'
-# SnowFoxOS — AMD GPU Konfiguration
-# Fix: runpm=0 verhindert dma_fence_wait_timeout Freeze auf Hybrid-Systemen
-# (AMD Display-Engine Deadlock mit NVIDIA Framebuffer)
+# SnowFoxOS — AMD GPU Konfiguration (Hybrid-Fix)
+# Fix: dcfeaturemask=0x8 deaktiviert PSR (Panel Self Refresh)
+# verhindert dma_fence_wait_timeout Freeze auf AMD+NVIDIA Systemen
 options amdgpu bpc=8
-options amdgpu dc=1
+options amdgpu dc=1 dcfeaturemask=0x8
 options amdgpu dpm=1
 options amdgpu audio=0
 options amdgpu runpm=0
 EOF
-        success "amdgpu Freeze-Fix installiert (runpm=0)"
+        success "amdgpu Hybrid-Freeze-Fix installiert (PSR deaktiviert via dcfeaturemask=0x8)"
     fi
 
     XANMOD_KERNEL=$(ls /lib/modules 2>/dev/null | grep xanmod | sort -V | tail -1)
@@ -373,7 +373,7 @@ elif $HAS_AMD; then
     cat > /etc/modprobe.d/amdgpu.conf << 'EOF'
 # SnowFoxOS — AMD GPU Konfiguration
 options amdgpu bpc=8
-options amdgpu dc=1
+options amdgpu dc=1 dcfeaturemask=0x8
 options amdgpu dpm=1
 options amdgpu audio=0
 EOF
@@ -1536,10 +1536,29 @@ if [[ -f "$POLYBAR_CONF" ]]; then
 fi
 
 if [[ -d "$SCRIPT_DIR/configs/modprobe" ]]; then
-    cp "$SCRIPT_DIR/configs/modprobe/nvidia.conf" /etc/modprobe.d/ 2>/dev/null || true
     # amdgpu.conf wurde bereits oben mit Freeze-Fix geschrieben, nicht überschreiben
+    # nvidia.conf aus Repo kopieren falls vorhanden, sonst Standard schreiben
+    if [[ -f "$SCRIPT_DIR/configs/modprobe/nvidia.conf" ]]; then
+        cp "$SCRIPT_DIR/configs/modprobe/nvidia.conf" /etc/modprobe.d/nvidia.conf
+    fi
     update-initramfs -u 2>/dev/null || true
     success "modprobe Configs installiert"
+fi
+
+# nvidia.conf sicherstellen — falls nicht aus Repo kopiert
+if [[ ! -f /etc/modprobe.d/nvidia.conf ]]; then
+    cat > /etc/modprobe.d/nvidia.conf << 'EOF'
+# SnowFoxOS — NVIDIA Konfiguration
+blacklist nouveau
+
+options nvidia NVreg_TemporaryFilePath=/var/tmp
+options nvidia NVreg_EnableS0ixPowerManagement=0
+options nvidia NVreg_PreserveVideoMemoryAllocations=1
+options nvidia-drm modeset=1
+options nvidia NVreg_DynamicPowerManagement=0x00
+options nvidia NVreg_EnableGpuFirmware=0
+EOF
+    success "nvidia.conf geschrieben"
 fi
 
 [[ -f "$SCRIPT_DIR/configs/powermenu.sh" ]] && \
