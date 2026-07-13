@@ -45,17 +45,21 @@ Dieses System ist für Menschen die ihre Hardware zurückhaben wollen. Es telefo
 - **Polybar** — Statusleiste mit CPU, RAM, Akku, Netzwerk, Lautstärke und System-Tray
 - **Rofi** — schneller App-Launcher mit passendem Dark-Theme
 - **Kitty** — GPU-beschleunigtes Terminal
-- **Zen Browser** — privacy-fokussierter Browser auf Firefox-Basis, keine Telemetrie
+- **Zen Browser** — privacy-fokussierter Browser auf Firefox-Basis, keine Telemetrie (optional)
 - **PipeWire** — moderner Audio-Stack, PulseAudio entfernt
 - **Dunst** — schlanker Notification-Daemon
+- **Greenclip** — schlanker Clipboard-Manager ohne GTK-Overhead
+- **fastfetch** — systeminfo mit SnowFox-Logo
 - **zram** — komprimierter Swap im RAM (lz4, 50%), Swappiness auf 10 gesetzt
 - **tlp** — automatische Akku-Optimierung, aktiv bei jedem Boot
 - **earlyoom** — verhindert System-Freeze bei sehr geringem freiem RAM
 - **ufw Firewall** — eingehende Verbindungen standardmäßig blockiert
-- **MAC-Randomisierung** — zufällige MAC beim WLAN-Scan, kein Tracking durch Hotspots
 - **DNS-over-TLS** — via systemd-resolved mit Cloudflare + Quad9, keine DNS-Leaks
 - **GPU-Erkennung** — installiert automatisch die richtigen Treiber für AMD, NVIDIA oder Hybrid
-- **Dark Mode** — Catppuccin Mocha Lavender (GTK + Qt) out of the box
+- **Hybrid GPU Freeze Fix** — PSR-Deaktivierung via `dcfeaturemask=0x8` für stabile AMD+NVIDIA Dual-Monitor Setups
+- **Dark Mode** — SnowFox Palette (GTK2/3/4 + Qt) out of the box, konsistent über alle Apps
+- **OnlyOffice** — vollständige Microsoft-Format-Kompatibilität (optional im Installer)
+- **SnowFox Console Launcher** — nativer Game-Launcher für Steam, GOG, Retro und eigene Spiele
 
 ---
 
@@ -66,13 +70,13 @@ SnowFoxOS ist darauf ausgelegt nicht im Weg zu stehen und so wenig Ressourcen wi
 - zram mit lz4-Kompression ersetzt traditionellen Swap — schneller und RAM-effizienter
 - `vm.swappiness=10` hält Daten so lange wie möglich im RAM
 - `tlp` optimiert CPU, USB und Festplatten-Powermanagement automatisch
-- Unnötige System-Dienste werden beim Install deaktiviert (cups-browsed, avahi, ModemManager, colord)
+- Unnötige System-Dienste werden beim Install deaktiviert (cups-browsed, avahi, ModemManager, colord, zeitgeist)
 - Kein Display Manager — i3 startet direkt von TTY1
-- Picom läuft im `glx`-Modus mit aktivierten Schatten für Fenster und Panels (Polybar)
+- Kein Compositor — kein picom, kein unnötiger GPU-Overhead im Idle
 
 | Zustand | RAM (ungefähr) |
 |---|---|
-| Desktop ohne offene Apps | ~300–400 MB |
+| Desktop ohne offene Apps | ~350–420 MB |
 | + Zen Browser (1–5 Tabs) | ~900 MB – 1,3 GB |
 | + Zen Browser (viele Tabs) | 1,5–2,5 GB |
 | + OnlyOffice geöffnet | +500 MB |
@@ -85,7 +89,8 @@ Zum Vergleich:
 | Windows 11 | ~3,5 GB |
 | Ubuntu (GNOME) | ~1,5 GB |
 | KDE Plasma | ~900 MB |
-| **SnowFoxOS** | **~300–400 MB** |
+| Arch Linux mit i3 | ~400–500 MB |
+| **SnowFoxOS** | **~350–420 MB** |
 
 > **Hinweis:** Linux nutzt freien RAM automatisch als Dateisystem-Cache. Das ist normal und kein Problem — der Cache wird sofort freigegeben sobald ein Programm ihn braucht. `free -h` zeigt in der Spalte `verfügbar` den tatsächlich nutzbaren Speicher.
 
@@ -131,8 +136,18 @@ Zum Vergleich:
 | `snowfox autostart [list|enable|disable]` | Autostart-Programme verwalten |
 | `snowfox layout [tiling|floating]` | Fenstermodus wechseln (i3) |
 | `snowfox webapp [add|list|open|remove]` | WebApps erstellen und verwalten |
-| `snowfox network` | Netzwerk-Manager (Rofi) |
+| `snowfox network` | Netzwerk-Manager (nmtui) |
 | `snowfox ai` | Lokale KI (Ollama) |
+
+### Node-Modi
+
+SnowFoxOS kann auf drei verschiedene Arten als Node betrieben werden:
+
+| Befehl | Beschreibung |
+|---|---|
+| `snowfox node console` | Startet den SnowFox Console Launcher — nativer Game-Hub für Steam, GOG, Retro und eigene Spiele |
+| `snowfox node server` | Server-Modus — minimaler Footprint, optimiert für Dauerbetrieb |
+| `snowfox node desktop` | Standard Desktop-Modus (Standard) |
 
 ### System-Profile
 
@@ -186,8 +201,8 @@ exit   # Session beenden, neu einloggen
 ### Schritt 3 — Repo klonen & installieren
 
 ```bash
-git clone https://github.com/Xr7-Code/SnowFoxOS-v2-i3.git
-cd SnowFoxOS-v2-i3
+git clone https://github.com/Xr7-Code/SnowFoxOS-v3.git
+cd SnowFoxOS-v3
 chmod +x install.sh
 sudo bash install.sh
 ```
@@ -238,13 +253,17 @@ Nach dem Neustart startet i3 automatisch von TTY1.
 | Statusleiste | polybar |
 | App-Launcher | rofi |
 | Terminal | kitty |
-| Browser | zen-browser |
+| Browser | zen-browser (optional) |
 | Audio | pipewire + wireplumber |
-| Compositor | picom (glx, with shadows) |
+| Compositor | — (kein picom, bewusst entfernt) |
 | Benachrichtigungen | dunst |
+| Clipboard | greenclip |
 | Dateimanager | pcmanfm |
+| System-Info | fastfetch |
 | Bildschirmsperre | i3lock + xss-lock |
 | Media Player | mpv + yt-dlp |
+| Game Launcher | SnowFox Console Launcher |
+| Office | OnlyOffice (optional) |
 | Akku | tlp |
 | Firewall | ufw |
 | OOM-Schutz | earlyoom |
@@ -280,12 +299,15 @@ Der Installer installiert `cuda-drivers-580`. Unterstützt werden ausschließlic
 
 Ältere Karten (GTX 600, GTX 500 und älter) werden **nicht unterstützt** und der Installer schlägt beim GPU-Schritt fehl.
 
+### AMD + NVIDIA Hybrid (Dual-Monitor)
+
+SnowFoxOS enthält einen Fix für den bekannten `dma_fence_wait_timeout` Freeze auf Hybrid-Systemen mit AMD und NVIDIA GPUs an separaten Monitoren. Der Fix deaktiviert PSR (Panel Self Refresh) via `amdgpu dcfeaturemask=0x8` und Runtime Power Management (`runpm=0`). Der Installer erkennt Hybrid-Systeme automatisch und wendet den Fix an.
+
 ### Ältere Systeme (vor 2013)
 
 SnowFoxOS ist nicht für alte Hardware ausgelegt. Auf Systemen vor 2013 können folgende Probleme auftreten:
 
 - Kernel bootet nicht (kein AVX2)
-- Picom verursacht Grafikfehler oder hohe CPU-Last
 - NVIDIA-Treiber nicht kompatibel
 - Zen Browser zu ressourcenintensiv
 
