@@ -335,35 +335,69 @@ SnowFoxOS wird unter der **SnowFox Public License v1.0** veröffentlicht — ein
 
 
 <!--
-I saw a Raven fly, into the woods where we swore we would never return
-And they will never die they’ve stolen the seed from the still hanging bodies of men
-Now they are condemned
-They walk on the other side, a dark bridge to the other side
+Might I confide? Horror deep inside
+Help me break free, eternity
+What's one more scar?
 
-And like a hurricane they broke through the door separating the living and dead
-So here we are again, to witness the creatures that crawl through the old druid woods
-And now that we know
-Now they will never die again, dancing between the Worlds of pain
-The howling winds of madness here (on Hangmans Hyll)
-They walk on the other side, a dark bridge to the other side
-And I saw a Raven fly, black wings on a blood red sky
+Mirror mirror do you clearly see?
+Who is that staring back at me?
+Mirror mirror do you clearly show?
+Lies, those eyes from the depths below?
 
-Insane the laugh I hear, I feel them drawing near
-Dancing between the worlds of pain
-And when the hangman came they’d wait by the crossroads till moonlight had entered the world, and cut them down again
+Come now little child
+There is something you must hide
+Take away, all I say
+This is the only way
+Heed those dark souls of night
+And the righteous ones of light
+There's no grey, only day
+Path, chosen there you stay
 
-Something so hideous, in ritual dances and fiery trances they sway
-And now it’s opening a doorway to death and return, but with madness the price
-I told you to run
-Now they will never die again, dancing between the worlds of pain
-The howling winds of madness here
-They walk on the other side, a dark bridge to the other side
+So smile, run the mile, no one can know
+The pain, darkened stain never show
 
-And even their gods have turned away
-They opened the door that should not be
-Where we must never go again
-And I saw a raven fly, black wings on a blood red sky
-Burn the wood and all within
-Yes burn the wood and all within
-I feel the Winter crawling in
+Far, far away, where the night claims the day
+There's a flame burning low, quiet, sad, faint glow
+When the music starts, fuel the fire in our hearts
+Ignite the skies, no more of your lies
+I'm on my way
+
+Now we're singing la la la...
+Singing la la la...
+Mirror mirror, I'm on my way!
+
+I will not be shaken
+I'm not that child forsaken
+Away, now you stay
+This is my reck'ning day
+Unleash the beast inside
+Precious time, enjoy the ride
+Can you see? This is me
+The truth shall set you free
+
+So smile, own the mile, breathe life a new
+For the song, it plays on, filling you
+
+Far, far away, where the night claims the day
+There's a flame burning low, quiet, sad, faint glow
+When the music starts, fuel the fire in our hearts
+Ignite the skies, no more of your lies
+I'm on my way
+
+Scar
+One more scar, one more scar
+One more scar
+One more scar, one more, two more, three?
+
+Far, far away, where the night claims the day
+There's a flame burning low, quiet, sad, faint glow
+When the music starts, fuel the fire in our hearts
+Ignite the skies, no more of your lies
+I'm on my way
+
+Now we're gonna sail, sail away on a sea ever grey
+With the changing of tide, do not fear nor hide
+Fire ablaze within, burning light through the dim
+Break of dawn, night is almost gone
+I'm on my way 
 -->
