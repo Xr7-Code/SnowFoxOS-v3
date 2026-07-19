@@ -332,3 +332,38 @@ SnowFoxOS wird unter der **SnowFox Public License v1.0** veröffentlicht — ein
 <div align="center">
 <sub>Gebaut von Alexander Valentin Ludwig (Xr7-Code) auf Debian 12</sub>
 </div>
+
+
+<!--
+I saw a Raven fly, into the woods where we swore we would never return
+And they will never die they’ve stolen the seed from the still hanging bodies of men
+Now they are condemned
+They walk on the other side, a dark bridge to the other side
+
+And like a hurricane they broke through the door separating the living and dead
+So here we are again, to witness the creatures that crawl through the old druid woods
+And now that we know
+Now they will never die again, dancing between the Worlds of pain
+The howling winds of madness here (on Hangmans Hyll)
+They walk on the other side, a dark bridge to the other side
+And I saw a Raven fly, black wings on a blood red sky
+
+Insane the laugh I hear, I feel them drawing near
+Dancing between the worlds of pain
+And when the hangman came they’d wait by the crossroads till moonlight had entered the world, and cut them down again
+
+Something so hideous, in ritual dances and fiery trances they sway
+And now it’s opening a doorway to death and return, but with madness the price
+I told you to run
+Now they will never die again, dancing between the worlds of pain
+The howling winds of madness here
+They walk on the other side, a dark bridge to the other side
+
+And even their gods have turned away
+They opened the door that should not be
+Where we must never go again
+And I saw a raven fly, black wings on a blood red sky
+Burn the wood and all within
+Yes burn the wood and all within
+I feel the Winter crawling in
+-->
