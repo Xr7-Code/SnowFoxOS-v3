@@ -43,10 +43,10 @@ Dieses System ist für Menschen die ihre Hardware zurückhaben wollen. Es telefo
 
 - **i3** — Tiling Window Manager mit Smart Gaps und flexiblen Floating-Regeln
 - **Polybar** — Statusleiste mit CPU, RAM, Akku, Netzwerk, Lautstärke und System-Tray
-- **Rofi** — schneller App-Launcher mit passendem Dark-Theme
-- **Kitty** — GPU-beschleunigtes Terminal
+- **Rofi** — schneller App-Launcher mit passendem Dark-Theme und ikonischem Design
+- **Kitty** — GPU-beschleunigtes Terminal mit SnowFox-Farbpalette und JetBrainsMono Nerd Font
 - **Zen Browser** — privacy-fokussierter Browser auf Firefox-Basis, keine Telemetrie (optional)
-- **PipeWire** — moderner Audio-Stack, PulseAudio entfernt
+- **PipeWire** — moderner Audio-Stack (ersetzt PulseAudio), inklusive WirePlumber und grafischem Mixer (Pavucontrol)
 - **Dunst** — schlanker Notification-Daemon
 - **Greenclip** — schlanker Clipboard-Manager ohne GTK-Overhead
 - **fastfetch** — systeminfo mit SnowFox-Logo
@@ -57,9 +57,33 @@ Dieses System ist für Menschen die ihre Hardware zurückhaben wollen. Es telefo
 - **DNS-over-TLS** — via systemd-resolved mit Cloudflare + Quad9, keine DNS-Leaks
 - **GPU-Erkennung** — installiert automatisch die richtigen Treiber für AMD, NVIDIA oder Hybrid
 - **Hybrid GPU Freeze Fix** — PSR-Deaktivierung via `dcfeaturemask=0x8` für stabile AMD+NVIDIA Dual-Monitor Setups
-- **Dark Mode** — SnowFox Palette (GTK2/3/4 + Qt) out of the box, konsistent über alle Apps
+- **Dark Mode** — SnowFox Palette (GTK2/3/4 + Qt) out of the box, konsistent über alle Apps und Ordnerfarben
 - **OnlyOffice** — vollständige Microsoft-Format-Kompatibilität (optional im Installer)
 - **SnowFox Console Launcher** — nativer Game-Launcher für Steam, GOG, Retro und eigene Spiele
+- **Multiarch (i386)** — Volle Unterstützung für 32-Bit-Anwendungen und Spiele (z.B. Steam).
+- **Core Utilities** — Vorkonfiguriertes Set an essentiellen Tools wie `fzf`, `aria2`, `btop`, `imagemagick`, `xclip`, `xdotool`, `lm-sensors`.
+- **`startx` ohne sudo** — Komfortabler Start der Desktop-Umgebung direkt von der TTY ohne Root-Rechte.
+- **System-Locales** — Konfiguration für `de_AT.UTF-8` und `en_US.UTF-8` zur Fehlervermeidung in Anwendungen wie Steam.
+- **Hardware-spezifische WLAN-Fixes** — Automatische Erkennung und Anwendung von Stabilitäts-Fixes für bestimmte WLAN-Chips (z.B. Realtek RTL8821CE, Fritz USB) inklusive Kernel-Parameter (`pci=noaer`).
+- **CPU Microcode Updates** — Automatische Installation der passenden Microcode-Updates für Intel- und AMD-CPUs.
+- **`thermald`** — Intelligentes Thermalmanagement für Laptops.
+- **Bibata-Modern-Classic Cursor** — Elegantes und konsistentes Cursor-Theme.
+- **`bluetui`** — Ein Terminal-basiertes UI zum Verwalten von Bluetooth-Geräten.
+- **Erweiterte Desktop-Integration** — Desktop-Einträge für `nmtui`, `bluetui`, `pcmanfm` für schnelle Erreichbarkeit via Rofi.
+- **Detaillierte Touchpad-Konfiguration** — Voreinstellungen für Tapping, Click-Method, Natural Scrolling und Deaktivierung während der Eingabe.
+- **Standard-Anwendungen** — Vorkonfigurierte Standard-Apps für Dateimanager (PCManFM), Texteditor (Mousepad/VSCodium), Bildanzeige (Ristretto), Archivverwaltung (File Roller) und Medienwiedergabe (MPV).
+- **Redshift** — Dynamische Anpassung der Bildschirmfarben an die Tageszeit.
+- **Scrot & Brightnessctl** — Werkzeuge für Screenshots und Helligkeitsregelung direkt über Tastenkürzel.
+- **Playerctl** — Steuerung von Medienplayern über globale Tastenkürzel.
+- **Druckerunterstützung (CUPS)** — Grundlegende Druckerunterstützung inklusive CUPS und Splix-Treiber.
+- **XanMod LTS Kernel (x64v3)** — Ein speziell optimierter Kernel für moderne CPUs (AVX2 erforderlich) für verbesserte Performance und niedrige Latenz.
+- **Boot-Screen** — Anpassbarer Plymouth Boot-Screen mit SnowFox-Logo.
+- **System-Identity** — Angepasste `os-release` und `lsb-release` zur klaren Identifizierung als SnowFoxOS.
+- **Papirus Ordnerfarben** — Violette Ordner-Icons für ein konsistentes SnowFox-Theme.
+- **NVIDIA Treiber Optimierungen** — Erweiterte Konfiguration für NVIDIA GPUs inklusive spezifischer `modprobe` Optionen für Stabilität und Performance (z.B. `modeset=1`, `NVreg_PreserveVideoMemoryAllocations=1`).
+- **Intel Media Driver Fix für Steam** — Verhindert Steam-Freezes beim Workspace-Wechsel auf Systemen mit Intel-Grafik.
+- **Ollama** — Lokale KI-Engine (ohne vorinstalliertes Modell), mit Anleitung zum Starten und Herunterladen von Modellen.
+- **`yt-dlp`** — Für effizientes Streaming und Herunterladen von Videos/Audios.
 
 ---
 
@@ -67,12 +91,22 @@ Dieses System ist für Menschen die ihre Hardware zurückhaben wollen. Es telefo
 
 SnowFoxOS ist darauf ausgelegt nicht im Weg zu stehen und so wenig Ressourcen wie möglich zu verbrauchen.
 
-- zram mit lz4-Kompression ersetzt traditionellen Swap — schneller und RAM-effizienter
-- `vm.swappiness=10` hält Daten so lange wie möglich im RAM
-- `tlp` optimiert CPU, USB und Festplatten-Powermanagement automatisch
-- Unnötige System-Dienste werden beim Install deaktiviert (cups-browsed, avahi, ModemManager, colord, zeitgeist)
-- Kein Display Manager — i3 startet direkt von TTY1
-- Kein Compositor — kein picom, kein unnötiger GPU-Overhead im Idle
+- **zram mit lz4-Kompression** ersetzt traditionellen Swap — schneller und RAM-effizienter mit 50% RAM-Nutzung und hoher Priorität (`PRIORITY=100`).
+- **`vm.swappiness=10`** hält Daten so lange wie möglich im RAM, optimiert für Desktop-Betrieb.
+- **`tlp`** optimiert CPU, USB und Festplatten-Powermanagement automatisch.
+- **`earlyoom`** schützt das System proaktiv vor Freezes bei zu wenig freiem RAM.
+- **Detaillierte `sysctl.d` Tunings** für RAM/Swap (`vm.vfs_cache_pressure`, `vm.dirty_background_ratio`), Netzwerk (`net.core.default_qdisc=fq`, `net.ipv4.tcp_congestion_control=bbr`), und CPU (`kernel.nmi_watchdog=0`).
+- **IPv6 Privacy Extensions** (`net.ipv6.conf.all.use_tempaddr=2`) zum Schutz deiner Privatsphäre im Netzwerk.
+- **`fstab` Optimierungen** mit `noatime` für schnellere Dateisystem-Operationen und `tmpfs /tmp size=4G` für ein schnelles, RAM-basiertes `/tmp`.
+- **UFW Firewall** ist standardmäßig aktiv mit blockierten eingehenden und erlaubten ausgehenden Verbindungen.
+- **Netzwerkmanager Integration** — `ifupdown`-Einträge für WLAN/LAN werden deaktiviert, um volle Kontrolle durch NetworkManager zu gewährleisten. Zusätzliche WiFi-Energiesparmodi sind aktiviert (`wifi.powersave=2`).
+- **DNS-over-TLS (DoT)** über `systemd-resolved` mit Cloudflare und Quad9 als primären Servern, Fallback zu Google, und `DNSSEC=allow-downgrade` für verbesserte Sicherheit und Privatsphäre.
+- **Deaktivierung unnötiger System-Dienste** beim Install (cups-browsed, avahi, ModemManager, colord, blueman, apt-daily, apt-daily-upgrade).
+- **Maskierung von Online-Wait-Services** (`NetworkManager-wait-online.service`, `systemd-networkd-wait-online.service`) für schnelleren Boot.
+- **Entfernung von Bloatware** wie `zeitgeist`, `diodon`, `xterm`, `uxterm` und Maskierung der `xdg-desktop-portal` Dienste.
+- **`HandlePowerKey=ignore`** in `logind.conf` verhindert ungewolltes Herunterfahren bei kurzem Power-Button-Druck.
+- Kein Display Manager — i3 startet direkt von TTY1 für minimalen Ressourcenverbrauch.
+- Kein Compositor — kein picom, kein unnötiger GPU-Overhead im Idle.
 
 | Zustand | RAM (ungefähr) |
 |---|---|
@@ -145,7 +179,7 @@ SnowFoxOS kann auf drei verschiedene Arten als Node betrieben werden:
 
 | Befehl | Beschreibung |
 |---|---|
-| `snowfox node console` | Startet den SnowFox Console Launcher — nativer Game-Hub für Steam, GOG, Retro und eigene Spiele |
+| `snowfox node console` | Startet den SnowFox Console Launcher — nativer Game-hub für Steam, GOG, Retro und eigene Spiele |
 | `snowfox node server` | Server-Modus — minimaler Footprint, optimiert für Dauerbetrieb |
 | `snowfox node desktop` | Standard Desktop-Modus (Standard) |
 
@@ -268,6 +302,15 @@ Nach dem Neustart startet i3 automatisch von TTY1.
 | Firewall | ufw |
 | OOM-Schutz | earlyoom |
 | Kernel | XanMod LTS (x64v3) |
+| Bluetooth Terminal UI | bluetui |
+| Maus-Cursor | Bibata-Modern-Classic |
+| Night Light | redshift |
+| Screenshot Tool | scrot |
+| Helligkeitsregelung | brightnessctl |
+| Mediensteuerung | playerctl |
+| Druckerunterstützung | cups |
+| GTK-Theme Management | lxappearance, lxpolkit |
+| Thermal Management | thermald |
 
 ---
 
@@ -332,72 +375,3 @@ SnowFoxOS wird unter der **SnowFox Public License v1.0** veröffentlicht — ein
 <div align="center">
 <sub>Gebaut von Alexander Valentin Ludwig (Xr7-Code) auf Debian 12</sub>
 </div>
-
-
-<!--
-Might I confide? Horror deep inside
-Help me break free, eternity
-What's one more scar?
-
-Mirror mirror do you clearly see?
-Who is that staring back at me?
-Mirror mirror do you clearly show?
-Lies, those eyes from the depths below?
-
-Come now little child
-There is something you must hide
-Take away, all I say
-This is the only way
-Heed those dark souls of night
-And the righteous ones of light
-There's no grey, only day
-Path, chosen there you stay
-
-So smile, run the mile, no one can know
-The pain, darkened stain never show
-
-Far, far away, where the night claims the day
-There's a flame burning low, quiet, sad, faint glow
-When the music starts, fuel the fire in our hearts
-Ignite the skies, no more of your lies
-I'm on my way
-
-Now we're singing la la la...
-Singing la la la...
-Mirror mirror, I'm on my way!
-
-I will not be shaken
-I'm not that child forsaken
-Away, now you stay
-This is my reck'ning day
-Unleash the beast inside
-Precious time, enjoy the ride
-Can you see? This is me
-The truth shall set you free
-
-So smile, own the mile, breathe life a new
-For the song, it plays on, filling you
-
-Far, far away, where the night claims the day
-There's a flame burning low, quiet, sad, faint glow
-When the music starts, fuel the fire in our hearts
-Ignite the skies, no more of your lies
-I'm on my way
-
-Scar
-One more scar, one more scar
-One more scar
-One more scar, one more, two more, three?
-
-Far, far away, where the night claims the day
-There's a flame burning low, quiet, sad, faint glow
-When the music starts, fuel the fire in our hearts
-Ignite the skies, no more of your lies
-I'm on my way
-
-Now we're gonna sail, sail away on a sea ever grey
-With the changing of tide, do not fear nor hide
-Fire ablaze within, burning light through the dim
-Break of dawn, night is almost gone
-I'm on my way 
--->
