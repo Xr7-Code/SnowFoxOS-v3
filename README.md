@@ -167,9 +167,9 @@ Zum Vergleich:
 
 | Befehl | Beschreibung |
 |---|---|
-| `snowfox autostart [list|enable|disable]` | Autostart-Programme verwalten |
-| `snowfox layout [tiling|floating]` | Fenstermodus wechseln (i3) |
-| `snowfox webapp [add|list|open|remove]` | WebApps erstellen und verwalten |
+| `snowfox autostart [list\|enable\|disable]` | Autostart-Programme verwalten |
+| `snowfox layout [tiling\|floating]` | Fenstermodus wechseln (i3) |
+| `snowfox webapp [add\|list\|open\|remove]` | WebApps erstellen und verwalten |
 | `snowfox network` | Netzwerk-Manager (nmtui) |
 | `snowfox ai` | Lokale KI (Ollama) |
 
