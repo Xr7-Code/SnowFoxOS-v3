@@ -21,6 +21,8 @@ if $IS_LAPTOP; then
     AC=$(ls /sys/class/power_supply/ | grep -E '^(AC|ADP|ACAD)' | head -1)
     [[ -n "$BAT" ]] && sed -i "s/^battery = .*/battery = $BAT/" ~/.config/polybar/config.ini
     [[ -n "$AC" ]]  && sed -i "s/^adapter = .*/adapter = $AC/"  ~/.config/polybar/config.ini
+    BACKLIGHT_CARD=$(ls /sys/class/backlight/ | head -1) # Erkennung der Backlight-Karte
+    [[ -n "$BACKLIGHT_CARD" ]] && sed -i "s/^card = .*/card = $BACKLIGHT_CARD/" ~/.config/polybar/config.ini # Aktualisierung der Backlight-Karte
     MONITOR=$PRIMARY polybar snowfox-laptop 2>/tmp/polybar.log &
 else
     MONITOR=$PRIMARY polybar snowfox 2>/tmp/polybar.log &
