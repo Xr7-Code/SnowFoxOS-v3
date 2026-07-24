@@ -472,8 +472,24 @@ if [[ -f "$POLYBAR_CONF" ]]; then
         BAT_NAME=$(ls /sys/class/power_supply/ 2>/dev/null | grep -E "BAT|battery" | head -1)
         [[ -n "$BAT_NAME" ]] && sed -i "s/battery = BAT1/battery = $BAT_NAME/" "$POLYBAR_CONF"
 
-        BL_NAME=$(ls /sys/class/backlight/ 2>/dev/null | head -1)
-        [[ -n "$BL_NAME" ]] && sed -i "s/card = intel_backlight/card = $BL_NAME/" "$POLYBAR_CONF"
+        # Backlight-Card ermitteln — Priorität: amdgpu > intel > acpi-Fallback
+        # /sys/class/backlight/ ist nach Reboot befüllt, beim Installer-Lauf
+        # aber oft noch leer (Treiber noch nicht initialisiert).
+        # Daher: card immer neu schreiben, auch wenn BL_NAME leer ist.
+        BL_NAME=$(ls /sys/class/backlight/ 2>/dev/null | grep -E "amdgpu_bl|intel_backlight" | head -1)
+        BL_NAME="${BL_NAME:-$(ls /sys/class/backlight/ 2>/dev/null | head -1)}"
+
+        if [[ -n "$BL_NAME" ]]; then
+            # Ersetzt jeden vorhandenen card-Wert (nicht nur intel_backlight)
+            sed -i "s/^card = .*/card = $BL_NAME/" "$POLYBAR_CONF"
+            success "Polybar: Backlight-Card gesetzt → $BL_NAME"
+        else
+            # Fallback: amdgpu_bl0 für AMD-Laptops, wird nach Reboot aktiv
+            sed -i "s/^card = .*/card = amdgpu_bl0/" "$POLYBAR_CONF"
+            warn "Backlight-Gerät noch nicht sichtbar — Fallback amdgpu_bl0 gesetzt"
+            warn "Falls Helligkeit fehlt: ls /sys/class/backlight/ prüfen und"
+            warn "  in ~/.config/polybar/config.ini → card = <dein-Gerät> anpassen"
+        fi
 
         sed -i 's/^modules-right =.*/modules-right = backlight battery memory network pulseaudio/' "$POLYBAR_CONF"
         success "Polybar: Laptop-Modus (Akku + Helligkeit aktiv)"
