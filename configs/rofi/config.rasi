@@ -24,7 +24,6 @@ window {
     background-color: @bg;
     border:           1px solid;
     border-color:     @border-color;
-    /* border-radius:    5px; Border Radius 5 aus deinem Design */
     width:            500px;
     padding:          8px;
 }
