@@ -109,16 +109,39 @@ else
 fi
 
 # ── X11 / startx ohne sudo ────────────────────────────────────
-# Fix: X-Server blockiert normalen Benutzern standardmäßig den
-# Zugriff auf die physische Konsole (TTY) -> startx brauchte sudo.
-if [[ -f /etc/X11/Xwrapper.config ]]; then
-    if grep -q "^allowed_users=" /etc/X11/Xwrapper.config; then
-        sed -i 's/^allowed_users=.*/allowed_users=anybody/' /etc/X11/Xwrapper.config
+# Debian 12 liefert Xorg ohne SUID-Bit (rootless Xorg).
+# Für "startx" direkt vom TTY ohne sudo sind zwei Dinge nötig:
+#
+# 1. Xwrapper.config:
+#    allowed_users=anybody  → jeder darf X starten (nicht nur console-Owner)
+#    needs_root_rights=auto → Xorg fragt systemd-logind nach Geräte-Zugriff.
+#                             Bei echter TTY-Session (getty → PAM → logind)
+#                             bekommt Xorg ACLs auf /dev/dri/* und /dev/input/*.
+#                             Das ist sicherer als needs_root_rights=yes (SUID).
+#
+# 2. Gruppen:
+#    video  → /dev/dri/* (GPU/DRM)
+#    input  → /dev/input/* (Tastatur, Maus) — Debian vergibt das NICHT automatisch
+#    render → /dev/dri/renderD* (GPU-Rendering)
+#    tty    → /dev/tty* (TTY-Wechsel durch X)
+#    audio  → /dev/snd/* (PipeWire, zur Sicherheit)
+#
+# Ohne Gruppeneinträge schlägt startx mit "No screens found" oder
+# "Cannot open /dev/dri/card0" fehl — auch mit allowed_users=anybody.
+
+mkdir -p /etc/X11
+cat > /etc/X11/Xwrapper.config << 'XWEOF'
+allowed_users=anybody
+needs_root_rights=auto
+XWEOF
+success "Xwrapper.config gesetzt (allowed_users=anybody, needs_root_rights=auto)"
+
+info "Setze Gruppen für $TARGET_USER (video, input, render, tty, audio)..."
+for grp in video input render tty audio; do
+    if getent group "$grp" > /dev/null 2>&1; then
+        usermod -aG "$grp" "$TARGET_USER"
     else
-        echo "allowed_users=anybody" >> /etc/X11/Xwrapper.config
+        warn "Gruppe '$grp' nicht gefunden — wird übersprungen"
     fi
-else
-    mkdir -p /etc/X11
-    echo "allowed_users=anybody" > /etc/X11/Xwrapper.config
-fi
-success "Xwrapper.config: startx ohne sudo erlaubt"
+done
+success "Gruppen gesetzt — $TARGET_USER kann startx ohne sudo verwenden"
