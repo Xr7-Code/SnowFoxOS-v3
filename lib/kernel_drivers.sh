@@ -173,7 +173,10 @@ EOF
     apt-get install -y \
         cuda-drivers-580 \
         libvulkan1 libvulkan1:i386 \
-        nvidia-vulkan-icd nvidia-vulkan-icd:i386
+        nvidia-vulkan-icd nvidia-vulkan-icd:i386 \
+        vulkan-tools \
+        libgl1-mesa-dri libgl1-mesa-dri:i386 \
+        libnvidia-encode1 2>/dev/null || true
 
     if $HAS_AMD; then
         info "AMD+NVIDIA Hybrid erkannt — Konfiguriere Freeze-Fix..."
@@ -199,10 +202,15 @@ EOF
     XANMOD_KERNEL=$(ls /lib/modules 2>/dev/null | grep xanmod | sort -V | tail -1)
     NVIDIA_VER=$(ls /var/lib/dkms/nvidia/ 2>/dev/null | sort -V | tail -1)
     if [[ -n "$XANMOD_KERNEL" && -n "$NVIDIA_VER" ]]; then
+        # Kernel-Header installieren — ohne sie schlägt jeder DKMS-Build still fehl
+        info "Installiere Kernel-Header für $XANMOD_KERNEL..."
+        apt-get install -y "linux-headers-${XANMOD_KERNEL}" 2>/dev/null || \
+            warn "Kernel-Header nicht im Repo gefunden — DKMS-Build könnte fehlschlagen"
+
         info "Baue NVIDIA DKMS-Module für $XANMOD_KERNEL..."
         dkms install nvidia/"$NVIDIA_VER" -k "$XANMOD_KERNEL" 2>/dev/null || \
-            warn "DKMS-Build fehlgeschlagen — nach Reboot prüfen"
-        success "NVIDIA DKMS-Moule gebaut"
+            warn "DKMS-Build fehlgeschlagen — nach Reboot: sudo dkms autoinstall"
+        success "NVIDIA DKMS-Module gebaut"
     else
         warn "DKMS übersprungen (Kernel: ${XANMOD_KERNEL:-?}, NVIDIA: ${NVIDIA_VER:-?})"
     fi
@@ -211,7 +219,15 @@ EOF
 
 elif $HAS_AMD; then
     info "AMD GPU erkannt — Nutze Mesa..."
-    apt-get install -y firmware-amd-graphics mesa-vulkan-drivers mesa-va-drivers
+    apt-get install -y \
+        firmware-amd-graphics \
+        mesa-vulkan-drivers \
+        mesa-vulkan-drivers:i386 \
+        mesa-va-drivers \
+        mesa-va-drivers:i386 \
+        libvulkan1 libvulkan1:i386 \
+        vulkan-tools \
+        libgl1-mesa-dri libgl1-mesa-dri:i386
 
     cat > /etc/modprobe.d/amdgpu.conf << 'EOF'
 # SnowFoxOS — AMD GPU Konfiguration
@@ -224,7 +240,16 @@ EOF
 
 elif $HAS_INTEL; then
     info "Intel Grafik erkannt..."
-    apt-get install -y intel-media-va-driver-non-free i965-va-driver 2>/dev/null || true
+    # VA-API Decoder (Hardware-Videodekodierung)
+    apt-get install -y \
+        intel-media-va-driver-non-free \
+        i965-va-driver \
+        libva-drm2 libva-x11-2 vainfo \
+        libvulkan1 libvulkan1:i386 \
+        vulkan-tools \
+        mesa-vulkan-drivers mesa-vulkan-drivers:i386 \
+        libgl1-mesa-dri libgl1-mesa-dri:i386 \
+        libosmesa6 2>/dev/null || true
     success "Intel Stack installiert"
 fi
 
