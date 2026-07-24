@@ -1,5 +1,5 @@
 # ============================================================
-#   SnowFoxOS v2.1 — i3 Konfiguration (SnowFox Palette)
+#   SnowFoxOS v3 — i3 Konfiguration (SnowFox Palette)
 # ============================================================
 
 set $mod Mod4
@@ -34,14 +34,13 @@ smart_borders on
 
 # ── Autostart ───────────────────────────────────────────────
 exec_always --no-startup-id ~/.fehbg
-exec --no-startup-id picom --config ~/.config/picom.conf
 exec --no-startup-id ~/.config/polybar/launch.sh
 exec --no-startup-id dunst
 exec --no-startup-id lxpolkit
 exec --no-startup-id xsettingsd
 exec --no-startup-id nm-applet --no-agent
 exec --no-startup-id redshift
-# exec --no-startup-id diodon # Deaktiviert wegen Systembereinigung
+exec --no-startup-id greenclip daemon
 exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork -c 1e1e2e
 
 # ── Keyboard Shortcuts ──────────────────────────────────────
