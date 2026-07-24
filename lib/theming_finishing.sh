@@ -19,27 +19,18 @@ mkdir -p "$CONFIG_DIR/fastfetch"
 mkdir -p "$TARGET_HOME/Pictures/wallpapers"
 
 # ── Distro-Identität ─────────────────────────────────────────
-cat > /etc/os-release << 'EOF'
-PRETTY_NAME="SnowFoxOS 3.0"
-NAME="SnowFoxOS"
-VERSION="3.0"
-VERSION_ID="3.0"
-ID=snowfoxos
-ID_LIKE=debian
-HOME_URL="https://github.com/Xr7-Code/SnowFoxOS-v2.2"
-ANSI_COLOR="0;35"
-EOF
+# set_system_version() aus lib/system_setup.sh — schreibt os-release,
+# lsb-release, /etc/issue und GRUB_DISTRIBUTOR korrekt und konsistent.
+set_system_version
 
 cat > /etc/lsb-release << 'EOF'
 DISTRIB_ID=SnowFoxOS
 DISTRIB_RELEASE=3.0
 DISTRIB_CODENAME=fox
-DISTRIB_DESCRIPTION="SnowFoxOS 3.0"
+DISTRIB_DESCRIPTION="SnowFoxOS v3"
 EOF
 
-echo "snowfox"             > /etc/hostname
-echo "SnowFoxOS 3.0"       > /etc/issue
-echo "SnowFoxOS 3.0 \n \l" > /etc/issue.net
+echo "snowfox"        > /etc/hostname
 hostname snowfox 2>/dev/null || true
 success "Distro-Identität gesetzt"
 
