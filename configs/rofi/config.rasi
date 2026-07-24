@@ -22,20 +22,21 @@ configuration {
 
 window {
     background-color: @bg;
-    border:           1px solid;
+    border:           1px;
     border-color:     @border-color;
+    border-radius:    5px;
     width:            500px;
     padding:          8px;
 }
 
 mainbox {
     background-color: transparent;
-    children: [inputbar, listview];
+    children:         [inputbar, listview];
 }
 
 inputbar {
     background-color: @bg-alt;
-    border-radius:    /* 5px;  Konsistent 5px */
+    border-radius:    5px;
     padding:          8px 12px;
     margin:           0 0 8px 0;
     children:         [prompt, entry];
@@ -51,7 +52,7 @@ entry {
     background-color: transparent;
     text-color:       @fg;
     placeholder:      "Suchen...";
-    placeholder-color: @fg-alt;
+    placeholder-color:@fg-alt;
 }
 
 listview {
@@ -62,13 +63,13 @@ listview {
 
 element {
     background-color: transparent;
-    border-radius:    5px; /* Konsistent 5px */
+    border-radius:    5px;
     padding:          6px 8px;
 }
 
 element selected {
     background-color: rgba(129, 57, 232, 0.2); /* Selektion mit leichtem lila Schimmer */
-    border:           1px solid;
+    border:           1px;
     border-color:     rgba(129, 57, 232, 0.4);
 }
 
