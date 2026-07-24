@@ -593,6 +593,16 @@ chown "$TARGET_USER:$TARGET_USER" "$TARGET_HOME/.gtkrc-2.0"
 chown "$TARGET_USER:$TARGET_USER" "$TARGET_HOME/.gtkrc-2.0.mine"
 chown "$TARGET_USER:$TARGET_USER" "$TARGET_HOME/.bash_profile"
 
+# ── Xorg-Logverzeichnis ───────────────────────────────────────
+# Xorg schreibt sein Log nach ~/.local/share/xorg/Xorg.0.log.
+# Da der Installer als root läuft, gehört .local/share dem root
+# wenn es hier zum ersten Mal entsteht — startx schlägt dann mit
+# "(EE) Cannot open log file" fehl. Verzeichnis vorab anlegen
+# und direkt dem User übergeben.
+mkdir -p "$TARGET_HOME/.local/share/xorg"
+chown -R "$TARGET_USER:$TARGET_USER" "$TARGET_HOME/.local"
+success "Xorg-Logverzeichnis gesetzt ($TARGET_USER)"
+
 # DKMS_HOOKS is defined in the main script and assumed to be available
 DKMS_HOOKS=(
     /etc/kernel/postinst.d/dkms
