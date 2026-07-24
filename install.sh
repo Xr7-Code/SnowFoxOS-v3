@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-#  SnowFoxOS v3.0 — Installer
+#  SnowFoxOS v3 — Installer
 #  Basis: Debian 12 (Bookworm) minimal
 #  Desktop: i3 + Polybar + Rofi + Dunst + i3lock
 #  Ausführen: sudo bash install.sh
@@ -30,7 +30,7 @@ fi
 TARGET_HOME="/home/$TARGET_USER"
 [[ ! -d "$TARGET_HOME" ]] && error "Home $TARGET_HOME nicht gefunden"
 
-# ── Globale Variablen exportieren (werden von lib-Dateien gebraucht) ─
+# ── Globale Variablen exportieren (werden von lib-Dateien gebraucht) ──
 export TARGET_USER
 export TARGET_HOME
 export SCRIPT_DIR
@@ -50,30 +50,35 @@ export HAS_AMD=false
 export HAS_INTEL=false
 export IS_LAPTOP=false
 
-# Browser/Editor/FM — werden in browser_selection.sh bzw. theming_finishing.sh gesetzt
+# Browser/Editor/FM — werden in browser_selection.sh gesetzt,
+# von theming_finishing.sh für MIME-Defaults gebraucht.
 export DEFAULT_BROWSER_DESKTOP="firefox-esr.desktop"
 export DEFAULT_EDITOR_DESKTOP="mousepad.desktop"
 export DEFAULT_FM_DESKTOP="pcmanfm.desktop"
 
 # ============================================================
-#  Module laden — jedes sourced lib/utils.sh selbst nochmal,
-#  das ist unschädlich da nur Variablen/Funktionen gesetzt werden.
+#  Module laden — alle laufen im selben Shell-Prozess (source),
+#  Variablen und Funktionen sind daher sofort im Scope verfügbar.
 # ============================================================
 
-# Schritt 1 — System aktualisieren
+# Funktionsbibliothek: set_system_version(), set_grub_theme()
+# Muss vor theming_finishing.sh und boot_screen.sh geladen werden.
+source "$SCRIPT_DIR/lib/system_setup.sh"
+
+# Schritt 1 — System aktualisieren, Xwrapper, Gruppen
 source "$SCRIPT_DIR/lib/base_system.sh"
 
 # Schritt 2 — Kernel, Treiber, GPU-Erkennung
 # Setzt HAS_NVIDIA, HAS_AMD, HAS_INTEL, IS_LAPTOP
 source "$SCRIPT_DIR/lib/kernel_drivers.sh"
 
-# Schritt 3 — i3 Desktop-Umgebung
+# Schritt 3 — i3 Desktop-Umgebung, .xinitrc, .bash_profile
 source "$SCRIPT_DIR/lib/desktop_environment.sh"
 
 # Schritt 4 — Audio (PipeWire) + Kitty Terminal
 source "$SCRIPT_DIR/lib/audio_terminal.sh"
 
-# Schritt 5 — Standard-Apps (Dateimanager, Office, yt-dlp, ...)
+# Schritt 5 — Standard-Apps (PCManFM, Office, yt-dlp, ...)
 source "$SCRIPT_DIR/lib/default_apps.sh"
 
 # Schritt 6 — Browser-Auswahl
@@ -84,17 +89,19 @@ source "$SCRIPT_DIR/lib/browser_selection.sh"
 source "$SCRIPT_DIR/lib/mesh_module.sh"
 
 # Schritt 7 + 7b — Steam/Gaming + Ollama
+# Liest HAS_NVIDIA, HAS_AMD, HAS_INTEL, IS_LAPTOP
 source "$SCRIPT_DIR/lib/gaming_ai.sh"
 
 # Schritt 8 — Performance & Sicherheit
 source "$SCRIPT_DIR/lib/performance_security.sh"
 
-# Schritt 9 — Plymouth Boot-Screen
+# Schritt 9 — Plymouth Boot-Screen + GRUB-Theme (via set_grub_theme())
 source "$SCRIPT_DIR/lib/boot_screen.sh"
 
 # Schritt 10 — Theming, Configs, Finishing
-# Braucht DEFAULT_BROWSER_DESKTOP, IS_LAPTOP, HAS_NVIDIA, DKMS_HOOKS
+# Liest DEFAULT_BROWSER_DESKTOP, IS_LAPTOP, HAS_NVIDIA, DKMS_HOOKS
+# Ruft set_system_version() auf
 source "$SCRIPT_DIR/lib/theming_finishing.sh"
 
-# Abschluss — Banner + Hinweis
+# Abschluss — Banner + Reboot-Hinweis
 source "$SCRIPT_DIR/lib/cleanup_final.sh"
