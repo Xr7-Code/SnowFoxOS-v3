@@ -46,3 +46,10 @@ plymouth-set-default-theme -R snowfox 2>/dev/null || \
     { plymouth-set-default-theme snowfox 2>/dev/null || true; update-initramfs -u 2>/dev/null || true; }
 
 success "Boot-Screen bereit"
+
+# ── GRUB-Theme & Systemversion ────────────────────────────────
+# set_grub_theme() und set_system_version() aus lib/system_setup.sh.
+# Beide Funktionen sind bereits durch das frühere source von system_setup.sh
+# im Scope verfügbar.
+set_grub_theme
+info "GRUB-Theme und Boot-Konfiguration abgeschlossen"
