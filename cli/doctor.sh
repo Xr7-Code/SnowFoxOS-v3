@@ -411,8 +411,7 @@ cmd_doctor() {
     # ══════════════════════════════════════════════════════
     echo ""
     divider
-    echo -e "${PURPLE}${BOLD}  Diagnose abgeschlossen${RESET}"
-    divider
+    section "Diagnose abgeschlossen"
     if [[ "$ISSUES" -eq 0 && "$WARNINGS" -eq 0 ]]; then
         echo -e "  ${GREEN}${BOLD}✓ System ist in einwandfreiem Zustand.${RESET}"
     else
