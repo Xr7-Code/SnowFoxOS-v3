@@ -13,7 +13,7 @@ source "$SCRIPT_DIR/lib/utils.sh"
 step "8/10 — Performance & Sicherheit"
 
 wait_apt
-apt-get install -y zram-tools earlyoom ufw
+apt-get install -y zram-tools earlyoom ufw tor torsocks macchanger
 command -v tlp &>/dev/null || apt-get install -y tlp tlp-rdw
 
 cat > /etc/default/zramswap << 'EOF'
