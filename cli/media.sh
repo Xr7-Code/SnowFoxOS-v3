@@ -30,9 +30,9 @@ cmd_download() {
     mkdir -p "$OUTDIR"
 
     case "$FORMAT" in
-        1) yt-dlp -o "$OUTDIR/%(title)s.%(ext)s" "$1" ;;
-        2) yt-dlp -x --audio-format mp3 -o "$OUTDIR/%(title)s.%(ext)s" "$1" ;;
-        3) yt-dlp -x --audio-format opus -o "$OUTDIR/%(title)s.%(ext)s" "$1" ;;
+        1) yt-dlp --force-ipv4 -o "$OUTDIR/%(title)s.%(ext)s" "$1" ;;
+        2) yt-dlp --force-ipv4 -x --audio-format mp3 -o "$OUTDIR/%(title)s.%(ext)s" "$1" ;;
+        3) yt-dlp --force-ipv4 -x --audio-format opus -o "$OUTDIR/%(title)s.%(ext)s" "$1" ;;
         *) err "Ungültige Auswahl." ;;
     esac
 
@@ -60,7 +60,7 @@ cmd_stream() {
     else
         fox "Suche auf YouTube: ${BOLD}$QUERY${RESET}..."
 
-        mapfile -t RESULTS < <(yt-dlp --print "%(title)s|%(id)s" --flat-playlist "ytsearch5:$QUERY" 2>/dev/null)
+        mapfile -t RESULTS < <(yt-dlp --force-ipv4 --print "%(title)s|%(id)s" --flat-playlist "ytsearch5:$QUERY" 2>/dev/null)
 
         if [[ ${#RESULTS[@]} -eq 0 ]]; then
             err "Keine Ergebnisse gefunden."
@@ -84,5 +84,7 @@ cmd_stream() {
     fi
 
     fox "Starte Stream..."
-    mpv --ytdl "$URL"
+    # --ytdl-raw-options: IPv4 erzwingen verhindert 403-Fehler bei IPv6
+    # yt-dlp als ytdl-Backend explizit setzen (neuere mpv-Versionen)
+    mpv         --ytdl-raw-options="force-ipv4=,no-check-certificate="         --script-opts=ytdl_hook-ytdl_path=yt-dlp         "$URL"
 }
