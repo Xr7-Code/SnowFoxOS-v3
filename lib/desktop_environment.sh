@@ -77,26 +77,38 @@ else
 fi
 
 # ── bluetui — Terminal Bluetooth Manager ─────────────────────
-if ask_install "bluetui (Bluetooth Terminal UI)"; then
-    info "Installiere System-Abhängigkeiten für Bluetooth..."
-    apt-get install -y bluez dbus pkg-config libdbus-1-dev 2>/dev/null
-
-    info "Lade vorkompiliertes bluetui Binary von GitHub..."
-    BLUETUI_VERSION=$(curl -sf https://api.github.com/repos/pythops/bluetui/releases/latest | python3 -c "import sys,json; print(json.load(sys.stdin).get('tag_name','v0.8.1'))" 2>/dev/null || echo "v0.8.1")
-    BLUETUI_URL="https://github.com/pythops/bluetui/releases/download/${BLUETUI_VERSION}/bluetui-x86_64-linux-musl"
-
-    if curl -L "$BLUETUI_URL" -o /usr/local/bin/bluetui 2>/dev/null; then
-        chmod +x /usr/local/bin/bluetui
-        systemctl enable --now bluetooth 2>/dev/null
-        success "bluetui erfolgreich installiert!"
-    else
-        warn "Konnte Binary nicht laden. Versuche Cargo Fallback..."
-        apt-get install -y cargo 2>/dev/null
-        cargo install bluetui --root /usr/local/ 2>/dev/null && success "bluetui via Cargo installiert!" || warn "bluetui Installation fehlgeschlagen."
-    fi
+# ── Bluetooth: BlueZ-Dienst aktivieren ───────────────────────
+# bluetooth.service muss laufen bevor bluetui oder bluetoothctl genutzt wird.
+# Timeout verhindert Aufhängen falls der Dienst nicht antwortet.
+systemctl enable bluetooth 2>/dev/null || true
+systemctl start bluetooth 2>/dev/null &
+BT_PID=$!
+sleep 3
+if ! kill -0 $BT_PID 2>/dev/null; then
+    success "Bluetooth-Dienst gestartet"
+else
+    kill $BT_PID 2>/dev/null || true
+    warn "Bluetooth-Dienst Timeout — wird nach Reboot aktiv"
 fi
 
-systemctl enable bluetooth
+if ask_install "bluetui (Bluetooth Terminal UI)"; then
+    info "Installiere bluetui Abhängigkeiten..."
+    # bluez-tools für vollständige Profil-Unterstützung
+    apt-get install -y bluez bluez-tools dbus pkg-config libdbus-1-dev 2>/dev/null
+
+    info "Lade vorkompiliertes bluetui Binary von GitHub..."
+    BLUETUI_VERSION=$(curl -sf --max-time 10         https://api.github.com/repos/pythops/bluetui/releases/latest |         python3 -c "import sys,json; print(json.load(sys.stdin).get('tag_name','v0.8.1'))"         2>/dev/null || echo "v0.8.1")
+    BLUETUI_URL="https://github.com/pythops/bluetui/releases/download/${BLUETUI_VERSION}/bluetui-x86_64-linux-musl"
+
+    if curl -L --max-time 30 "$BLUETUI_URL" -o /usr/local/bin/bluetui 2>/dev/null; then
+        chmod +x /usr/local/bin/bluetui
+        success "bluetui installiert (${BLUETUI_VERSION})"
+    else
+        warn "bluetui Download fehlgeschlagen — versuche Cargo..."
+        apt-get install -y cargo 2>/dev/null
+        cargo install bluetui --root /usr/local/ 2>/dev/null             && success "bluetui via Cargo installiert"             || warn "bluetui konnte nicht installiert werden"
+    fi
+fi
 
 # Desktop-Einträge — nmtui, bluetui, pcmanfm (für Rofi)
 mkdir -p "$TARGET_HOME/.local/share/applications"
