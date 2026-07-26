@@ -16,9 +16,7 @@ PROFILE_FILE="$HOME/.config/snowfox/profile"
 # snowfox update
 # ============================================================
 cmd_update() {
-    divider
-    echo -e "${PURPLE}${BOLD}  SnowFoxOS — System Update${RESET}"
-    divider
+    header "System Update"
 
     # Repo-Verzeichnis ermitteln
     REPO_DIR=""
@@ -208,7 +206,7 @@ cmd_profile() {
             divider
             echo -e "${PURPLE}${BOLD}  SnowFoxOS — Aktives Profil${RESET}"
             divider
-            echo -e "${GRAY}  Profil:     ${BOLD}${CURRENT}${RESET}"
+            row "Profil" "${CURRENT}"
             echo ""
             echo -e "  Verfügbare Profile:"
             echo -e "  ${CYAN}balanced${RESET}     — Standard, ausgewogen"
