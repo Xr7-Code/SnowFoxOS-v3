@@ -542,20 +542,61 @@ if [[ -f "$SCRIPT_DIR/configs/snowfox-display.sh" ]]; then
 fi
 
 mkdir -p "$CONFIG_DIR/polybar"
-cat > "$CONFIG_DIR/polybar/launch.sh" << 'LAUNCHEOF'
+mkdir -p "$CONFIG_DIR/polybar/scripts"
+
+# ── launch.sh aus Repo kopieren (enthält Laptop-Erkennung) ───
+if [[ -f "$SCRIPT_DIR/configs/polybar/launch.sh" ]]; then
+    cp "$SCRIPT_DIR/configs/polybar/launch.sh" "$CONFIG_DIR/polybar/launch.sh"
+    chmod +x "$CONFIG_DIR/polybar/launch.sh"
+    success "polybar/launch.sh installiert"
+else
+    warn "configs/polybar/launch.sh nicht gefunden — Fallback wird geschrieben"
+    cat > "$CONFIG_DIR/polybar/launch.sh" << 'LAUNCHEOF'
 #!/bin/bash
 # SnowFoxOS — Polybar Starter
 sleep 2
 killall -q polybar
 while pgrep -u $UID -x polybar >/dev/null; do sleep 0.1; done
 PRIMARY=$(xrandr --query | grep " connected primary" | cut -d" " -f1)
-if [[ -z "$PRIMARY" ]]; then
-    PRIMARY=$(xrandr --query | grep " connected" | head -1 | cut -d" " -f1)
+[[ -z "$PRIMARY" ]] && PRIMARY=$(xrandr --query | grep " connected" | head -1 | cut -d" " -f1)
+CHASSIS=$(cat /sys/class/dmi/id/chassis_type 2>/dev/null || echo "0")
+IS_LAPTOP=false
+[[ "$CHASSIS" =~ ^(8|9|10|14)$ ]] && IS_LAPTOP=true
+ls /sys/class/power_supply/BAT* &>/dev/null && IS_LAPTOP=true
+if $IS_LAPTOP; then
+    BAT=$(ls /sys/class/power_supply/ | grep -E '^BAT' | head -1)
+    AC=$(ls /sys/class/power_supply/ | grep -E '^(AC|ADP|ACAD)' | head -1)
+    [[ -n "$BAT" ]] && sed -i "s/^battery = .*/battery = $BAT/" ~/.config/polybar/config.ini
+    [[ -n "$AC" ]]  && sed -i "s/^adapter = .*/adapter = $AC/"  ~/.config/polybar/config.ini
+    BACKLIGHT_CARD=$(ls /sys/class/backlight/ | head -1)
+    [[ -n "$BACKLIGHT_CARD" ]] && sed -i "s/^card = .*/card = $BACKLIGHT_CARD/" ~/.config/polybar/config.ini
+    MONITOR=$PRIMARY polybar snowfox-laptop 2>/tmp/polybar.log &
+else
+    MONITOR=$PRIMARY polybar snowfox 2>/tmp/polybar.log &
 fi
-MONITOR=$PRIMARY polybar snowfox 2>/tmp/polybar.log &
 LAUNCHEOF
-chmod +x "$CONFIG_DIR/polybar/launch.sh"
-success "polybar/launch.sh installiert"
+    chmod +x "$CONFIG_DIR/polybar/launch.sh"
+fi
+
+# ── Bluetooth-Script installieren ────────────────────────────
+# Externes Script verhindert Backslash-Parse-Fehler in der polybar ini-Datei
+# und zeigt korrekt an ob BT an/aus/verbunden ist.
+if [[ -f "$SCRIPT_DIR/configs/polybar/scripts/bluetooth.sh" ]]; then
+    cp "$SCRIPT_DIR/configs/polybar/scripts/bluetooth.sh"        "$CONFIG_DIR/polybar/scripts/bluetooth.sh"
+else
+    cat > "$CONFIG_DIR/polybar/scripts/bluetooth.sh" << 'BTEOF'
+#!/bin/bash
+# SnowFoxOS — Polybar Bluetooth Status
+if ! bluetoothctl show 2>/dev/null | grep -q "Powered: yes"; then
+    echo "aus"
+    exit 0
+fi
+DEV=$(bluetoothctl devices Connected 2>/dev/null     | head -n1     | awk '{$1=""; $2=""; print $0}'     | xargs)
+[[ -n "$DEV" ]] && echo "$DEV" || echo "an"
+BTEOF
+fi
+chmod +x "$CONFIG_DIR/polybar/scripts/bluetooth.sh"
+success "polybar/scripts/bluetooth.sh installiert"
 
 # snowfox CLI + Module installieren
 if [[ -f "$SCRIPT_DIR/snowfox" ]]; then
