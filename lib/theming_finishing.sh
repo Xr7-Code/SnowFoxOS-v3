@@ -557,8 +557,21 @@ LAUNCHEOF
 chmod +x "$CONFIG_DIR/polybar/launch.sh"
 success "polybar/launch.sh installiert"
 
-[[ -f "$SCRIPT_DIR/snowfox" ]] && \
-    cp "$SCRIPT_DIR/snowfox" /usr/local/bin/snowfox && chmod +x /usr/local/bin/snowfox
+# snowfox CLI + Module installieren
+if [[ -f "$SCRIPT_DIR/snowfox" ]]; then
+    cp "$SCRIPT_DIR/snowfox" /usr/local/bin/snowfox
+    chmod +x /usr/local/bin/snowfox
+    # cli/-Module nach /usr/local/lib/snowfox/cli/
+    if [[ -d "$SCRIPT_DIR/cli" ]]; then
+        mkdir -p /usr/local/lib/snowfox/cli
+        cp "$SCRIPT_DIR/cli/"*.sh /usr/local/lib/snowfox/cli/
+        chmod 644 /usr/local/lib/snowfox/cli/*.sh
+        success "snowfox CLI + Module installiert"
+    else
+        warn "cli/-Verzeichnis nicht gefunden — nur snowfox Binary kopiert"
+        success "snowfox CLI installiert (ohne Module)"
+    fi
+fi
 
 [[ -f "$SCRIPT_DIR/snowfox-greeting.sh" ]] && \
     cp "$SCRIPT_DIR/snowfox-greeting.sh" /usr/local/bin/snowfox-greeting && \
@@ -609,15 +622,15 @@ chown "$TARGET_USER:$TARGET_USER" "$TARGET_HOME/.gtkrc-2.0"
 chown "$TARGET_USER:$TARGET_USER" "$TARGET_HOME/.gtkrc-2.0.mine"
 chown "$TARGET_USER:$TARGET_USER" "$TARGET_HOME/.bash_profile"
 
-# ── Xorg-Logverzeichnis ───────────────────────────────────────
-# Xorg schreibt sein Log nach ~/.local/share/xorg/Xorg.0.log.
-# Da der Installer als root läuft, gehört .local/share dem root
-# wenn es hier zum ersten Mal entsteht — startx schlägt dann mit
-# "(EE) Cannot open log file" fehl. Verzeichnis vorab anlegen
-# und direkt dem User übergeben.
+# ── Home-Verzeichnis: Besitzer komplett bereinigen ───────────
+# Der Installer läuft als root — dadurch entstehen im Home-Verzeichnis
+# Ordner die root gehören (z.B. .local, .steam, .config, .cache).
+# Ein einzelnes chown -R am Ende behebt alle Berechtigungsprobleme
+# auf einmal, egal welcher Schritt welches Verzeichnis angelegt hat.
+info "Setze Besitzer für $TARGET_HOME ($TARGET_USER)..."
 mkdir -p "$TARGET_HOME/.local/share/xorg"
-chown -R "$TARGET_USER:$TARGET_USER" "$TARGET_HOME/.local"
-success "Xorg-Logverzeichnis gesetzt ($TARGET_USER)"
+chown -R "$TARGET_USER:$TARGET_USER" "$TARGET_HOME"
+success "Berechtigungen gesetzt — $TARGET_HOME gehört $TARGET_USER"
 
 # DKMS_HOOKS is defined in the main script and assumed to be available
 DKMS_HOOKS=(
