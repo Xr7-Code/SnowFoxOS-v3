@@ -1,41 +1,60 @@
 #!/bin/bash
-# ============================================================
-#  SnowFoxOS — CLI Modul: Hilfe & Befehlsübersicht
-#  Wird von /usr/local/bin/snowfox gesourced.
-# ============================================================
+# SnowFoxOS — CLI Modul: Hilfe & Befehlsübersicht
 
-
-# ============================================================
-# snowfox help
-# ============================================================
 cmd_help() {
-    divider
-    echo -e "${PURPLE}${BOLD}  🦊 SnowFoxOS — snowfox CLI${RESET}"
-    echo -e "${GRAY}  Copyright (c) 2026 Alexander Valentin Ludwig${RESET}"
-    divider
     echo ""
-    echo -e "  ${CYAN}${BOLD}snowfox status${RESET}              — System-Übersicht"
-    echo -e "  ${CYAN}${BOLD}snowfox battery${RESET}             — Akku Status, Verbrauch & Gesundheit"
-    echo -e "  ${CYAN}${BOLD}snowfox profile [name]${RESET}      — Profil wechseln (balanced|performance|battery|privacy)"
-    echo -e "  ${CYAN}${BOLD}snowfox update${RESET}              — System aktualisieren"
-    echo -e "  ${CYAN}${BOLD}snowfox gpu${RESET}                 — GPU-Modus wechseln (Hybrid)"
-    echo -e "  ${CYAN}${BOLD}snowfox audit${RESET}               — aktive Netzwerkverbindungen"
-    echo -e "  ${CYAN}${BOLD}snowfox autostart [list|enable|disable]${RESET} — Autostart verwalten"
-    echo -e "  ${CYAN}${BOLD}snowfox airmode [on|off|status]${RESET} — Funk komplett deaktivieren"
-    echo -e "  ${CYAN}${BOLD}snowfox kill [mic|cam|all|restore]${RESET} — Hardware deaktivieren"
-    echo -e "  ${CYAN}${BOLD}snowfox download <URL>${RESET}      — Video/Audio herunterladen"
-    echo -e "  ${CYAN}${BOLD}snowfox stream <Suche|URL>${RESET}  — Video/Musik streamen"
-    echo -e "  ${CYAN}${BOLD}snowfox pass [add|get|list|remove]${RESET} — Passwort-Manager"
-    echo -e "  ${CYAN}${BOLD}snowfox tip${RESET}                 — Sicherheitstipp"
-    echo -e "  ${CYAN}${BOLD}snowfox layout [tiling|floating]${RESET} — Fenstermodus wechseln"
-    echo -e "  ${CYAN}${BOLD}snowfox webapp [add|list|open|remove]${RESET} — WebApps verwalten"
-    echo -e "  ${CYAN}${BOLD}snowfox apps [list|remove]${RESET}  — installierte Rofi-Apps verwalten"
-    echo -e "  ${CYAN}${BOLD}snowfox network${RESET}             — Netzwerk-Manager"
-    echo -e "  ${CYAN}${BOLD}snowfox mesh${RESET}                — P2P-Mesh-Netzwerk (autark, verschlüsselt)"
-    echo -e "  ${CYAN}${BOLD}snowfox node [desktop|server|console]${RESET} — Modus wechseln"
-    echo -e "  ${CYAN}${BOLD}snowfox doctor${RESET}              — Systemdiagnose (RAM, Treiber, Configs, …)"
-    echo -e "  ${CYAN}${BOLD}snowfox ai${RESET}                  — Offline-KI"
-    echo -e "  ${CYAN}${BOLD}snowfox help${RESET}                — diese Hilfe"
+    echo -e "${PURPLE}${BOLD}  ┌────────────────────────────────────────────────┐${RESET}"
+    echo -e "${PURPLE}${BOLD}  │                                                │${RESET}"
+    echo -e "${PURPLE}${BOLD}  │   🦊  ${LPURPLE}SnowFoxOS ${DGRAY}— snowfox CLI${PURPLE}                  │${RESET}"
+    echo -e "${PURPLE}${BOLD}  │   ${DGRAY}Copyright (c) 2026 Alexander Valentin Ludwig${PURPLE}  │${RESET}"
+    echo -e "${PURPLE}${BOLD}  │                                                │${RESET}"
+    echo -e "${PURPLE}${BOLD}  └────────────────────────────────────────────────┘${RESET}"
     echo ""
+
+    _help_section() {
+        echo -e "  ${LPURPLE}${BOLD}$1${RESET}"
+        echo -e "  ${PURPLE}${DIM}  ──────────────────────────────────────────────${RESET}"
+    }
+
+    _help_cmd() {
+        local cmd="$1" desc="$2"
+        printf "  ${CYAN}${BOLD}  %-38s${RESET}${DGRAY}%s${RESET}\n" "$cmd" "$desc"
+    }
+
+    _help_section "System"
+    _help_cmd "snowfox status"                    "System-Übersicht"
+    _help_cmd "snowfox battery"                   "Akku, Verbrauch & Gesundheit"
+    _help_cmd "snowfox update"                    "System & CLI aktualisieren"
+    _help_cmd "snowfox profile [name]"            "balanced · performance · battery · privacy"
+    _help_cmd "snowfox node [desktop|server]"     "Systemmodus wechseln"
+    _help_cmd "snowfox doctor"                    "Diagnose: RAM, Treiber, Configs"
+    echo ""
+
+    _help_section "Hardware & Sicherheit"
+    _help_cmd "snowfox gpu"                       "GPU-Modus wechseln (Hybrid)"
+    _help_cmd "snowfox kill [mic|cam|all|restore]" "Hardware-Kill"
+    _help_cmd "snowfox airmode [on|off|status]"   "Funk komplett deaktivieren"
+    _help_cmd "snowfox audit"                     "Aktive Netzwerkverbindungen"
+    _help_cmd "snowfox pass [add|get|list|remove]" "Passwort-Manager"
+    _help_cmd "snowfox tip"                       "Sicherheitstipp"
+    echo ""
+
+    _help_section "Desktop"
+    _help_cmd "snowfox autostart [list|enable|disable]" "Autostart verwalten"
+    _help_cmd "snowfox layout [tiling|floating]"  "Fenstermodus wechseln"
+    _help_cmd "snowfox apps [list|remove]"        "Rofi-Apps verwalten"
+    _help_cmd "snowfox webapp [add|list|open|remove]" "WebApps verwalten"
+    _help_cmd "snowfox network"                   "Netzwerk-Manager"
+    echo ""
+
+    _help_section "Medien & KI"
+    _help_cmd "snowfox download <URL>"            "Video/Audio herunterladen"
+    _help_cmd "snowfox stream <Suche|URL>"        "Video/Musik streamen"
+    _help_cmd "snowfox mesh"                      "P2P-Mesh (autark, verschlüsselt)"
+    _help_cmd "snowfox ai"                        "Offline-KI (Ollama)"
+    echo ""
+
     divider
+    info "snowfox <Befehl> --help  für Details zu einem Befehl"
+    echo ""
 }
