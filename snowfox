@@ -28,6 +28,7 @@ source "$CLI_DIR/desktop.sh"
 source "$CLI_DIR/doctor.sh"
 source "$CLI_DIR/mesh.sh"
 source "$CLI_DIR/ai.sh"
+source "$CLI_DIR/tor.sh"
 source "$CLI_DIR/help.sh"
 
 # ── Dispatcher ───────────────────────────────────────────────
@@ -53,6 +54,7 @@ case "$1" in
     doctor)    cmd_doctor ;;
     mesh)      shift; cmd_mesh_wrapper "$@" ;;
     ai)        cmd_ai ;;
+    tor)       cmd_tor "$2" ;;
     network)   exec ~/.config/snowfox-network.sh ;;
     help|"")   cmd_help ;;
     *)
