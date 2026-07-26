@@ -17,14 +17,56 @@ apt-get install -y \
     pipewire \
     pipewire-pulse \
     pipewire-alsa \
+    pipewire-audio \
     wireplumber \
     pavucontrol \
-    pulseaudio-utils
+    pulseaudio-utils \
+    libspa-0.2-bluetooth \
+    bluez-obexd
 
-apt-get remove --purge -y pulseaudio 2>/dev/null || true
-sudo -u "$TARGET_USER" systemctl --user enable pipewire pipewire-pulse wireplumber 2>/dev/null || true
+apt-get remove --purge -y pulseaudio pulseaudio-bluetooth 2>/dev/null || true
 
-success "PipeWire installiert"
+# PipeWire-Bluetooth-Profil: verhindert "br-connection-profile-unavailable"
+# BlueZ braucht explizit die Policy für alle Profile inkl. A2DP und HFP/HSP.
+mkdir -p /etc/pipewire/wireplumber.conf.d
+cat > /etc/pipewire/wireplumber.conf.d/51-bluez-config.conf << 'BTWEOF'
+monitor.bluez.properties = {
+  bluez5.enable-sbc-xq    = true
+  bluez5.enable-msbc      = true
+  bluez5.enable-hw-volume = true
+  bluez5.headset-roles    = [ hsp_hs hsp_ag hfp_hf hfp_ag ]
+  bluez5.a2dp.codecs      = [ sbc sbc_xq aac ldac aptx aptx_hd ]
+}
+BTWEOF
+
+# BlueZ-Hauptkonfiguration: verhindert Aufhängen bei A2DP-Verbindungen
+# AutoEnable=true startet BT nach Boot automatisch ohne manuelles "power on"
+mkdir -p /etc/bluetooth
+cat > /etc/bluetooth/main.conf << 'BZEOF'
+[Policy]
+AutoEnable=true
+
+[General]
+Enable=Source,Sink,Media,Socket
+ControllerMode=dual
+FastConnectable=true
+ReconnectAttempts=7
+ReconnectIntervals=1,2,4,8,16,32,64
+BZEOF
+
+# systemctl --user in einem sudo-Kontext ist unzuverlässig (kein DBUS_SESSION_BUS_ADDRESS).
+# Stattdessen loginctl-linger aktivieren damit User-Services beim Boot starten.
+loginctl enable-linger "$TARGET_USER" 2>/dev/null || true
+
+# Symlinks für PipeWire-Autostart im User-Systemd anlegen
+sudo -u "$TARGET_USER" mkdir -p "$TARGET_HOME/.config/systemd/user/default.target.wants"
+for svc in pipewire.service pipewire-pulse.service wireplumber.service; do
+    src="/usr/lib/systemd/user/$svc"
+    dst="$TARGET_HOME/.config/systemd/user/default.target.wants/$svc"
+    [[ -f "$src" ]] && sudo -u "$TARGET_USER" ln -sf "$src" "$dst" 2>/dev/null || true
+done
+
+success "PipeWire + Bluetooth-Audio installiert (A2DP, HFP, HSP)"
 
 # ── Kitty Terminal Konfiguration ──────────────────────────────
 info "Konfiguriere Kitty Terminal..."
