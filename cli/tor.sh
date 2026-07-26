@@ -55,10 +55,16 @@ _tor_enable() {
     # ── 3. DNS durch Tor leiten ──────────────────────────────
     # Tor lauscht auf 127.0.0.1:9053 für DNS — verhindert DNS-Leaks
     info "Leite DNS durch Tor..."
-    sudo bash -c "cat > /etc/tor/torrc.d/snowfox-dns.conf << 'TOREOF'
+    # torrc.d/ existiert nicht auf allen Systemen — direkt in torrc schreiben
+    sudo mkdir -p /etc/tor
+    # Vorherige SnowFox-DNS-Einträge entfernen falls vorhanden
+    sudo sed -i '/# SnowFox-DNS-Start/,/# SnowFox-DNS-Ende/d' /etc/tor/torrc 2>/dev/null || true
+    sudo bash -c "cat >> /etc/tor/torrc << 'TOREOF'
+# SnowFox-DNS-Start
 DNSPort 9053
 AutomapHostsOnResolve 1
 AutomapHostsSuffixes .exit,.onion
+# SnowFox-DNS-Ende
 TOREOF"
     sudo systemctl restart tor 2>/dev/null
     sleep 1
@@ -117,7 +123,8 @@ _tor_disable() {
     fi
 
     # ── Tor-DNS-Config entfernen ─────────────────────────────
-    sudo rm -f /etc/tor/torrc.d/snowfox-dns.conf 2>/dev/null
+    # SnowFox-DNS-Einträge aus torrc entfernen
+    sudo sed -i '/# SnowFox-DNS-Start/,/# SnowFox-DNS-Ende/d' /etc/tor/torrc 2>/dev/null || true
     sudo systemctl restart tor 2>/dev/null
 
     # ── IPv6 wieder aktivieren ───────────────────────────────
