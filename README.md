@@ -377,36 +377,48 @@ SnowFoxOS wird unter der **SnowFox Public License v1.0** veröffentlicht — ein
 </div>
 
 <!--
-Auferstanden aus Ruinen
-Und der Zukunft zugewandt
-Lass uns dir zum Guten dienen
-Deutschland, einig Vaterland
-Alte Not gilt es zu zwingen
-Und wir zwingen sie vereint
-Denn es muss uns doch gelingen
-Dass die Sonne schön wie nie
-Über Deutschland scheint
-Über Deutschland scheint
+I know it's hard to tell how mixed up you feel
+Hoping what you need is behind every door
+Each time you get hurt, I don't want you to change
+Because everyone has hopes, you're human after all
+The feeling sometimes, wishing you were someone else
+Feeling as though you never belong
+This feeling is not sadness, this feeling is not joy
+I truly understand. Please, don't cry now
 
-Glück und Friede sei beschieden
-Deutschland, unserm Vaterland
-Alle Welt sehnt sich nach Frieden
-Reicht den Völkern eure Hand
-Wenn wir brüderlich uns einen
-Schlagen wir des Volkes Feind
-Lasst das Licht des Friedens scheinen
-Dass nie eine Mutter mehr
-Ihren Sohn beweint
-Ihren Sohn beweint
+Please don't go, I want you to stay
+I'm begging you please, please don't leave here
+I don't want you to hate;
+For all the hurt that you feel,
+The world is just illusion, trying to change you
 
-Lasst uns pflügen, lasst uns bauen
-Lernt und schafft wie nie zuvor
-Und der eignen Kraft vertrauend
-Steigt ein frei Geschlecht empor
-Deutsche Jugend, bestes Streben
-Unsres Volks in dir vereint
-Wirst du Deutschlands neues Leben
-Und die Sonne schön wie nie
-Über Deutschland scheint
-Über Deutschland scheint
+Being like you are
+Well this is something else, who would comprehend?
+But some that do, lay claim
+Divine purpose blesses them
+That's not what I believe, and it doesn't matter anyway
+A part of your soul ties you to the next world
+Or maybe to the last, but I'm still not sure
+But what I do know, is to us the world is different
+As we are to the world but I guess you would know that
+
+Please don't go, I want you to stay
+I'm begging you please, please don't leave here
+I don't want you to hate for all the hurt that you feel
+The world is just illusion trying to change you
+Please don't go, I want you to stay
+I'm begging you please, oh please don't leave here
+I don't want you to change;
+For all the hurt that you feel,
+This world is just illusion, always trying to change you
+
+Please don't go, I want you to stay
+I'm begging you please, please don't leave here
+I don't want you to hate for all the hurt that you feel
+The world is just illusion trying to change you
+Please don't go, I want you to stay
+I'm begging you please, oh please don't leave here
+I don't want you to change;
+For all the hurt that you feel,
+This world is just illusion, always trying to change you 
 -->
