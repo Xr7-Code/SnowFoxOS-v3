@@ -71,3 +71,27 @@ if ask_install "Ollama (lokale KI, kein Modell — nur Engine)"; then
     success "Ollama installiert (nicht aktiv — starten mit: ollama serve)"
     info "Modelle installieren mit: ollama pull <modell> (z.B. ollama pull mistral)"
 fi
+
+# ── SnowFox Console Launcher ─────────────────────────────────
+LAUNCHER_DIR="$TARGET_HOME/SnowFox-Console-Launcher"
+if ask_install "SnowFox Console Launcher (Game Hub für Steam & GOG)"; then
+    if command -v git &>/dev/null; then
+        info "Klone SnowFox Console Launcher..."
+        if [[ -d "$LAUNCHER_DIR" ]]; then
+            info "Bereits vorhanden — aktualisiere..."
+            git -C "$LAUNCHER_DIR" pull 2>/dev/null                 && ok "Console Launcher aktualisiert"                 || warn "Update fehlgeschlagen — manuell prüfen"
+        else
+            sudo -u "$TARGET_USER" git clone                 https://github.com/Xr7-Code/SnowFox-Console-Launcher.git                 "$LAUNCHER_DIR" 2>/dev/null                 && ok "Console Launcher installiert → $LAUNCHER_DIR"                 || warn "Clone fehlgeschlagen — Netzwerk prüfen"
+        fi
+        # Execute-Bit setzen
+        if [[ -f "$LAUNCHER_DIR/snowfox_launcher" ]]; then
+            chmod +x "$LAUNCHER_DIR/snowfox_launcher"
+            chown "$TARGET_USER:$TARGET_USER" "$LAUNCHER_DIR/snowfox_launcher"
+            ok "snowfox_launcher ist ausführbar"
+        fi
+    else
+        warn "git nicht gefunden — Console Launcher nicht installiert"
+        info "Nachinstallieren:"
+        info "  git clone https://github.com/Xr7-Code/SnowFox-Console-Launcher.git ~/SnowFox-Console-Launcher"
+    fi
+fi
