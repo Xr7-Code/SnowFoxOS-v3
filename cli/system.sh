@@ -101,6 +101,14 @@ cmd_update() {
                 ok "snowfox CLI aktualisiert (Module unverändert)"
             fi
 
+            # ── Console Launcher aktualisieren ───────────────
+            LAUNCHER_DIR="$HOME/SnowFox-Console-Launcher"
+            if [[ -d "$LAUNCHER_DIR" ]]; then
+                info "Aktualisiere Console Launcher..."
+                git -C "$LAUNCHER_DIR" pull 2>/dev/null                     && ok "Console Launcher aktualisiert"                     || warn "Console Launcher Update fehlgeschlagen"
+                [[ -f "$LAUNCHER_DIR/snowfox_launcher" ]] &&                     chmod +x "$LAUNCHER_DIR/snowfox_launcher"
+            fi
+
             # ── Configs aktualisieren ────────────────────────
             if [[ -d "$REPO_DIR/configs" ]]; then
                 cp -r "$REPO_DIR/configs/"* "$HOME/.config/"
@@ -230,9 +238,8 @@ cmd_node() {
     case "$1" in
         desktop)
             fox "Wechsle zu Desktop-Modus..."
-            if grep -q "snowfox_launcher\|SNOWFOX_NODE_CONSOLE" "$HOME/.config/i3/config" 2>/dev/null; then
-                sed -i 's|^exec.*snowfox_launcher.*|#&|' "$HOME/.config/i3/config"
-                sed -i 's|^exec.*SNOWFOX_NODE_CONSOLE.*|#&|' "$HOME/.config/i3/config"
+            if grep -q "SnowFox-Console-Launcher" "$HOME/.config/i3/config" 2>/dev/null; then
+                sed -i 's|^exec.*SnowFox-Console-Launcher.*|#&|' "$HOME/.config/i3/config"
                 ok "Launcher aus i3-Autostart entfernt"
             fi
             ok "Desktop-Modus — i3 wird neu geladen"
@@ -245,13 +252,19 @@ cmd_node() {
             ;;
         console)
             fox "Starte SnowFox Console Launcher..."
-            LAUNCHER="$HOME/Dokumente/SNOWFOX_NODE_CONSOLE/start.sh"
+            LAUNCHER="$HOME/SnowFox-Console-Launcher/snowfox_launcher"
             if [[ ! -f "$LAUNCHER" ]]; then
                 err "Launcher nicht gefunden: $LAUNCHER"
-                exit 1
+                info "Installieren mit:"
+                info "  git clone https://github.com/Xr7-Code/SnowFox-Console-Launcher.git ~/SnowFox-Console-Launcher"
+                return 1
             fi
-            bash "$LAUNCHER" &
-            ok "Console Launcher gestartet"
+            if [[ ! -x "$LAUNCHER" ]]; then
+                chmod +x "$LAUNCHER"
+            fi
+            # Auf Workspace 8 wechseln und Launcher starten
+            i3-msg workspace 8 2>/dev/null || true
+            exec "$LAUNCHER"
             ;;
         help|"")
             divider
