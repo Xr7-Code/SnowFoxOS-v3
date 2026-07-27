@@ -60,27 +60,36 @@ cmd_stream() {
     else
         fox "Suche auf YouTube: ${BOLD}$QUERY${RESET}..."
 
-        mapfile -t RESULTS < <(yt-dlp --force-ipv4 --print "%(title)s|%(id)s" --flat-playlist "ytsearch5:$QUERY" 2>/dev/null)
+        # Titel und IDs separat holen — verhindert Parsing-Fehler wenn
+        # Titel ein | enthalten oder yt-dlp die ID als Titel zurückgibt
+        mapfile -t TITLES < <(yt-dlp --force-ipv4             --print "%(title)s" --flat-playlist "ytsearch5:$QUERY" 2>/dev/null)
+        mapfile -t IDS    < <(yt-dlp --force-ipv4             --print "%(id)s"    --flat-playlist "ytsearch5:$QUERY" 2>/dev/null)
 
-        if [[ ${#RESULTS[@]} -eq 0 ]]; then
+        if [[ ${#TITLES[@]} -eq 0 ]]; then
             err "Keine Ergebnisse gefunden."
             return
         fi
 
         divider
-        i=1
-        for res in "${RESULTS[@]}"; do
-            title=$(echo "$res" | cut -d'|' -f1)
-            echo -e "  ${CYAN}$i${RESET}) $title"
-            ((i++))
+        for i in "${!TITLES[@]}"; do
+            echo -e "  ${CYAN}$((i+1))${RESET}) ${TITLES[$i]}"
         done
         divider
 
-        read -rp "$(echo -e ${PURPLE}${BOLD}"Auswahl [1-5]: "${RESET})" CHOICE
-        [[ -z "$CHOICE" || ! "$CHOICE" =~ ^[1-5]$ ]] && return
+        read -rp "$(echo -e ${PURPLE}${BOLD}"Auswahl [1-${#TITLES[@]}]: "${RESET})" CHOICE
+        [[ -z "$CHOICE" || ! "$CHOICE" =~ ^[1-9]$ ]] && return
+        [[ "$CHOICE" -gt "${#TITLES[@]}" ]] && return
 
-        ID=$(echo "${RESULTS[$((CHOICE-1))]}" | cut -d'|' -f2)
-        URL="https://www.youtube.com/watch?v=$ID"
+        # ID validieren — muss 11 Zeichen sein (YouTube Video-ID Format)
+        ID="${IDS[$((CHOICE-1))]}"
+        if [[ ! "$ID" =~ ^[A-Za-z0-9_-]{11}$ ]]; then
+            err "Ungültige Video-ID: $ID"
+            info "Versuche direkten URL-Fallback..."
+            # Fallback: yt-dlp direkt mit Suche aufrufen
+            URL="ytsearch1:${TITLES[$((CHOICE-1))]}"
+        else
+            URL="https://www.youtube.com/watch?v=$ID"
+        fi
     fi
 
     fox "Starte Stream..."
