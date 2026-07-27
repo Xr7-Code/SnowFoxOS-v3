@@ -60,33 +60,31 @@ cmd_stream() {
     else
         fox "Suche auf YouTube: ${BOLD}$QUERY${RESET}..."
 
-        # Titel und IDs separat holen — verhindert Parsing-Fehler wenn
-        # Titel ein | enthalten oder yt-dlp die ID als Titel zurückgibt
-        mapfile -t TITLES < <(yt-dlp --force-ipv4             --print "%(title)s" --flat-playlist "ytsearch5:$QUERY" 2>/dev/null)
-        mapfile -t IDS    < <(yt-dlp --force-ipv4             --print "%(id)s"    --flat-playlist "ytsearch5:$QUERY" 2>/dev/null)
+        # Ein yt-dlp-Aufruf mit Trennzeichen das nie in Titeln vorkommt
+        # deutlich schneller als zwei separate Aufrufe
+        mapfile -t RESULTS < <(yt-dlp --force-ipv4             --print "%(title)s	%(id)s"             --flat-playlist "ytsearch5:$QUERY" 2>/dev/null)
 
-        if [[ ${#TITLES[@]} -eq 0 ]]; then
+        if [[ ${#RESULTS[@]} -eq 0 ]]; then
             err "Keine Ergebnisse gefunden."
             return
         fi
 
         divider
-        for i in "${!TITLES[@]}"; do
-            echo -e "  ${CYAN}$((i+1))${RESET}) ${TITLES[$i]}"
+        for i in "${!RESULTS[@]}"; do
+            title="${RESULTS[$i]%	*}"
+            echo -e "  ${CYAN}$((i+1))${RESET}) $title"
         done
         divider
 
-        read -rp "$(echo -e ${PURPLE}${BOLD}"Auswahl [1-${#TITLES[@]}]: "${RESET})" CHOICE
+        read -rp "$(echo -e ${PURPLE}${BOLD}"Auswahl [1-${#RESULTS[@]}]: "${RESET})" CHOICE
         [[ -z "$CHOICE" || ! "$CHOICE" =~ ^[1-9]$ ]] && return
-        [[ "$CHOICE" -gt "${#TITLES[@]}" ]] && return
+        [[ "$CHOICE" -gt "${#RESULTS[@]}" ]] && return
 
-        # ID validieren — muss 11 Zeichen sein (YouTube Video-ID Format)
-        ID="${IDS[$((CHOICE-1))]}"
+        # ID nach dem Tab-Trennzeichen extrahieren und validieren
+        ID="${RESULTS[$((CHOICE-1))]##*	}"
         if [[ ! "$ID" =~ ^[A-Za-z0-9_-]{11}$ ]]; then
-            err "Ungültige Video-ID: $ID"
-            info "Versuche direkten URL-Fallback..."
-            # Fallback: yt-dlp direkt mit Suche aufrufen
-            URL="ytsearch1:${TITLES[$((CHOICE-1))]}"
+            TITLE="${RESULTS[$((CHOICE-1))]%	*}"
+            URL="ytsearch1:$TITLE"
         else
             URL="https://www.youtube.com/watch?v=$ID"
         fi
