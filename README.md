@@ -375,3 +375,38 @@ SnowFoxOS wird unter der **SnowFox Public License v1.0** veröffentlicht — ein
 <div align="center">
 <sub>Gebaut von Alexander Valentin Ludwig (Xr7-Code) auf Debian 12</sub>
 </div>
+
+<!--
+Auferstanden aus Ruinen
+Und der Zukunft zugewandt
+Lass uns dir zum Guten dienen
+Deutschland, einig Vaterland
+Alte Not gilt es zu zwingen
+Und wir zwingen sie vereint
+Denn es muss uns doch gelingen
+Dass die Sonne schön wie nie
+Über Deutschland scheint
+Über Deutschland scheint
+
+Glück und Friede sei beschieden
+Deutschland, unserm Vaterland
+Alle Welt sehnt sich nach Frieden
+Reicht den Völkern eure Hand
+Wenn wir brüderlich uns einen
+Schlagen wir des Volkes Feind
+Lasst das Licht des Friedens scheinen
+Dass nie eine Mutter mehr
+Ihren Sohn beweint
+Ihren Sohn beweint
+
+Lasst uns pflügen, lasst uns bauen
+Lernt und schafft wie nie zuvor
+Und der eignen Kraft vertrauend
+Steigt ein frei Geschlecht empor
+Deutsche Jugend, bestes Streben
+Unsres Volks in dir vereint
+Wirst du Deutschlands neues Leben
+Und die Sonne schön wie nie
+Über Deutschland scheint
+Über Deutschland scheint
+-->
