@@ -13,7 +13,7 @@ source "$SCRIPT_DIR/lib/utils.sh"
 step "8/10 — Performance & Sicherheit"
 
 wait_apt
-apt-get install -y zram-tools earlyoom ufw tor torsocks macchanger
+apt-get install -y zram-tools earlyoom ufw
 command -v tlp &>/dev/null || apt-get install -y tlp tlp-rdw
 
 cat > /etc/default/zramswap << 'EOF'
@@ -87,7 +87,7 @@ cat > /etc/systemd/resolved.conf.d/snowfox.conf << 'EOF'
 [Resolve]
 DNS=1.1.1.1#cloudflare-dns.com 9.9.9.9#dns.quad9.net
 FallbackDNS=8.8.8.8
-DNSSEC=allow-downgrade
+DNSSEC=yes
 DNSOverTLS=opportunistic
 EOF
 systemctl enable systemd-resolved irqbalance 2>/dev/null || true
@@ -111,3 +111,51 @@ success "Ballast entfernt (zeitgeist, diodon, xterm, uxterm)"
 sed -i 's/#HandlePowerKey=.*/HandlePowerKey=ignore/' /etc/systemd/logind.conf
 
 success "Performance & Sicherheit optimiert"
+
+# ── Kernel-Härtung ────────────────────────────────────────────
+info "Setze Kernel-Sicherheitsparameter..."
+cat > /etc/sysctl.d/99-snowfox-security.conf << 'SYSCTLEOF'
+# SnowFoxOS Kernel-Härtung
+
+# Kernel-Informationen verstecken
+kernel.dmesg_restrict=1
+kernel.kptr_restrict=2
+kernel.perf_event_paranoid=3
+kernel.unprivileged_bpf_disabled=1
+net.core.bpf_jit_harden=2
+
+# Netzwerk-Härtung
+net.ipv4.conf.all.rp_filter=1
+net.ipv4.conf.default.rp_filter=1
+net.ipv4.tcp_syncookies=1
+net.ipv4.conf.all.accept_redirects=0
+net.ipv4.conf.default.accept_redirects=0
+net.ipv4.conf.all.send_redirects=0
+net.ipv6.conf.all.accept_redirects=0
+net.ipv4.conf.all.log_martians=1
+net.ipv4.tcp_max_syn_backlog=2048
+net.ipv4.tcp_synack_retries=2
+
+# Core Dumps deaktivieren
+fs.suid_dumpable=0
+kernel.core_pattern=|/bin/false
+SYSCTLEOF
+sysctl -p /etc/sysctl.d/99-snowfox-security.conf &>/dev/null
+success "Kernel-Härtung gesetzt"
+
+# ── SSH deaktivieren ──────────────────────────────────────────
+if systemctl is-enabled ssh &>/dev/null 2>&1; then
+    systemctl disable --now ssh 2>/dev/null || true
+    info "SSH deaktiviert (aktivieren: sudo systemctl enable --now ssh)"
+fi
+
+# ── UFW: SSH-Regel entfernen ──────────────────────────────────
+if command -v ufw &>/dev/null; then
+    ufw delete allow 22/tcp 2>/dev/null || true
+    ufw delete allow ssh    2>/dev/null || true
+    ufw --force enable      2>/dev/null || true
+    success "UFW: SSH-Regel entfernt"
+fi
+
+# ── rfkill installieren (für snowfox airmode) ─────────────────
+apt-get install -y rfkill 2>/dev/null || true
