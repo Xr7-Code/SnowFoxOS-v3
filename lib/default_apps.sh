@@ -68,6 +68,11 @@ curl -sL https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp \
     -o /usr/local/bin/yt-dlp && chmod +x /usr/local/bin/yt-dlp
 success "yt-dlp installiert"
 
+# Node.js — JS-Runtime für yt-dlp (YouTube-Signatur-Entschlüsselung)
+# Ohne JS-Runtime fehlen ab yt-dlp 2025+ manche Formate
+apt-get install -y nodejs 2>/dev/null || true
+success "Node.js installiert (JS-Runtime für yt-dlp)"
+
 # ── SnowFox Console Launcher klonen ──────────────────────────
 info "Klone SnowFox Console Launcher..."
 if git clone https://github.com/Xr7-Code/SnowFox-Console-Launcher \
