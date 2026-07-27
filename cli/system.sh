@@ -235,50 +235,143 @@ cmd_profile() {
 # snowfox node
 # ============================================================
 cmd_node() {
+    # Aktuellen Modus lesen
+    NODE_MODE_FILE="$HOME/.config/snowfox/node-mode"
+    CURRENT_MODE=$(cat "$NODE_MODE_FILE" 2>/dev/null || echo "desktop")
+
     case "$1" in
         desktop)
-            fox "Wechsle zu Desktop-Modus..."
-            if grep -q "SnowFox-Console-Launcher" "$HOME/.config/i3/config" 2>/dev/null; then
-                sed -i 's|^exec.*SnowFox-Console-Launcher.*|#&|' "$HOME/.config/i3/config"
-                ok "Launcher aus i3-Autostart entfernt"
+            header "Node → Desktop"
+
+            # ── Dienste die im Server-Modus deaktiviert wurden wieder aktivieren
+            if [[ "$CURRENT_MODE" == "server" ]]; then
+                info "Stelle Desktop-Dienste wieder her..."
+                sudo systemctl set-default graphical.target 2>/dev/null
+                # Unnötige Server-Dienste stoppen
+                for svc in nginx apache2 postgresql mysql docker; do
+                    systemctl is-active --quiet "$svc" 2>/dev/null &&                         sudo systemctl stop "$svc" 2>/dev/null &&                         info "  $svc gestoppt"
+                done
+                ok "graphical.target wiederhergestellt"
             fi
-            ok "Desktop-Modus — i3 wird neu geladen"
-            i3-msg restart
+
+            # ── i3-Config: Launcher-Autostart entfernen falls gesetzt
+            if grep -q "SnowFox-Console-Launcher" "$HOME/.config/i3/config" 2>/dev/null; then
+                sed -i '/exec.*SnowFox-Console-Launcher/d' "$HOME/.config/i3/config"
+                ok "Console Launcher aus i3-Autostart entfernt"
+            fi
+
+            # ── Polybar wieder aktivieren falls deaktiviert
+            if ! pgrep -x polybar &>/dev/null; then
+                "$HOME/.config/polybar/launch.sh" &
+                ok "Polybar neu gestartet"
+            fi
+
+            # ── Modus speichern
+            mkdir -p "$HOME/.config/snowfox"
+            echo "desktop" > "$NODE_MODE_FILE"
+
+            ok "Desktop-Modus aktiv"
+            i3-msg restart 2>/dev/null || true
             ;;
+
         server)
-            fox "Wechsle zu Server-Modus (kein X11)..."
-            ok "Wechsle zu multi-user.target..."
-            sudo systemctl isolate multi-user.target
+            header "Node → Server"
+
+            # ── X11 / i3 beenden
+            info "Beende Desktop-Umgebung..."
+            # Polybar stoppen
+            killall polybar 2>/dev/null || true
+            # Dunst stoppen
+            killall dunst 2>/dev/null || true
+            # Redshift stoppen
+            killall redshift 2>/dev/null || true
+            ok "Desktop-Prozesse beendet"
+
+            # ── Auf multi-user.target wechseln (kein X11, kein Display Manager)
+            info "Wechsle zu multi-user.target..."
+            sudo systemctl set-default multi-user.target 2>/dev/null
+            ok "Server-Modus ab nächstem Boot Standard"
+
+            # ── Ressourcen-Optimierungen für Server
+            info "Optimiere System für Server-Betrieb..."
+            # TLP auf Performance falls vorhanden
+            command -v tlp &>/dev/null && sudo tlp ac 2>/dev/null || true
+            # earlyoom aggressiver
+            sudo systemctl is-active --quiet earlyoom &&                 sudo systemctl restart earlyoom 2>/dev/null || true
+            ok "Server-Optimierungen gesetzt"
+
+            # ── Modus speichern
+            mkdir -p "$HOME/.config/snowfox"
+            echo "server" > "$NODE_MODE_FILE"
+
+            divider
+            ok "Server-Modus aktiv — nur Terminal"
+            warn "X11 wird nach diesem i3-Session-Ende nicht mehr gestartet"
+            info "Zurück zu Desktop: snowfox node desktop && startx"
+            echo ""
+
+            # i3 beenden → landet im TTY
+            i3-msg exit 2>/dev/null || true
             ;;
+
         console)
-            fox "Starte SnowFox Console Launcher..."
+            header "Node → Console Launcher"
             LAUNCHER="$HOME/SnowFox-Console-Launcher/snowfox_launcher"
+
             if [[ ! -f "$LAUNCHER" ]]; then
                 err "Launcher nicht gefunden: $LAUNCHER"
                 info "Installieren mit:"
                 info "  git clone https://github.com/Xr7-Code/SnowFox-Console-Launcher.git ~/SnowFox-Console-Launcher"
                 return 1
             fi
-            if [[ ! -x "$LAUNCHER" ]]; then
-                chmod +x "$LAUNCHER"
-            fi
-            # Auf Workspace 8 wechseln und Launcher starten
+            [[ ! -x "$LAUNCHER" ]] && chmod +x "$LAUNCHER"
+
+            # ── Workspace 8 für Launcher, 9 für Terminal-Begleitung
+            info "Wechsle zu Workspace 8..."
             i3-msg workspace 8 2>/dev/null || true
+
+            # ── Polybar auf Workspace 8/9 ausblenden (Launcher ist Vollbild)
+            # Launcher läuft fullscreen — Polybar stört nicht da i3 Fullscreen-Apps
+            # die Bar automatisch verbirgt wenn fullscreen aktiviert ist
+
+            # ── Modus speichern
+            mkdir -p "$HOME/.config/snowfox"
+            echo "console" > "$NODE_MODE_FILE"
+
+            ok "Starte Console Launcher..."
             exec "$LAUNCHER"
             ;;
+
+        status)
+            header "Node Status"
+            row "Aktueller Modus" "$CURRENT_MODE" "$CYAN"
+            echo ""
+            case "$CURRENT_MODE" in
+                desktop) info "i3 Desktop-Modus — voller Funktionsumfang" ;;
+                server)  info "Server-Modus — kein X11, nur Terminal" ;;
+                console) info "Console Launcher aktiv auf Workspace 8" ;;
+            esac
+            echo ""
+            ;;
+
         help|"")
+            header "snowfox node"
+            row "snowfox node desktop" "Normaler i3-Desktop"
+            echo ""
+            row "snowfox node server"  "Server-Modus: X11 aus, nur Terminal"
+            echo ""
+            row "snowfox node console" "Console Launcher auf Workspace 8"
+            echo ""
+            row "snowfox node status"  "Aktuellen Modus anzeigen"
+            echo ""
             divider
-            echo -e "${PURPLE}${BOLD}  snowfox node — Modus-Wechsel${RESET}"
-            divider
-            echo -e "  ${CYAN}snowfox node desktop${RESET}   — normaler i3-Desktop, kein Launcher"
-            echo -e "  ${CYAN}snowfox node server${RESET}    — Server-Modus, kein X11"
-            echo -e "  ${CYAN}snowfox node console${RESET}   — Console Launcher starten"
-            divider
+            info "Zurück von server zu desktop: snowfox node desktop && startx"
+            echo ""
             ;;
         *)
             err "Unbekannter Befehl: node $1"
-            echo -e "  Hilfe: ${CYAN}snowfox node help${RESET}"
-            exit 1
+            info "Hilfe: snowfox node help"
+            return 1
             ;;
     esac
 }
