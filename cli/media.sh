@@ -93,5 +93,7 @@ cmd_stream() {
     fox "Starte Stream..."
     # --ytdl-raw-options: IPv4 erzwingen verhindert 403-Fehler bei IPv6
     # yt-dlp als ytdl-Backend explizit setzen (neuere mpv-Versionen)
-    mpv         --ytdl-raw-options="force-ipv4=,no-check-certificate="         --script-opts=ytdl_hook-ytdl_path=yt-dlp         "$URL"
+    # VP9/H264 bevorzugen — AV1 (libdav1d) verursacht OBU-Decoder-Fehler
+    # auf älteren libdav1d-Versionen. VP9 ist stabil und überall unterstützt.
+    mpv         --ytdl-raw-options="force-ipv4=,no-check-certificate="         --ytdl-format="bestvideo[vcodec^=vp9][height<=1080]+bestaudio/bestvideo[vcodec^=avc1][height<=1080]+bestaudio/best[height<=1080]"         --script-opts=ytdl_hook-ytdl_path=yt-dlp         "$URL"
 }
