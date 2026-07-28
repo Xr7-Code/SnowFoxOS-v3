@@ -146,12 +146,15 @@ cmd_doctor() {
         fi
     fi
 
-    # AMD
-    if lspci 2>/dev/null | grep -qi "AMD\|ATI"; then
+    # AMD — nur prüfen wenn AMD eine dedizierte/primäre GPU ist
+    # Intel Iris Xe hat AMD-ähnliche PCI-IDs auf manchen Systemen → false positive vermeiden
+    AMD_GPU=$(lspci 2>/dev/null | grep -iE "AMD|ATI" | grep -iE "VGA|3D|Display" | grep -iv "Intel")
+    if [[ -n "$AMD_GPU" ]]; then
         if lsmod 2>/dev/null | grep -qE "amdgpu|radeon"; then
             _doc_ok   "AMD-Treiber (amdgpu/radeon) geladen"
         else
             _doc_warn "AMD GPU erkannt, aber kein Kernelmodul geladen"
+            _doc_info "  $AMD_GPU"
         fi
     fi
 
@@ -200,15 +203,27 @@ cmd_doctor() {
         fi
 
         # Fehlende exec-Binaries im Autostart
+        AUTOSTART_MISSING=0
         while IFS= read -r line; do
-            BIN=$(echo "$line" | sed 's/^exec[[:space:]]*//' | awk '{print $1}')
-            [[ "$BIN" == "--no-startup-id" ]] && BIN=$(echo "$line" | awk '{print $3}')
+            # --no-startup-id überspringen, echtes Binary extrahieren
+            BIN=$(echo "$line" | sed 's/^exec[[:space:]]*//'                 | sed 's/--no-startup-id[[:space:]]*//'                 | awk '{print $1}')
+            [[ -z "$BIN" ]] && continue
+            # Tilde expandieren
+            BIN="${BIN/#\~/$HOME}"
             BIN_BASE=$(basename "$BIN")
-            if [[ -n "$BIN" ]] && ! command -v "$BIN_BASE" &>/dev/null && [[ ! -x "$BIN" ]]; then
+            # Prüfen: im PATH, als absoluter Pfad ausführbar, oder in ~/.config/
+            if command -v "$BIN_BASE" &>/dev/null; then
+                continue
+            elif [[ -x "$BIN" ]]; then
+                continue
+            elif [[ -x "$HOME/.config/$BIN_BASE" ]]; then
+                continue
+            else
                 _doc_warn "Autostart-Binary nicht gefunden: ${BIN_BASE}"
+                AUTOSTART_MISSING=$((AUTOSTART_MISSING+1))
             fi
         done < <(grep "^exec " "$I3_CFG" 2>/dev/null)
-        _doc_ok   "Autostart-Einträge geprüft"
+        [[ $AUTOSTART_MISSING -eq 0 ]] && _doc_ok "Autostart-Einträge geprüft"
     fi
 
     # Polybar
@@ -342,7 +357,7 @@ cmd_doctor() {
     _doc_head "Sicherheit & Privatsphäre"
 
     # Firewall
-    if command -v ufw &>/dev/null; then
+    if command -v ufw &>/dev/null || dpkg -l ufw &>/dev/null 2>&1; then
         UFW_STATUS=$(sudo ufw status 2>/dev/null | grep "Status:" | awk '{print $2}')
         if [[ "$UFW_STATUS" == "active" ]]; then
             _doc_ok   "UFW Firewall aktiv"
@@ -391,7 +406,7 @@ cmd_doctor() {
     fi
 
     # Wallpaper-Verzeichnis
-    if [[ -d "$HOME/wallpapers" ]] || [[ -d "$HOME/.config/wallpapers" ]]; then
+    if [[ -d "$HOME/wallpapers" ]] ||        [[ -d "$HOME/.config/wallpapers" ]] ||        [[ -d "$HOME/Bilder" ]] ||        [[ -d "$HOME/Pictures" ]] ||        ls "$HOME"/*.{jpg,jpeg,png,webp} &>/dev/null 2>&1; then
         _doc_ok   "Wallpaper-Verzeichnis vorhanden"
     else
         _doc_warn "Wallpaper-Verzeichnis fehlt"
