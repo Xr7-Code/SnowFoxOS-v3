@@ -16,6 +16,7 @@ wait_apt
 apt-get install -y \
     i3 \
     i3lock \
+    picom \
     polybar \
     rofi \
     dunst \
