@@ -398,6 +398,14 @@ grep -q "fastfetch\|neofetch\|snowfox-greeting" "$TARGET_HOME/.bashrc" 2>/dev/nu
 
 if [[ -d "$SCRIPT_DIR/configs" ]]; then
     cp -r "$SCRIPT_DIR/configs/"* "$CONFIG_DIR/"
+
+# ── picom.conf explizit kopieren ─────────────────────────────
+if [[ -f "$SCRIPT_DIR/configs/picom.conf" ]]; then
+    cp "$SCRIPT_DIR/configs/picom.conf" "$CONFIG_DIR/picom.conf"
+    success "picom.conf installiert"
+else
+    warn "configs/picom.conf nicht gefunden — picom läuft ohne Config"
+fi
     success "Konfigurationsdateien kopiert"
 
     # Rofi Config anpassen — kein border-radius (kein picom mehr)
@@ -410,8 +418,7 @@ if [[ -d "$SCRIPT_DIR/configs" ]]; then
     fi
 
     # picom Config entfernen falls vorhanden
-    rm -f "$CONFIG_DIR/picom.conf" 2>/dev/null || true
-
+    
     I3_CONFIG_PATH="$CONFIG_DIR/i3/config"
     if [[ -f "$I3_CONFIG_PATH" ]]; then
         # picom aus i3 Autostart entfernen
