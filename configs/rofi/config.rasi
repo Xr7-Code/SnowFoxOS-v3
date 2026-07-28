@@ -1,89 +1,137 @@
 /* ============================================================
-   SnowFoxOS — Rofi Theme (SnowFox Palette)
+   SnowFoxOS v3 — Rofi Theme (SnowFox Palette)
    ============================================================ */
 
 configuration {
-    modi:        "drun,run";
-    show-icons:  false;
-    icon-theme:  "Papirus-Dark";
+    modi:           "drun,run";
+    show-icons:     true;
+    icon-theme:     "Papirus-Dark";
+    drun-display-format: "{name}";
+    display-drun:   "";
+    display-run:    "";
 }
 
 * {
     font:             "Inter 11";
     bg:               #1e1e2e;
-    bg-alt:           #252538;
+    bg-alt:           #1a1a2a;
+    bg-hover:         #252538;
     fg:               #cdd6f4;
     fg-alt:           #6c7086;
     purple:           #8139e8;
+    purple-dim:       rgba(129, 57, 232, 0.15);
+    purple-border:    rgba(129, 57, 232, 0.45);
     orange:           #ff79c6;
-    border-color:     rgba(129, 57, 232, 0.5); /* 8139e8 mit 50% Deckkraft */
     background-color: transparent;
+    text-color:       @fg;
 }
 
 window {
     background-color: @bg;
-    border:           1px;
-    border-color:     @border-color;
-    /* border-radius:    5px; */
-    width:            500px;
-    padding:          8px;
+    border:           1px solid;
+    border-color:     @purple-border;
+    border-radius:    12px;
+    width:            480px;
+    padding:          12px;
+    /* Schatten simulieren via Rand */
+    x-offset:        0;
+    y-offset:        -80px;
+    location:         center;
 }
 
 mainbox {
     background-color: transparent;
+    spacing:          8px;
     children:         [inputbar, listview];
 }
 
+/* ── Suchleiste ─────────────────────────────────────────── */
 inputbar {
     background-color: @bg-alt;
-    border-radius:    5px;
-    padding:          8px 12px;
-    margin:           0 0 8px 0;
+    border-radius:    8px;
+    border:           1px solid;
+    border-color:     rgba(129, 57, 232, 0.2);
+    padding:          10px 14px;
+    spacing:          8px;
     children:         [prompt, entry];
 }
 
 prompt {
     background-color: transparent;
     text-color:       @purple;
-    padding:          0 8px 0 0;
+    font:             "Inter Bold 11";
 }
 
 entry {
     background-color: transparent;
     text-color:       @fg;
-    placeholder:      "Suchen...";
-    placeholder-color:@fg-alt;
+    placeholder:      "App suchen...";
+    placeholder-color: @fg-alt;
+    cursor:           text;
 }
 
+/* ── Ergebnisliste ──────────────────────────────────────── */
 listview {
     background-color: transparent;
-    lines:            8;
-    spacing:          4px;
+    lines:            7;
+    columns:          1;
+    spacing:          2px;
+    fixed-height:     true;
+    scrollbar:        false;
 }
 
 element {
     background-color: transparent;
-    border-radius:    5px;
-    padding:          6px 8px;
+    border-radius:    8px;
+    padding:          7px 10px;
+    spacing:          10px;
+    orientation:      horizontal;
+    children:         [element-icon, element-text];
 }
 
-element selected {
-    background-color: rgba(129, 57, 232, 0.2); /* Selektion mit leichtem lila Schimmer */
-    border:           1px;
-    border-color:     rgba(129, 57, 232, 0.4);
+element normal normal {
+    background-color: transparent;
+    text-color:       @fg;
+}
+
+element normal active {
+    background-color: @purple-dim;
+    text-color:       @purple;
+}
+
+element selected normal {
+    background-color: @purple-dim;
+    border:           1px solid;
+    border-color:     @purple-border;
+    text-color:       @fg;
+}
+
+element selected active {
+    background-color: @purple-dim;
+    text-color:       @purple;
+}
+
+element alternate normal {
+    background-color: transparent;
 }
 
 element-icon {
-    size:   22px;
-    margin: 0 8px 0 0;
+    size:             20px;
+    vertical-align:   0.5;
+    horizontal-align: 0.5;
 }
 
 element-text {
     background-color: transparent;
-    text-color:       @fg;
+    text-color:       inherit;
     vertical-align:   0.5;
+    highlight:        bold @purple;
 }
 
-element selected element-text {
-    text-color: @fg;
+/* ── Scrollbar (versteckt aber definiert) ───────────────── */
+scrollbar {
+    background-color: @bg-alt;
+    handle-color:     @purple-dim;
+    border-radius:    4px;
+    width:            4px;
 }
