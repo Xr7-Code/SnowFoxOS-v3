@@ -15,15 +15,15 @@
     indicate_hidden        = yes
     transparency           = 8
     separator_height       = 1
-    padding                = 10
-    horizontal_padding     = 12
-    text_icon_padding      = 8
+    padding                = 12
+    horizontal_padding     = 14
+    text_icon_padding      = 10
     frame_width            = 1
     frame_color            = "#8139e8"
     separator_color        = frame
     sort                   = yes
     font                   = Inter 11
-    line_height            = 0
+    line_height            = 2
     markup                 = full
     format                 = "<b>%s</b>\n%b"
     alignment              = left
@@ -44,7 +44,7 @@
     always_run_script      = true
     title                  = Dunst
     class                  = Dunst
-    corner_radius          = 8
+    corner_radius          = 10
     ignore_dbusclose       = false
     force_xwayland         = false
     force_xinerama         = false
@@ -55,20 +55,24 @@
 [experimental]
     per_monitor_dpi = false
 
+# ── Urgency-Stufen — alle auf SnowFox-Palette ────────────────
+# low: gedimmt, kaum sichtbar
 [urgency_low]
     background  = "#1e1e2e"
-    foreground  = "#888888"
-    frame_color = "#2a2a2a"
+    foreground  = "#6c7086"
+    frame_color = "#2a2a3e"
     timeout     = 4
 
+# normal: volle Palette, lila Rand
 [urgency_normal]
     background  = "#1e1e2e"
-    foreground  = "#e8e8e8"
-    frame_color = "#9B59B6"
+    foreground  = "#cdd6f4"
+    frame_color = "#8139e8"
     timeout     = 6
 
+# critical: roter Rand, sofort sichtbar
 [urgency_critical]
     background  = "#1e1e2e"
-    foreground  = "#e8e8e8"
-    frame_color = "#E67E22"
+    foreground  = "#cdd6f4"
+    frame_color = "#e05555"
     timeout     = 0
