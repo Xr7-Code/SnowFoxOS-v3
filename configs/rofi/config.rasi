@@ -1,26 +1,28 @@
 /* ============================================================
-   SnowFoxOS v3 — Rofi Theme (SnowFox Palette)
+   SnowFoxOS v3 — Rofi Theme (SnowFox Palette Enhanced)
    ============================================================ */
 
 configuration {
-    modi:           "drun,run";
+    modi:           "drun,run,window";
     show-icons:     true;
     icon-theme:     "Papirus-Dark";
     drun-display-format: "{name}";
-    display-drun:   "";
-    display-run:    "";
+    display-drun:   "󰍉";
+    display-run:    "󰞷";
+    display-window: "󰕰";
 }
 
 * {
-    font:             "Inter 11";
+    font:             "JetBrainsMono Nerd Font 10.5";
     bg:               #1e1e2e;
-    bg-alt:           #1a1a2a;
-    bg-hover:         #252538;
+    bg-alt:           #181825;
+    bg-hover:         #313244;
     fg:               #cdd6f4;
     fg-alt:           #6c7086;
     purple:           #8139e8;
-    purple-dim:       rgba(129, 57, 232, 0.15);
-    purple-border:    rgba(129, 57, 232, 0.45);
+    purple-lt:        #a366ff;
+    purple-dim:       rgba(129, 57, 232, 0.18);
+    purple-border:    rgba(163, 102, 255, 0.5);
     orange:           #ff79c6;
     background-color: transparent;
     text-color:       @fg;
@@ -28,44 +30,43 @@ configuration {
 
 window {
     background-color: @bg;
-    border:           1px solid;
+    border:           1.5px solid;
     border-color:     @purple-border;
-    border-radius:    12px;
-    width:            480px;
-    padding:          12px;
-    /* Schatten simulieren via Rand */
-    x-offset:        0;
-    y-offset:        -80px;
+    border-radius:    14px;
+    width:            520px;
+    padding:          14px;
+    x-offset:         0;
+    y-offset:         -60px;
     location:         center;
 }
 
 mainbox {
     background-color: transparent;
-    spacing:          8px;
+    spacing:          10px;
     children:         [inputbar, listview];
 }
 
 /* ── Suchleiste ─────────────────────────────────────────── */
 inputbar {
     background-color: @bg-alt;
-    border-radius:    8px;
+    border-radius:    10px;
     border:           1px solid;
-    border-color:     rgba(129, 57, 232, 0.2);
+    border-color:     rgba(129, 57, 232, 0.25);
     padding:          10px 14px;
-    spacing:          8px;
+    spacing:          10px;
     children:         [prompt, entry];
 }
 
 prompt {
     background-color: transparent;
-    text-color:       @purple;
-    font:             "Inter Bold 11";
+    text-color:       @purple-lt;
+    font:             "JetBrainsMono Nerd Font Bold 12";
 }
 
 entry {
     background-color: transparent;
     text-color:       @fg;
-    placeholder:      "App suchen...";
+    placeholder:      "Anwendung suchen...";
     placeholder-color: @fg-alt;
     cursor:           text;
 }
@@ -75,7 +76,7 @@ listview {
     background-color: transparent;
     lines:            7;
     columns:          1;
-    spacing:          2px;
+    spacing:          4px;
     fixed-height:     true;
     scrollbar:        false;
 }
@@ -83,8 +84,8 @@ listview {
 element {
     background-color: transparent;
     border-radius:    8px;
-    padding:          7px 10px;
-    spacing:          10px;
+    padding:          8px 12px;
+    spacing:          12px;
     orientation:      horizontal;
     children:         [element-icon, element-text];
 }
@@ -96,19 +97,19 @@ element normal normal {
 
 element normal active {
     background-color: @purple-dim;
-    text-color:       @purple;
+    text-color:       @purple-lt;
 }
 
 element selected normal {
     background-color: @purple-dim;
     border:           1px solid;
     border-color:     @purple-border;
-    text-color:       @fg;
+    text-color:       #ffffff;
 }
 
 element selected active {
     background-color: @purple-dim;
-    text-color:       @purple;
+    text-color:       @purple-lt;
 }
 
 element alternate normal {
@@ -116,7 +117,7 @@ element alternate normal {
 }
 
 element-icon {
-    size:             20px;
+    size:             22px;
     vertical-align:   0.5;
     horizontal-align: 0.5;
 }
@@ -124,11 +125,8 @@ element-icon {
 element-text {
     background-color: transparent;
     text-color:       inherit;
-    vertical-align:   0.5;
-    highlight:        bold @purple;
 }
 
-/* ── Scrollbar (versteckt aber definiert) ───────────────── */
 scrollbar {
     background-color: @bg-alt;
     handle-color:     @purple-dim;
