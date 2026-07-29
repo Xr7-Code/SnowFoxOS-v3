@@ -5,7 +5,7 @@
 set $mod Mod4
 set $term kitty
 
-# ── Farben (Exakt nach Canva-Design) ────────────────────────
+# ── Farben ──────────────────────────────────────────────────
 set $purple   #8139e8
 set $bg       #1e1e2e
 set $bg2      #252538
@@ -17,7 +17,6 @@ set $orange   #ff79c6
 font pango:JetBrainsMono Nerd Font 10
 
 # ── Fenster-Dekoration ──────────────────────────────────────
-# class                 border  backgr. text    indicator child_border
 client.focused          $purple $purple $fg     $purple   $purple
 client.focused_inactive $bg2    $bg     $gray   $bg2      $bg2
 client.unfocused        $bg2    $bg     $gray   $bg2      $bg2
@@ -26,7 +25,7 @@ client.urgent           $orange $bg2    $fg     $orange   $orange
 default_border pixel 2
 default_floating_border pixel 2
 
-# Gaps für den schwebenden Look mit abgerundeten Ecken erhöht
+# ── Gaps ────────────────────────────────────────────────────
 gaps inner 10
 gaps outer 5
 smart_gaps on
@@ -34,6 +33,7 @@ smart_borders on
 
 # ── Autostart ───────────────────────────────────────────────
 exec_always --no-startup-id ~/.fehbg
+exec --no-startup-id picom --config ~/.config/picom.conf
 exec --no-startup-id ~/.config/polybar/launch.sh
 exec --no-startup-id dunst
 exec --no-startup-id lxpolkit
@@ -43,38 +43,47 @@ exec --no-startup-id redshift
 exec --no-startup-id greenclip daemon
 exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork -c 1e1e2e
 
-# ── Keyboard Shortcuts ──────────────────────────────────────
+# ── Shortcuts ───────────────────────────────────────────────
 bindsym $mod+Return exec $term
 bindsym $mod+space  exec rofi -show drun -show-icons -theme ~/.config/rofi/config.rasi
 bindsym $mod+Tab    exec rofi -show window -theme ~/.config/rofi/config.rasi
+bindsym $mod+c      exec rofi -modi "clipboard:greenclip print" -show clipboard \
+                         -run-command '{cmd}' -theme ~/.config/rofi/config.rasi
 bindsym $mod+e      exec pcmanfm
 bindsym $mod+n      exec ~/.config/snowfox-network.sh
 bindsym $mod+w      exec ~/.config/snowfox-wallpaper.sh
 bindsym $mod+l      exec i3lock -c 1e1e2e
 bindsym $mod+p      exec ~/.config/snowfox-display.sh
 
-bindsym Print exec scrot ~/Pictures/screenshot_%Y%m%d_%H%M%S.png && \
-    notify-send "SnowFox" "Screenshot gespeichert"
-bindsym $mod+Print exec scrot -s ~/Pictures/screenshot_%Y%m%d_%H%M%S.png && \
-    notify-send "SnowFox" "Ausschnitt gespeichert"
+# ── Screenshots ─────────────────────────────────────────────
+bindsym Print       exec scrot ~/Pictures/screenshot_%Y%m%d_%H%M%S.png \
+                         -e 'xclip -selection clipboard -t image/png -i $f' \
+                         && notify-send "SnowFox" "Screenshot gespeichert"
+bindsym $mod+Print  exec scrot -s ~/Pictures/screenshot_%Y%m%d_%H%M%S.png \
+                         -e 'xclip -selection clipboard -t image/png -i $f' \
+                         && notify-send "SnowFox" "Ausschnitt gespeichert"
 
+# ── Audio ────────────────────────────────────────────────────
 bindsym XF86AudioRaiseVolume exec wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+
 bindsym XF86AudioLowerVolume exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-
 bindsym XF86AudioMute        exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
 
+# ── Helligkeit ───────────────────────────────────────────────
 bindsym XF86MonBrightnessUp   exec brightnessctl set +5%
 bindsym XF86MonBrightnessDown exec brightnessctl set 5%-
 
+# ── Medien ───────────────────────────────────────────────────
 bindsym XF86AudioPlay  exec playerctl play-pause
 bindsym XF86AudioNext  exec playerctl next
 bindsym XF86AudioPrev  exec playerctl previous
 
+# ── System ───────────────────────────────────────────────────
 bindsym $mod+q        kill
-bindsym $mod+Shift+r reload
-bindsym $mod+Shift+e exec ~/.config/powermenu.sh
-bindsym XF86PowerOff exec --no-startup-id ~/.config/powermenu.sh
+bindsym $mod+Shift+r  reload
+bindsym $mod+Shift+e  exec ~/.config/powermenu.sh
+bindsym XF86PowerOff  exec --no-startup-id ~/.config/powermenu.sh
 
-# ── Fensterverwaltung ───────────────────────────────────────
+# ── Fensterverwaltung ────────────────────────────────────────
 bindsym $mod+Left  focus left
 bindsym $mod+Right focus right
 bindsym $mod+Up    focus up
@@ -95,38 +104,49 @@ bindsym $mod+Shift+space floating toggle
 bindsym $mod+d            focus mode_toggle
 floating_modifier $mod
 
-# ── Workspaces ──────────────────────────────────────────────
+# ── Workspaces ───────────────────────────────────────────────
 set $ws1 "1"
 set $ws2 "2"
 set $ws3 "3"
 set $ws4 "4"
 set $ws5 "5"
+set $ws6 "6"
+set $ws7 "7"
+set $ws8 "8"
+set $ws9 "9"
 
 bindsym $mod+1 workspace $ws1
 bindsym $mod+2 workspace $ws2
 bindsym $mod+3 workspace $ws3
 bindsym $mod+4 workspace $ws4
 bindsym $mod+5 workspace $ws5
+bindsym $mod+6 workspace $ws6
+bindsym $mod+7 workspace $ws7
+bindsym $mod+8 workspace $ws8
+bindsym $mod+9 workspace $ws9
 
 bindsym $mod+Shift+1 move container to workspace $ws1
 bindsym $mod+Shift+2 move container to workspace $ws2
 bindsym $mod+Shift+3 move container to workspace $ws3
 bindsym $mod+Shift+4 move container to workspace $ws4
 bindsym $mod+Shift+5 move container to workspace $ws5
+bindsym $mod+Shift+6 move container to workspace $ws6
+bindsym $mod+Shift+7 move container to workspace $ws7
+bindsym $mod+Shift+8 move container to workspace $ws8
+bindsym $mod+Shift+9 move container to workspace $ws9
 
-# ── Floating Regeln ─────────────────────────────────────────
+# ── Floating Regeln ──────────────────────────────────────────
 for_window [class="Pavucontrol"]           floating enable, resize set 600 400
-for_window [class=".*"] tiling enable
 for_window [class="Nm-connection-editor"]  floating enable
 for_window [class="System-config-printer"] floating enable
 for_window [window_role="dialog"]          floating enable
 for_window [window_role="pop-up"]          floating enable
 for_window [class="jetbrains-toolbox"]     floating enable, move position center
 for_window [class="MEGAsync"]              floating enable, move position center
-for_window [title="MEGAsync"]              floating enable, move position center
+for_window [title="MEGAsync"]             floating enable, move position center
 no_focus [class="MEGAsync"]
 
-# ── Resize Mode ─────────────────────────────────────────────
+# ── Resize Mode ──────────────────────────────────────────────
 mode "resize" {
     bindsym Left  resize shrink width  20px
     bindsym Right resize grow   width  20px
