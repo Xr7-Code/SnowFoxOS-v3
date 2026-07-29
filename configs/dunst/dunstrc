@@ -1,10 +1,10 @@
 [global]
     monitor                = 0
     follow                 = mouse
-    width                  = 320
-    height                 = 100
+    width                  = 340
+    height                 = 110
     origin                 = top-right
-    offset                 = 12x48
+    offset                 = 14x46
     scale                  = 0
     notification_limit     = 5
     progress_bar           = true
@@ -13,16 +13,16 @@
     progress_bar_min_width = 150
     progress_bar_max_width = 300
     indicate_hidden        = yes
-    transparency           = 8
+    transparency           = 5
     separator_height       = 1
     padding                = 12
-    horizontal_padding     = 14
-    text_icon_padding      = 10
-    frame_width            = 1
+    horizontal_padding     = 16
+    text_icon_padding      = 12
+    frame_width            = 1.5
     frame_color            = "#8139e8"
     separator_color        = frame
     sort                   = yes
-    font                   = Inter 11
+    font                   = JetBrainsMono Nerd Font 10
     line_height            = 2
     markup                 = full
     format                 = "<b>%s</b>\n%b"
@@ -44,7 +44,7 @@
     always_run_script      = true
     title                  = Dunst
     class                  = Dunst
-    corner_radius          = 10
+    corner_radius          = 12
     ignore_dbusclose       = false
     force_xwayland         = false
     force_xinerama         = false
@@ -55,24 +55,21 @@
 [experimental]
     per_monitor_dpi = false
 
-# ── Urgency-Stufen — alle auf SnowFox-Palette ────────────────
-# low: gedimmt, kaum sichtbar
+# ── Urgency-Stufen ───────────────────────────────────────────
 [urgency_low]
     background  = "#1e1e2e"
-    foreground  = "#6c7086"
-    frame_color = "#2a2a3e"
+    foreground  = "#7f849c"
+    frame_color = "#313244"
     timeout     = 4
 
-# normal: volle Palette, lila Rand
 [urgency_normal]
     background  = "#1e1e2e"
     foreground  = "#cdd6f4"
     frame_color = "#8139e8"
     timeout     = 6
 
-# critical: roter Rand, sofort sichtbar
 [urgency_critical]
     background  = "#1e1e2e"
     foreground  = "#cdd6f4"
-    frame_color = "#e05555"
+    frame_color = "#f38ba8"
     timeout     = 0
