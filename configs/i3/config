@@ -7,6 +7,7 @@ set $term kitty
 
 # ── Farben ──────────────────────────────────────────────────
 set $purple   #8139e8
+set $purple_lt #a366ff
 set $bg       #1e1e2e
 set $bg2      #252538
 set $fg       #cdd6f4
@@ -17,17 +18,17 @@ set $orange   #ff79c6
 font pango:JetBrainsMono Nerd Font 10
 
 # ── Fenster-Dekoration ──────────────────────────────────────
-client.focused          $purple $purple $fg     $purple   $purple
-client.focused_inactive $bg2    $bg     $gray   $bg2      $bg2
-client.unfocused        $bg2    $bg     $gray   $bg2      $bg2
-client.urgent           $orange $bg2    $fg     $orange   $orange
+client.focused          $purple   $purple   $fg     $purple_lt $purple
+client.focused_inactive $bg2      $bg       $gray   $bg2       $bg2
+client.unfocused        $bg2      $bg       $gray   $bg2       $bg2
+client.urgent           $orange   $bg2      $fg     $orange    $orange
 
 default_border pixel 2
 default_floating_border pixel 2
 
 # ── Gaps ────────────────────────────────────────────────────
-gaps inner 10
-gaps outer 5
+gaps inner 8
+gaps outer 4
 smart_gaps on
 smart_borders on
 
@@ -136,7 +137,7 @@ bindsym $mod+Shift+8 move container to workspace $ws8
 bindsym $mod+Shift+9 move container to workspace $ws9
 
 # ── Floating Regeln ──────────────────────────────────────────
-for_window [class="Pavucontrol"]           floating enable, resize set 600 400
+for_window [class="Pavucontrol"]           floating enable, resize set 640 440
 for_window [class="Nm-connection-editor"]  floating enable
 for_window [class="System-config-printer"] floating enable
 for_window [window_role="dialog"]          floating enable
