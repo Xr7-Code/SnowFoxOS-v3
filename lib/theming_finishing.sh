@@ -420,10 +420,7 @@ fi
     # picom Config entfernen falls vorhanden
     
     I3_CONFIG_PATH="$CONFIG_DIR/i3/config"
-    if [[ -f "$I3_CONFIG_PATH" ]]; then
-        # picom aus i3 Autostart entfernen
-        sed -i '/exec.*picom/d' "$I3_CONFIG_PATH"
-        sed -i '/exec --no-startup-id picom/d' "$I3_CONFIG_PATH"
+
 
         if grep -q '^bindsym \$mod+e' "$I3_CONFIG_PATH"; then
             sed -i 's|^bindsym \$mod+e.*|bindsym $mod+e exec pcmanfm|' "$I3_CONFIG_PATH"
