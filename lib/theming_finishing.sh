@@ -399,6 +399,27 @@ grep -q "fastfetch\|neofetch\|snowfox-greeting" "$TARGET_HOME/.bashrc" 2>/dev/nu
 if [[ -d "$SCRIPT_DIR/configs" ]]; then
     cp -r "$SCRIPT_DIR/configs/"* "$CONFIG_DIR/"
 
+# ── Custom Fonts (SnowFox Icon Font) ─────────────────────────
+if [[ -d "$SCRIPT_DIR/assets/fonts" ]]; then
+    info "Installiere benutzerdefinierte SnowFox Schriftarten..."
+    
+    # 1. Zielordner definieren (eigener Unterordner ist sauberer für spätere Deinstallationen)
+    FONT_DIR="$TARGET_HOME/.local/share/fonts/snowfox"
+    mkdir -p "$FONT_DIR"
+    
+    # 2. Alle Schriftarten kopieren (TTF, OTF etc.)
+    cp -r "$SCRIPT_DIR/assets/fonts/"* "$FONT_DIR/" 2>/dev/null || true
+    
+    # 3. WICHTIG: Rechte des gesamten Fonts-Ordners an den Benutzer übertragen!
+    chown -R "$TARGET_USER:$TARGET_USER" "$TARGET_HOME/.local/share/fonts"
+    chmod -R 755 "$FONT_DIR"
+    
+    # 4. Font-Cache für den Benutzer gezielt aktualisieren
+    sudo -u "$TARGET_USER" fc-cache -f "$FONT_DIR" >/dev/null 2>&1 || true
+    
+    success "Benutzerdefinierte Schriftarten installiert"
+fi
+
 # ── picom.conf explizit kopieren ─────────────────────────────
 if [[ -f "$SCRIPT_DIR/configs/picom.conf" ]]; then
     cp "$SCRIPT_DIR/configs/picom.conf" "$CONFIG_DIR/picom.conf"
