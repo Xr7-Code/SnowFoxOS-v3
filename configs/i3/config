@@ -6,25 +6,31 @@ set $mod Mod4
 set $term kitty
 
 # ── Farben ──────────────────────────────────────────────────
-set $purple   #8139e8
+set $purple    #8139e8
 set $purple_lt #a366ff
-set $bg       #1e1e2e
-set $bg2      #252538
-set $fg       #cdd6f4
-set $gray     #6c7086
-set $orange   #ff79c6
+set $bg        #1e1e2e
+set $bg2       #252538
+set $fg        #cdd6f4
+set $gray      #6c7086
+set $orange    #ff79c6
 
 # ── Schrift ─────────────────────────────────────────────────
 font pango:JetBrainsMono Nerd Font 10
 
 # ── Fenster-Dekoration ──────────────────────────────────────
+# Tiling: kein Rahmen, kein Titel — clean
+# Floating: schmale Titelleiste zum Anfassen + lila Rahmen
 client.focused          $purple   $purple   $fg     $purple_lt $purple
 client.focused_inactive $bg2      $bg       $gray   $bg2       $bg2
 client.unfocused        $bg2      $bg       $gray   $bg2       $bg2
 client.urgent           $orange   $bg2      $fg     $orange    $orange
 
-default_border pixel 2
-default_floating_border pixel 2
+default_border none
+default_floating_border normal 2
+
+# Fenster-Regeln beim Start
+for_window [tiling] border none
+for_window [floating] border normal 2
 
 # ── Gaps ────────────────────────────────────────────────────
 gaps inner 8
@@ -43,6 +49,7 @@ exec --no-startup-id nm-applet --no-agent
 exec --no-startup-id redshift
 exec --no-startup-id greenclip daemon
 exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork -c 1e1e2e
+exec_always --no-startup-id dbus-update-activation-environment --systemd QT_QPA_PLATFORMTHEME
 
 # ── Shortcuts ───────────────────────────────────────────────
 bindsym $mod+Return exec $term
@@ -57,12 +64,12 @@ bindsym $mod+l      exec i3lock -c 1e1e2e
 bindsym $mod+p      exec ~/.config/snowfox-display.sh
 
 # ── Screenshots ─────────────────────────────────────────────
-bindsym Print       exec scrot ~/Pictures/screenshot_%Y%m%d_%H%M%S.png \
-                         -e 'xclip -selection clipboard -t image/png -i $f' \
-                         && notify-send "SnowFox" "Screenshot gespeichert"
+bindsym Print        exec scrot ~/Pictures/screenshot_%Y%m%d_%H%M%S.png \
+                          -e 'xclip -selection clipboard -t image/png -i $f' \
+                          && notify-send "SnowFox" "Screenshot gespeichert"
 bindsym $mod+Print  exec scrot -s ~/Pictures/screenshot_%Y%m%d_%H%M%S.png \
-                         -e 'xclip -selection clipboard -t image/png -i $f' \
-                         && notify-send "SnowFox" "Ausschnitt gespeichert"
+                          -e 'xclip -selection clipboard -t image/png -i $f' \
+                          && notify-send "SnowFox" "Ausschnitt gespeichert"
 
 # ── Audio ────────────────────────────────────────────────────
 bindsym XF86AudioRaiseVolume exec wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+
@@ -101,8 +108,12 @@ bindsym $mod+f fullscreen toggle
 bindsym $mod+s layout stacking
 bindsym $mod+t layout toggle split
 
-bindsym $mod+Shift+space floating toggle
-bindsym $mod+d            focus mode_toggle
+# Floating Toggle mit automatischer Rahmen- & Größenanpassung
+bindsym $mod+Shift+space floating toggle; [con_id="__focused__" floating] border normal 2, resize set 960 600, move position center; [con_id="__focused__" tiling] border none
+
+bindsym $mod+d           focus mode_toggle
+
+# Floating: Maus-Drag zum Verschieben (Titelleiste) + Mod+Klick als Fallback
 floating_modifier $mod
 
 # ── Workspaces ───────────────────────────────────────────────
@@ -144,7 +155,7 @@ for_window [window_role="dialog"]          floating enable
 for_window [window_role="pop-up"]          floating enable
 for_window [class="jetbrains-toolbox"]     floating enable, move position center
 for_window [class="MEGAsync"]              floating enable, move position center
-for_window [title="MEGAsync"]             floating enable, move position center
+for_window [title="MEGAsync"]              floating enable, move position center
 no_focus [class="MEGAsync"]
 
 # ── Resize Mode ──────────────────────────────────────────────
