@@ -41,7 +41,9 @@ Dieses System ist für Menschen die ihre Hardware zurückhaben wollen. Es telefo
 
 ## Features
 
-- **i3** — Tiling Window Manager mit Smart Gaps und flexiblen Floating-Regeln
+- **i3 WM mit Smart Dynamic Floating** — Tiling Window Manager mit Smart Gaps. Automatische Umschaltung von Rahmen & Titelleisten:
+  - **Wechsel zu Floating:** Fenster erhält automatisch eine greifbare Titelleiste, lila Rahmen, eine feste Standardgröße (`960x600`) und wird zentriert.
+  - **Wechsel zurück zu Tiling:** Rahmen und Titelleisten werden vollautomatisch und nahtlos wieder entfernt.
 - **Polybar** — Statusleiste mit CPU, RAM, Akku, Netzwerk, Lautstärke und System-Tray
 - **Rofi** — schneller App-Launcher mit passendem Dark-Theme und ikonischem Design
 - **Kitty** — GPU-beschleunigtes Terminal mit SnowFox-Farbpalette und JetBrainsMono Nerd Font
@@ -268,7 +270,7 @@ Nach dem Neustart startet i3 automatisch von TTY1.
 | `Super + Q` | Fenster schließen |
 | `Super + F` | Vollbild umschalten |
 | `Super + H / V` | Split horizontal / vertikal |
-| `Super + Shift + Space` | Floating umschalten |
+| `Super + Shift + Space` | Dynamic Floating Toggle (Auto-Size `960x600`, Auto-Border & Zentrierung) |
 | `Super + 1–5` | Workspace wechseln |
 | `Super + Shift + 1–5` | Fenster zu Workspace verschieben |
 | `Super + R` | Resize-Modus |
