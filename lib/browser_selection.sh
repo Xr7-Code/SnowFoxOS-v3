@@ -14,8 +14,8 @@ step "6/10 — Browser"
 
 echo ""
 echo -e "${PURPLE}${BOLD}  Browser Wahl:${RESET}"
-echo -e "  1) Zen Browser  (Firefox-Basis, Privacy — empfohlen)"
-echo -e "  2) LibreWolf    (gehärteter Firefox, max. Privacy)"
+echo -e "  1) LibreWolf    (gehärteter Firefox, max. Privacy — empfohlen)"
+echo -e "  2) Zen Browser  (Firefox-Basis, Privacy)"
 echo -e "  3) Brave        (Chromium-Basis, Privacy)"
 echo -e "  4) Firefox-ESR  (Standard, stabil)"
 echo -e "  5) Chromium     (leicht)"
@@ -26,6 +26,19 @@ read -rp "$(echo -e ${PURPLE}${BOLD}"Auswahl [1-6]: "${RESET})" BROWSER_CHOICE
 DEFAULT_BROWSER_DESKTOP="firefox-esr.desktop"
 case "$BROWSER_CHOICE" in
     1)
+        info "Installiere LibreWolf..."
+        apt-get install -y extrepo 2>/dev/null || true
+        extrepo enable librewolf 2>/dev/null || true
+        wait_apt; apt-get update -qq
+        if apt-get install -y librewolf; then
+            DEFAULT_BROWSER_DESKTOP="librewolf.desktop"
+            success "LibreWolf installiert"
+        else
+            warn "LibreWolf fehlgeschlagen — Fallback: Firefox-ESR"
+            apt-get install -y firefox-esr
+            DEFAULT_BROWSER_DESKTOP="firefox-esr.desktop"
+        fi ;;
+    2)
         info "Installiere Zen Browser..."
         ZEN_URL=""
         ZEN_JSON=$(curl -sf https://api.github.com/repos/zen-browser/desktop/releases/latest 2>/dev/null)
@@ -63,14 +76,6 @@ EOF
             apt-get install -y firefox-esr
             DEFAULT_BROWSER_DESKTOP="firefox-esr.desktop"
         fi ;;
-    2)
-        curl -fsSL https://deb.librewolf.net/keyring.gpg \
-            | gpg --dearmor | tee /usr/share/keyrings/librewolf.gpg > /dev/null
-        echo "deb [signed-by=/usr/share/keyrings/librewolf.gpg arch=amd64] https://deb.librewolf.net bookworm main" \
-            | tee /etc/apt/sources.list.d/librewolf.list
-        wait_apt; apt-get update -qq
-        apt-get install -y librewolf && success "LibreWolf installiert" || warn "LibreWolf fehlgeschlagen"
-        DEFAULT_BROWSER_DESKTOP="librewolf.desktop" ;;
     3)
         curl -fsS https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg \
             | tee /usr/share/keyrings/brave-browser-archive-keyring.gpg > /dev/null
