@@ -175,15 +175,17 @@ settings_bluetooth() {
     case "$1" in
         on)
             sudo systemctl enable --now bluetooth &>/dev/null
-            sudo rfkill unblock bluetooth &>/dev/null
+            rfkill unblock bluetooth &>/dev/null
+            bluetoothctl power on &>/dev/null
             ok "Bluetooth aktiviert."
             ;;
         off)
-            sudo systemctl disable --now bluetooth &>/dev/null
+            bluetoothctl power off &>/dev/null
+            rfkill block bluetooth &>/dev/null
             info "Bluetooth deaktiviert."
             ;;
         toggle)
-            if systemctl is-active --quiet bluetooth; then
+            if bluetoothctl show 2>/dev/null | grep -q "Powered: yes"; then
                 settings_bluetooth off
             else
                 settings_bluetooth on
@@ -191,13 +193,10 @@ settings_bluetooth() {
             ;;
         *)
             local status="inaktiv"
-            systemctl is-active --quiet bluetooth && status="aktiv"
+            bluetoothctl show 2>/dev/null | grep -q "Powered: yes" && status="aktiv"
             row "Bluetooth Status" "$status"
             echo ""
             info "Steuerung: snowfox settings bluetooth <on|off|toggle>"
-            if command -v bluetoothctl &>/dev/null && [[ "$status" == "aktiv" ]]; then
-                info "Geräte verwalten mit: bluetoothctl"
-            fi
             ;;
     esac
 }
