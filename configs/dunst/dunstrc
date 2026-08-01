@@ -4,23 +4,29 @@
     width                  = 340
     height                 = 110
     origin                 = top-right
+    # 14px vom Rand, 46px von oben — unter die Polybar
     offset                 = 14x46
     scale                  = 0
     notification_limit     = 5
+
     progress_bar           = true
     progress_bar_height    = 4
     progress_bar_frame_width = 0
     progress_bar_min_width = 150
     progress_bar_max_width = 300
+
     indicate_hidden        = yes
     transparency           = 5
     separator_height       = 1
     padding                = 12
     horizontal_padding     = 16
     text_icon_padding      = 12
-    frame_width            = 1.5
-    frame_color            = "#8139e8"
+
+    # Rahmen — neue Palette
+    frame_width            = 1
+    frame_color            = "#5c3d99"
     separator_color        = frame
+
     sort                   = yes
     font                   = JetBrainsMono Nerd Font 10
     line_height            = 2
@@ -34,20 +40,26 @@
     stack_duplicates       = true
     hide_duplicate_count   = false
     show_indicators        = yes
+
     icon_theme             = Papirus-Dark
     enable_recursive_icon_lookup = true
     icon_position          = left
     min_icon_size          = 0
     max_icon_size          = 32
+
     sticky_history         = yes
     history_length         = 20
     always_run_script      = true
     title                  = Dunst
     class                  = Dunst
+
+    # 12px — gleich wie picom corner-radius
     corner_radius          = 12
+
     ignore_dbusclose       = false
     force_xwayland         = false
     force_xinerama         = false
+
     mouse_left_click       = close_current
     mouse_middle_click     = do_action, close_current
     mouse_right_click      = close_all
@@ -56,20 +68,23 @@
     per_monitor_dpi = false
 
 # ── Urgency-Stufen ───────────────────────────────────────────
+# Alle auf neuer Basis-Palette (#1a1825)
+# frame_color folgt der Polybar-Farbsprache
+
 [urgency_low]
-    background  = "#1e1e2e"
-    foreground  = "#7f849c"
-    frame_color = "#313244"
+    background  = "#1a1825"
+    foreground  = "#6e6a8a"
+    frame_color = "#2a2840"
     timeout     = 4
 
 [urgency_normal]
-    background  = "#1e1e2e"
-    foreground  = "#cdd6f4"
-    frame_color = "#8139e8"
+    background  = "#1a1825"
+    foreground  = "#e0d9f5"
+    frame_color = "#5c3d99"
     timeout     = 6
 
 [urgency_critical]
-    background  = "#1e1e2e"
-    foreground  = "#cdd6f4"
-    frame_color = "#f38ba8"
+    background  = "#1a1825"
+    foreground  = "#e0d9f5"
+    frame_color = "#e87a7a"
     timeout     = 0
