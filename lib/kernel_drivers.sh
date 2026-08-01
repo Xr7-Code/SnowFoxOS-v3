@@ -22,63 +22,82 @@ success "Locales gesetzt (de_AT.UTF-8, en_US.UTF-8)"
 
 info "Prüfe CPU-Kompatibilität für x64v3..."
 if ! grep -q "avx2" /proc/cpuinfo; then
-    error "CPU unterstützt kein AVX2 — Installation abgebrochen um System-Brick zu verhindern."
+    warn "CPU unterstützt kein AVX2 — verwende Standard-Debian-Kernel statt XanMod"
+    USE_XANMOD=false
+else
+    USE_XANMOD=true
 fi
 
 info "Installiere DKMS-Tools..."
 apt-get install -y --no-install-recommends dkms libdw-dev clang lld llvm
 success "DKMS-Tools installiert"
 
-info "Installiere XanMod LTS Kernel..."
-dpkg --configure -a 2>/dev/null || true
-apt-get -f install -y 2>/dev/null || true
+if $USE_XANMOD; then
+    info "Installiere XanMod LTS Kernel..."
+    dpkg --configure -a 2>/dev/null || true
+    apt-get -f install -y 2>/dev/null || true
 
-mkdir -p /etc/apt/keyrings
-wget -qO - https://dl.xanmod.org/archive.key \
-    | gpg --dearmor --yes -o /etc/apt/keyrings/xanmod-archive-keyring.gpg
+    mkdir -p /etc/apt/keyrings
+    wget -qO - https://dl.xanmod.org/archive.key \
+        | gpg --dearmor --yes -o /etc/apt/keyrings/xanmod-archive-keyring.gpg
 
-echo "deb [signed-by=/etc/apt/keyrings/xanmod-archive-keyring.gpg] http://deb.xanmod.org bookworm main" \
-    > /etc/apt/sources.list.d/xanmod-release.list
+    echo "deb [signed-by=/etc/apt/keyrings/xanmod-archive-keyring.gpg] http://deb.xanmod.org bookworm main" \
+        > /etc/apt/sources.list.d/xanmod-release.list
 
-wait_apt
-apt-get update -qq
-wait_apt
+    wait_apt
+    apt-get update -qq
+    wait_apt
 
-DEBIAN_FRONTEND=noninteractive apt-get install -y linux-xanmod-lts-x64v3
-XANMOD_EXIT=$?
+    DEBIAN_FRONTEND=noninteractive apt-get install -y linux-xanmod-lts-x64v3
+    XANMOD_EXIT=$?
 
-if [[ $XANMOD_EXIT -eq 0 ]]; then
-    success "XanMod LTS Kernel installiert (aktiv nach Reboot)"
+    if [[ $XANMOD_EXIT -eq 0 ]]; then
+        success "XanMod LTS Kernel installiert (aktiv nach Reboot)"
+    else
+        warn "XanMod fehlgeschlagen (Exit $XANMOD_EXIT) — verwende Standard-Debian-Kernel"
+        USE_XANMOD=false
+    fi
+fi
 
-    if [[ -f /etc/default/grub ]]; then
-        GRUB_PARAMS="quiet splash"
+if ! $USE_XANMOD; then
+    info "Installiere Standard-Debian-Kernel (kompatibel mit älterer Hardware)..."
+    apt-get install -y linux-image-amd64 linux-headers-amd64 linux-firmware
+    success "Standard-Debian-Kernel installiert"
+fi
 
-        if lspci | grep -qi nvidia; then
-            GRUB_PARAMS="$GRUB_PARAMS nvidia-drm.modeset=1"
-        fi
+if [[ -f /etc/default/grub ]]; then
+    GRUB_PARAMS="quiet splash"
 
-        if lspci | grep -qi nvidia && lspci | grep -qi amd; then
-            # Fix: AMD+NVIDIA Hybrid verursachte dma_fence_wait_timeout Freeze
-            # durch amdgpu Display-Engine Deadlock. amdgpu.dc=1 + amdgpu.dpm=1
-            # stabilisieren den Display-Controller, IOMMU verhindert DMA-Konflikte.
-            GRUB_PARAMS="$GRUB_PARAMS amd_iommu=on iommu=pt amdgpu.dc=1 amdgpu.dpm=1"
-            info "AMD+NVIDIA Hybrid erkannt: IOMMU + amdgpu Freeze-Fix gesetzt"
-        fi
-
-        sed -i "s/GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT=\"$GRUB_PARAMS\"/" /etc/default/grub
-        sed -i 's/GRUB_TIMEOUT=.*/GRUB_TIMEOUT=1/' /etc/default/grub
+    if lspci | grep -qi nvidia; then
+        GRUB_PARAMS="$GRUB_PARAMS nvidia-drm.modeset=1"
     fi
 
+    if lspci | grep -qi nvidia && lspci | grep -qi amd; then
+        # Fix: AMD+NVIDIA Hybrid verursachte dma_fence_wait_timeout Freeze
+        # durch amdgpu Display-Engine Deadlock. amdgpu.dc=1 + amdgpu.dpm=1
+        # stabilisieren den Display-Controller, IOMMU verhindert DMA-Konflikte.
+        GRUB_PARAMS="$GRUB_PARAMS amd_iommu=on iommu=pt amdgpu.dc=1 amdgpu.dpm=1"
+        info "AMD+NVIDIA Hybrid erkannt: IOMMU + amdgpu Freeze-Fix gesetzt"
+    fi
+
+    if ! $USE_XANMOD; then
+        # Zusätzliche Kompatibilitäts-Parameter für ältere Hardware
+        GRUB_PARAMS="$GRUB_PARAMS acpi_osi=Linux"
+    fi
+
+    sed -i "s/GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT=\"$GRUB_PARAMS\"/" /etc/default/grub
+    sed -i 's/GRUB_TIMEOUT=.*/GRUB_TIMEOUT=1/' /etc/default/grub
+fi
+
+if $USE_XANMOD; then
     XANMOD_VER=$(ls /lib/modules 2>/dev/null | grep xanmod-lts 2>/dev/null | sort -V | tail -1)
     if [[ -n "$XANMOD_VER" ]]; then
         grub-set-default "Advanced options for SnowFoxOS GNU/Linux>SnowFoxOS GNU/Linux, with Linux $XANMOD_VER" 2>/dev/null || true
     fi
-
-    update-grub 2>/dev/null || true
-    success "Boot-Konfiguration aktualisiert"
-else
-    warn "XanMod fehlgeschlagen (Exit $XANMOD_EXIT) — Installation wird fortgesetzt"
 fi
+
+update-grub 2>/dev/null || true
+success "Boot-Konfiguration aktualisiert"
 
 apt-get install -y firmware-misc-nonfree 2>/dev/null || true
 if lsusb 2>/dev/null | grep -qi "fritz\|0x0bda\|2357"; then
@@ -199,20 +218,21 @@ EOF
         success "amdgpu Hybrid-Freeze-Fix installiert (PSR deaktiviert via dcfeaturemask=0x8)"
     fi
 
-    XANMOD_KERNEL=$(ls /lib/modules 2>/dev/null | grep xanmod | sort -V | tail -1)
+    # DKMS für aktiven Kernel (XanMod oder Standard)
+    CURRENT_KERNEL=$(ls /lib/modules 2>/dev/null | sort -V | tail -1)
     NVIDIA_VER=$(ls /var/lib/dkms/nvidia/ 2>/dev/null | sort -V | tail -1)
-    if [[ -n "$XANMOD_KERNEL" && -n "$NVIDIA_VER" ]]; then
+    if [[ -n "$CURRENT_KERNEL" && -n "$NVIDIA_VER" ]]; then
         # Kernel-Header installieren — ohne sie schlägt jeder DKMS-Build still fehl
-        info "Installiere Kernel-Header für $XANMOD_KERNEL..."
-        apt-get install -y "linux-headers-${XANMOD_KERNEL}" 2>/dev/null || \
+        info "Installiere Kernel-Header für $CURRENT_KERNEL..."
+        apt-get install -y "linux-headers-${CURRENT_KERNEL}" 2>/dev/null || \
             warn "Kernel-Header nicht im Repo gefunden — DKMS-Build könnte fehlschlagen"
 
-        info "Baue NVIDIA DKMS-Module für $XANMOD_KERNEL..."
-        dkms install nvidia/"$NVIDIA_VER" -k "$XANMOD_KERNEL" 2>/dev/null || \
+        info "Baue NVIDIA DKMS-Module für $CURRENT_KERNEL..."
+        dkms install nvidia/"$NVIDIA_VER" -k "$CURRENT_KERNEL" 2>/dev/null || \
             warn "DKMS-Build fehlgeschlagen — nach Reboot: sudo dkms autoinstall"
         success "NVIDIA DKMS-Module gebaut"
     else
-        warn "DKMS übersprungen (Kernel: ${XANMOD_KERNEL:-?}, NVIDIA: ${NVIDIA_VER:-?})"
+        warn "DKMS übersprungen (Kernel: ${CURRENT_KERNEL:-?}, NVIDIA: ${NVIDIA_VER:-?})"
     fi
 
     success "NVIDIA Stack installiert"
