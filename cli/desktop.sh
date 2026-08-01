@@ -269,6 +269,9 @@ cmd_apps() {
 # ============================================================
 # snowfox webapp
 # ============================================================
+# ============================================================
+# snowfox webapp
+# ============================================================
 cmd_webapp() {
     local WAPP_DIR="$HOME/.config/snowfox/webapps"
     local WAPP_JSON="$HOME/.config/snowfox/webapps.json"
@@ -306,9 +309,7 @@ cmd_webapp() {
             )
             for FURL in "${FAVICON_URLS[@]}"; do
                 if curl -sfL --max-time 5 "$FURL" -o "$WA_ICON_PATH" 2>/dev/null; then
-                    # Prüfen ob es wirklich ein Bild ist
                     if file "$WA_ICON_PATH" 2>/dev/null | grep -qiE "image|icon|PNG|GIF|JPEG"; then
-                        # Falls ICO — in PNG umwandeln
                         if file "$WA_ICON_PATH" | grep -qi "icon\|ICO"; then
                             convert "$WA_ICON_PATH" "$WA_ICON_PATH" 2>/dev/null || true
                         fi
@@ -322,50 +323,72 @@ cmd_webapp() {
 
             # ── Browser wählen ────────────────────────────────
             echo ""
-            echo -e "  ${CYAN}1${RESET}) Helium     (App-Modus — kein Browser-UI, empfohlen)"
-            echo -e "  ${CYAN}2${RESET}) Helium     (mit Addons — nutzt Hauptprofil)"
-            echo -e "  ${CYAN}3${RESET}) Zen Browser"
-            echo -e "  ${CYAN}4${RESET}) Chromium"
-            echo -e "  ${CYAN}5${RESET}) Brave"
-            echo -e "  ${CYAN}6${RESET}) Firefox-ESR"
+            echo -e "  ${CYAN}1${RESET}) Librewolf   (Standard — empfohlen)"
+            echo -e "  ${CYAN}2${RESET}) Helium      (App-Modus — kein Browser-UI)"
+            echo -e "  ${CYAN}3${RESET}) Helium      (mit Addons — nutzt Hauptprofil)"
+            echo -e "  ${CYAN}4${RESET}) Zen Browser"
+            echo -e "  ${CYAN}5${RESET}) Chromium"
+            echo -e "  ${CYAN}6${RESET}) Brave"
+            echo -e "  ${CYAN}7${RESET}) Firefox-ESR"
             echo ""
-            read -rp "$(echo -e ${PURPLE}${BOLD}"Browser wählen [1-6]: "${RESET})" WA_BR
+            read -rp "$(echo -e ${PURPLE}${BOLD}"Browser wählen [1-7] (Default: 1): "${RESET})" WA_BR
+            WA_BR=${WA_BR:-1}
 
-            local WA_BIN WA_EXEC
+            local WA_BIN WA_EXEC WA_PROFILE
             case "$WA_BR" in
                 1)
-                    WA_BIN="$HOME/Applications/helium.AppImage"
-                    WA_EXEC="$WA_BIN --app=$WA_URL --class=snowfox-webapp-$WA_SAFE"
+                    WA_BIN="librewolf"
+                    WA_PROFILE="$WAPP_DIR/$WA_SAFE/librewolf-profile"
+                    mkdir -p "$WA_PROFILE"
+                    # Librewolf spezifische Profileinstellungen für WebApp-Modus
+                    cat > "$WA_PROFILE/user.js" << 'EOF'
+// WebApp Optimierungen für Librewolf
+user_pref("browser.privatebrowsing.autostart", false);
+user_pref("browser.sessionstore.resume_from_crash", false);
+user_pref("browser.tabs.warnOnClose", false);
+user_pref("browser.warnOnQuit", false);
+user_pref("dom.disable_open_during_load", false);
+user_pref("toolkit.legacyUserProfileCustomizations.stylesheets", false);
+// Keine unnötigen UI-Elemente
+user_pref("browser.uiCustomization.state", "");
+EOF
+                    WA_EXEC="$WA_BIN --class=snowfox-webapp-$WA_SAFE --profile \"$WA_PROFILE\" \"$WA_URL\""
                     ;;
                 2)
                     WA_BIN="$HOME/Applications/helium.AppImage"
+                    WA_EXEC="$WA_BIN --app=$WA_URL --class=snowfox-webapp-$WA_SAFE"
+                    ;;
+                3)
+                    WA_BIN="$HOME/Applications/helium.AppImage"
                     local WA_PROF="$WAPP_DIR/$WA_SAFE/profile"
                     mkdir -p "$WA_PROF"
-                    # Addons aus Hauptprofil verlinken
                     local WA_MAIN
                     WA_MAIN=$(find "$HOME/.config/net.imput.helium" -maxdepth 2 -name "Extensions" -type d 2>/dev/null | head -1)
                     [[ -n "$WA_MAIN" ]] && ln -sf "$WA_MAIN" "$WA_PROF/Extensions" 2>/dev/null || true
                     WA_EXEC="$WA_BIN --app=$WA_URL --user-data-dir=$WA_PROF --class=snowfox-webapp-$WA_SAFE"
                     ;;
-                3)
+                4)
                     WA_BIN="/opt/zen-browser.AppImage"
                     WA_EXEC="$WA_BIN --app=$WA_URL --class=snowfox-webapp-$WA_SAFE"
                     ;;
-                4)
+                5)
                     WA_BIN="chromium"
                     WA_EXEC="$WA_BIN --app=$WA_URL --class=snowfox-webapp-$WA_SAFE"
                     ;;
-                5)
+                6)
                     WA_BIN="brave-browser"
                     WA_EXEC="$WA_BIN --app=$WA_URL --class=snowfox-webapp-$WA_SAFE"
                     ;;
-                6)
+                7)
                     WA_BIN="firefox-esr"
                     WA_EXEC="$WA_BIN --ssb=$WA_URL"
                     ;;
                 *)
-                    WA_BIN="$HOME/Applications/helium.AppImage"
-                    WA_EXEC="$WA_BIN --app=$WA_URL --class=snowfox-webapp-$WA_SAFE"
+                    # Fallback auf Librewolf
+                    WA_BIN="librewolf"
+                    WA_PROFILE="$WAPP_DIR/$WA_SAFE/librewolf-profile"
+                    mkdir -p "$WA_PROFILE"
+                    WA_EXEC="$WA_BIN --class=snowfox-webapp-$WA_SAFE --profile \"$WA_PROFILE\" \"$WA_URL\""
                     ;;
             esac
 
@@ -394,7 +417,13 @@ if os.path.exists(path):
     except:
         data = []
 data = [x for x in data if x.get('name') != '$WA_NAME']
-data.append({'name':'$WA_NAME','url':'$WA_URL','safe':'$WA_SAFE','icon':'$WA_ICON'})
+data.append({
+    'name':'$WA_NAME',
+    'url':'$WA_URL',
+    'safe':'$WA_SAFE',
+    'icon':'$WA_ICON',
+    'browser':'$WA_BIN'
+})
 with open(path, 'w') as f:
     json.dump(data, f, indent=2)
 " 2>/dev/null
@@ -420,6 +449,8 @@ with open('$WAPP_JSON') as f:
     data = json.load(f)
 for i, a in enumerate(data, 1):
     print(f\"  {i}) {a['name']}  →  {a['url']}\")
+    if 'browser' in a:
+        print(f\"     Browser: {a['browser']}\")
 " 2>/dev/null
             echo ""
             divider
