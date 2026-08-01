@@ -12,11 +12,12 @@ readonly TOR_MODE_FILE="${SNOWFOX_CONFIG_DIR}/tor-mode"
 readonly RESOLV_BAK="/etc/resolv.conf.snowfox-bak"
 readonly TOR_SOCKS_PORT="9050"
 readonly TOR_DNS_PORT="9053"
+readonly TOR_TRANSPARENT_PORT="9040"
 
 # ─── Dependency Check ──────────────────────────────────────
 _tor_check_deps() {
     local missing=()
-    local deps=(tor torsocks macchanger curl python3)
+    local deps=(tor torsocks macchanger curl python3 iptables)
     
     for dep in "${deps[@]}"; do
         command -v "$dep" &>/dev/null || missing+=("$dep")
@@ -84,27 +85,151 @@ except:
 " 2>/dev/null || echo "? ?"
 }
 
-# ─── Tor aktivieren ──────────────────────────────────────
+# ─── DNS testen ────────────────────────────────────────────
+_test_dns() {
+    local test_domain="${1:-google.com}"
+    info "Teste DNS-Auflösung für $test_domain..."
+    
+    # Versuche DNS über Tor
+    if timeout 5 dig @"127.0.0.1" -p "$TOR_DNS_PORT" "$test_domain" +short 2>/dev/null | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'; then
+        ok "DNS via Tor funktioniert ✓"
+        return 0
+    fi
+    
+    # Fallback: Versuche über torsocks
+    if timeout 5 torsocks dig "$test_domain" +short 2>/dev/null | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'; then
+        ok "DNS via torsocks funktioniert ✓"
+        return 0
+    fi
+    
+    warn "DNS-Auflösung fehlgeschlagen!"
+    return 1
+}
+
+# ─── Internetverbindung testen ────────────────────────────
+_test_connection() {
+    info "Teste Internetverbindung über Tor..."
+    
+    # Einfacher HTTP-Test
+    if timeout 10 torsocks curl -s -I https://check.torproject.org 2>/dev/null | grep -q "HTTP"; then
+        ok "HTTP-Verbindung über Tor funktioniert ✓"
+        return 0
+    fi
+    
+    # Fallback: Ping über Tor
+    if timeout 10 torsocks ping -c 1 8.8.8.8 2>/dev/null | grep -q "1 packets transmitted"; then
+        ok "Ping über Tor funktioniert ✓"
+        return 0
+    fi
+    
+    warn "Keine Internetverbindung über Tor!"
+    return 1
+}
+
+# ─── Tor Debug ─────────────────────────────────────────────
+_tor_debug() {
+    header "Tor Debug Informationen"
+    
+    # Tor Logs
+    info "Letzte Tor Log-Einträge:"
+    sudo journalctl -u tor -n 10 --no-pager 2>/dev/null || echo "Keine Logs verfügbar"
+    echo ""
+    
+    # Torrc prüfen
+    info "Torrc Konfiguration (relevant):"
+    grep -E "^DNSPort|^AutomapHosts|^SocksPort|^TransPort" "$TORRC" 2>/dev/null || echo "Keine relevanten Einträge gefunden"
+    echo ""
+    
+    # Netzwerk-Interfaces
+    info "Netzwerk-Interfaces:"
+    ip addr show | grep -E "^[0-9]+:|inet " | head -20
+    echo ""
+    
+    # DNS testen
+    _test_dns
+    echo ""
+    
+    # Verbindung testen
+    _test_connection
+    echo ""
+    
+    # IP prüfen
+    info "Prüfe Tor-IP:"
+    local tor_check
+    tor_check=$(_check_tor_ip)
+    echo "  $tor_check"
+    echo ""
+}
+
+# ─── Tor aktivieren (verbesserte Version) ──────────────────
 _tor_enable() {
     fox "Aktiviere Tor-Modus..."
 
-    # ── 1. Tor starten ──────────────────────────────────────
+    # ── 1. Prüfe ob Tor bereits läuft ────────────────────────
+    if _tor_is_running; then
+        warn "Tor läuft bereits. Starte neu..."
+        sudo systemctl restart tor
+        sleep 2
+    fi
+
+    # ── 2. Torrc konfigurieren ───────────────────────────────
+    info "Konfiguriere Tor für transparentes Proxying..."
+    sudo mkdir -p "$TOR_CONFIG_DIR"
+    
+    # Backup der original Torrc
+    if [[ ! -f "${TORRC}.orig" ]]; then
+        sudo cp "$TORRC" "${TORRC}.orig" 2>/dev/null || true
+    fi
+    
+    # Entferne alte SnowFox-Einträge
+    sudo sed -i '/# SnowFox-Start/,/# SnowFox-Ende/d' "$TORRC" 2>/dev/null || true
+    
+    # Füge neue Konfiguration hinzu
+    sudo tee -a "$TORRC" > /dev/null <<TOREOF
+
+# SnowFox-Start
+# SOCKS5 für Anwendungen
+SocksPort 127.0.0.1:${TOR_SOCKS_PORT}
+
+# Transparent Proxy für systemweites Routing
+TransPort 127.0.0.1:${TOR_TRANSPARENT_PORT}
+
+# DNS über Tor
+DNSPort 127.0.0.1:${TOR_DNS_PORT}
+
+# Automatische .onion Auflösung
+AutomapHostsOnResolve 1
+AutomapHostsSuffixes .exit,.onion
+
+# Erzwinge Tor für ausgehende Verbindungen
+ExitNodes {us},{ca},{gb},{de}
+StrictNodes 1
+
+# Erhöhte Sicherheit
+SafeSocks 1
+TestSocks 1
+WarnPlaintextPorts 23,109,110,143
+# SnowFox-Ende
+TOREOF
+
+    # ── 3. Tor starten ─────────────────────────────────────────
     info "Starte Tor-Dienst..."
     if ! sudo systemctl enable --now tor 2>/dev/null; then
         err "Tor konnte nicht aktiviert werden"
-        err "Prüfe: sudo journalctl -u tor -n 20"
+        _tor_debug
         return 1
     fi
     
-    sleep 2
+    sleep 3
     if ! _tor_is_running; then
-        err "Tor läuft nicht nach Aktivierung"
+        err "Tor läuft nicht!"
+        _tor_debug
         return 1
     fi
-    ok "Tor läuft (SOCKS5: 127.0.0.1:${TOR_SOCKS_PORT})"
+    ok "Tor läuft (Ports: SOCKS=${TOR_SOCKS_PORT}, DNS=${TOR_DNS_PORT}, Trans=${TOR_TRANSPARENT_PORT})"
 
-    # ── 2. IPv6 deaktivieren ──────────────────────────────
-    info "Deaktiviere IPv6 (verhindert Leaks)..."
+    # ── 4. IPv6 deaktivieren ──────────────────────────────────
+    info "Deaktiviere IPv6..."
     local ipv6_opts=(
         "net.ipv6.conf.all.disable_ipv6=1"
         "net.ipv6.conf.default.disable_ipv6=1"
@@ -113,37 +238,46 @@ _tor_enable() {
     for opt in "${ipv6_opts[@]}"; do
         sudo sysctl -w "$opt" &>/dev/null || warn "Konnte $opt nicht setzen"
     done
+    # Persistente Konfiguration
+    echo "net.ipv6.conf.all.disable_ipv6=1" | sudo tee -a /etc/sysctl.conf > /dev/null
     ok "IPv6 deaktiviert"
 
-    # ── 3. DNS durch Tor leiten ────────────────────────────
-    info "Leite DNS durch Tor (Port ${TOR_DNS_PORT})..."
-    sudo mkdir -p "$TOR_CONFIG_DIR"
+    # ── 5. DNS durch Tor leiten ──────────────────────────────
+    info "Leite DNS durch Tor..."
     
-    # Entferne alte SnowFox-Einträge sicher
-    sudo sed -i '/# SnowFox-DNS-Start/,/# SnowFox-DNS-Ende/d' "$TORRC" 2>/dev/null || true
-    
-    # Füge neue DNS-Konfiguration hinzu
-    sudo tee -a "$TORRC" > /dev/null <<TOREOF
-# SnowFox-DNS-Start
-DNSPort ${TOR_DNS_PORT}
-AutomapHostsOnResolve 1
-AutomapHostsSuffixes .exit,.onion
-# SnowFox-DNS-Ende
-TOREOF
-
-    sudo systemctl restart tor 2>/dev/null
-    sleep 2
-    
-    # DNS umstellen
-    if ! _dns_via_tor; then
-        sudo cp /etc/resolv.conf "$RESOLV_BAK" 2>/dev/null || true
+    # Backup der resolv.conf
+    if [[ ! -f "$RESOLV_BAK" ]]; then
+        sudo cp /etc/resolv.conf "$RESOLV_BAK"
     fi
     
+    # DNS über Tor setzen
     echo "nameserver 127.0.0.1" | sudo tee /etc/resolv.conf > /dev/null
-    sudo chattr +i /etc/resolv.conf 2>/dev/null || warn "Konnte resolv.conf nicht schützen"
-    ok "DNS → Tor (keine DNS-Leaks)"
+    
+    # resolv.conf vor Änderungen schützen
+    sudo chattr +i /etc/resolv.conf 2>/dev/null || true
+    
+    # Zusätzlich dnsmasq deaktivieren falls vorhanden
+    if systemctl is-active --quiet dnsmasq 2>/dev/null; then
+        sudo systemctl stop dnsmasq
+        sudo systemctl disable dnsmasq
+    fi
+    
+    ok "DNS → Tor (127.0.0.1:${TOR_DNS_PORT})"
 
-    # ── 4. MAC randomisieren ──────────────────────────────
+    # ── 6. Systemweites Routing über Tor ──────────────────────
+    info "Richte transparentes Proxying ein..."
+    
+    # iptables Regeln für Tor Transparent Proxy
+    sudo iptables -t nat -F
+    sudo iptables -t nat -A OUTPUT -m owner --uid-owner debian-tor -j RETURN
+    sudo iptables -t nat -A OUTPUT -p tcp --dport 53 -j REDIRECT --to-ports ${TOR_DNS_PORT}
+    sudo iptables -t nat -A OUTPUT -p udp --dport 53 -j REDIRECT --to-ports ${TOR_DNS_PORT}
+    sudo iptables -t nat -A OUTPUT -p tcp --dport 80 -j REDIRECT --to-ports ${TOR_TRANSPARENT_PORT}
+    sudo iptables -t nat -A OUTPUT -p tcp --dport 443 -j REDIRECT --to-ports ${TOR_TRANSPARENT_PORT}
+    
+    ok "Transparentes Routing aktiviert"
+
+    # ── 7. MAC randomisieren ──────────────────────────────────
     info "Randomisiere MAC-Adressen..."
     local mac_count=0
     for iface in $(_get_network_interfaces); do
@@ -155,22 +289,56 @@ TOREOF
     done
     ok "${mac_count} MAC-Adresse(n) randomisiert"
 
-    # ── 5. Status speichern ────────────────────────────────
+    # ── 8. Verbindung testen ──────────────────────────────────
+    info "Teste Verbindung über Tor..."
+    sleep 2
+    
+    if ! _test_dns; then
+        warn "DNS-Test fehlgeschlagen. Versuche alternative Konfiguration..."
+        # Alternative: DNS über System-resolv
+        echo "nameserver 1.1.1.1" | sudo tee -a /etc/resolv.conf > /dev/null
+        sudo chattr +i /etc/resolv.conf 2>/dev/null || true
+    fi
+    
+    if ! _test_connection; then
+        warn "Verbindungstest fehlgeschlagen. Starte Debug-Modus..."
+        _tor_debug
+        
+        warn "Mögliche Lösungen:"
+        echo "  1. Prüfe Firewall: sudo ufw disable"
+        echo "  2. Prüfe Tor Logs: sudo journalctl -u tor -f"
+        echo "  3. Manueller Test: torsocks curl https://check.torproject.org"
+        echo "  4. Alternative Bridge verwenden"
+        
+        read -p "Möchtest du trotzdem fortfahren? (j/N) " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Jj]$ ]]; then
+            _tor_disable
+            return 1
+        fi
+    else
+        ok "Tor-Verbindung erfolgreich getestet ✓"
+    fi
+
+    # ── 9. Status speichern ───────────────────────────────────
     mkdir -p "$SNOWFOX_CONFIG_DIR"
     echo "tor" > "$TOR_MODE_FILE"
     chmod 600 "$TOR_MODE_FILE"
 
-    # ── 6. Erfolgsmeldung ──────────────────────────────────
+    # ── 10. Erfolgsmeldung ──────────────────────────────────
     divider
     ok "Tor-Modus erfolgreich aktiviert"
-    info "Nutze 'torsocks <programm>' für einzelne Anwendungen"
-    info "oder konfiguriere SOCKS5-Proxy: 127.0.0.1:${TOR_SOCKS_PORT}"
     echo ""
-    info "Prüfe deine Tor-IP:"
-    info "  torsocks curl https://check.torproject.org/api/ip"
+    info "Systemweites Routing:"
+    echo "  • HTTP/HTTPS → Tor (transparent)"
+    echo "  • DNS → Tor (127.0.0.1:${TOR_DNS_PORT})"
+    echo "  • SOCKS5 → 127.0.0.1:${TOR_SOCKS_PORT}"
     echo ""
-    warn "Browser: Nutze den Tor Browser für vollständigen Schutz"
-    warn "Tor Browser: https://www.torproject.org/download/"
+    info "Teste deine Verbindung:"
+    echo "  torsocks curl https://check.torproject.org/api/ip"
+    echo "  oder einfach: curl https://ifconfig.me  # (via Tor)"
+    echo ""
+    info "Bei Problemen: snowfox tor debug"
     echo ""
 }
 
@@ -178,7 +346,13 @@ TOREOF
 _tor_disable() {
     fox "Deaktiviere Tor-Modus..."
 
-    # ── 1. DNS wiederherstellen ────────────────────────────
+    # ── 1. iptables zurücksetzen ─────────────────────────────
+    info "Setze Firewall-Regeln zurück..."
+    sudo iptables -t nat -F
+    sudo iptables -t nat -X
+    ok "Firewall zurückgesetzt"
+
+    # ── 2. DNS wiederherstellen ──────────────────────────────
     info "Stelle DNS wieder her..."
     sudo chattr -i /etc/resolv.conf 2>/dev/null || true
     
@@ -186,19 +360,28 @@ _tor_disable() {
         sudo cp "$RESOLV_BAK" /etc/resolv.conf
         sudo rm -f "$RESOLV_BAK"
         ok "DNS aus Backup wiederhergestellt"
-    elif command -v NetworkManager &>/dev/null; then
-        sudo systemctl restart NetworkManager 2>/dev/null
-        ok "DNS über NetworkManager wiederhergestellt"
     else
-        warn "Kein DNS-Backup gefunden, manuelle Wiederherstellung erforderlich"
+        # Standard DNS setzen
+        echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf > /dev/null
+        echo "nameserver 1.1.1.1" | sudo tee -a /etc/resolv.conf > /dev/null
+        ok "DNS auf Standard zurückgesetzt"
     fi
 
-    # ── 2. Tor-DNS-Config entfernen ──────────────────────
-    sudo sed -i '/# SnowFox-DNS-Start/,/# SnowFox-DNS-Ende/d' "$TORRC" 2>/dev/null || true
+    # ── 3. Tor-DNS aus Torrc entfernen ──────────────────────
+    sudo sed -i '/# SnowFox-Start/,/# SnowFox-Ende/d' "$TORRC" 2>/dev/null || true
+    
+    # Original Torrc wiederherstellen
+    if [[ -f "${TORRC}.orig" ]]; then
+        sudo cp "${TORRC}.orig" "$TORRC"
+        sudo rm -f "${TORRC}.orig"
+    fi
+    
     sudo systemctl restart tor 2>/dev/null
 
-    # ── 3. IPv6 reaktivieren ──────────────────────────────
+    # ── 4. IPv6 reaktivieren ──────────────────────────────────
     info "Aktiviere IPv6 wieder..."
+    sudo sed -i '/net.ipv6.conf.all.disable_ipv6=1/d' /etc/sysctl.conf
+    
     local ipv6_opts=(
         "net.ipv6.conf.all.disable_ipv6=0"
         "net.ipv6.conf.default.disable_ipv6=0"
@@ -208,19 +391,24 @@ _tor_disable() {
     done
     ok "IPv6 reaktiviert"
 
-    # ── 4. Tor stoppen ─────────────────────────────────────
+    # ── 5. dnsmasq wieder aktivieren ─────────────────────────
+    if systemctl is-enabled --quiet dnsmasq 2>/dev/null; then
+        sudo systemctl start dnsmasq
+    fi
+
+    # ── 6. Tor stoppen ──────────────────────────────────────
     info "Stoppe Tor-Dienst..."
     sudo systemctl disable --now tor 2>/dev/null
     ok "Tor gestoppt"
 
-    # ── 5. MAC randomisieren ──────────────────────────────
+    # ── 7. MAC randomisieren ──────────────────────────────────
     info "Randomisiere MAC neu (Cleanup)..."
     for iface in $(_get_network_interfaces); do
         _randomize_mac "$iface" &>/dev/null || true
     done
     ok "MAC-Adressen erneuert"
 
-    # ── 6. Cleanup ──────────────────────────────────────────
+    # ── 8. Cleanup ────────────────────────────────────────────
     rm -f "$TOR_MODE_FILE"
 
     divider
@@ -257,6 +445,13 @@ _tor_check() {
         row "DNS" "via Tor ✓" "$GREEN"
     else
         row "DNS" "NICHT via Tor ✗" "$RED"
+    fi
+
+    # Transparent Proxy
+    if sudo iptables -t nat -L -n 2>/dev/null | grep -q "${TOR_TRANSPARENT_PORT}"; then
+        row "Transparent Proxy" "aktiv ✓" "$GREEN"
+    else
+        row "Transparent Proxy" "inaktiv" "$YELLOW"
     fi
 
     # Externe IP prüfen
@@ -297,8 +492,12 @@ cmd_tor() {
             ;;
         restart)
             _tor_disable
+            sleep 2
             _tor_check_deps || return 1
             _tor_enable
+            ;;
+        debug)
+            _tor_debug
             ;;
         *)
             header "snowfox tor — Anonymitätsmodus"
@@ -308,8 +507,10 @@ cmd_tor() {
             row "snowfox tor off"    "Tor-Modus deaktivieren"
             row "snowfox tor status" "Status + externe IP prüfen"
             row "snowfox tor restart" "Tor neu starten"
+            row "snowfox tor debug"  "Debug-Informationen anzeigen"
             echo ""
             warn "Hinweise:"
+            info "• Bei Verbindungsproblemen: snowfox tor debug"
             info "• Tor Browser für Browser-Anonymität empfohlen"
             info "• torsocks für CLI-Anwendungen: torsocks curl ifconfig.me"
             info "• SOCKS5-Proxy: 127.0.0.1:${TOR_SOCKS_PORT}"
