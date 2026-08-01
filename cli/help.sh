@@ -1,5 +1,7 @@
 #!/bin/bash
-# SnowFoxOS — CLI Modul: Hilfe & Befehlsübersicht
+# ============================================================
+#  SnowFoxOS — CLI Modul: Hilfe & Befehlsübersicht
+# ============================================================
 
 cmd_help() {
     echo ""
@@ -21,13 +23,24 @@ cmd_help() {
         printf "  ${CYAN}${BOLD}  %-38s${RESET}${DGRAY}%s${RESET}\n" "$cmd" "$desc"
     }
 
-    _help_section "System"
+    _help_section "System & Status"
     _help_cmd "snowfox status"                    "System-Übersicht"
     _help_cmd "snowfox battery"                   "Akku, Verbrauch & Gesundheit"
     _help_cmd "snowfox update"                    "System & CLI aktualisieren"
     _help_cmd "snowfox profile [name]"            "balanced · performance · battery · privacy"
-    _help_cmd "snowfox node [desktop|server]"     "Systemmodus wechseln"
+    _help_cmd "snowfox node [desktop|server|console]" "Systemmodus wechseln"
     _help_cmd "snowfox doctor"                    "Diagnose: RAM, Treiber, Configs"
+    _help_cmd "snowfox reset"                     "Werkszustand / System zurücksetzen"
+    echo ""
+
+    _help_section "Einstellungen & Konfiguration"
+    _help_cmd "snowfox settings"                  "Übersicht aller Einstellungen"
+    _help_cmd "snowfox settings defaults"         "Standard-Apps (LibreWolf, Codium, PCManFM, Kitty)"
+    _help_cmd "snowfox settings keyboard [layout]" "Tastaturlayout anzeigen / ändern (z.B. de)"
+    _help_cmd "snowfox settings language [locale]" "Systemsprache festlegen (z.B. de_DE.UTF-8)"
+    _help_cmd "snowfox settings time [zone]"      "Zeitzone & Uhrzeit (z.B. Europe/Berlin)"
+    _help_cmd "snowfox settings user [passwd|add|del]" "Nutzer & Passwörter verwalten"
+    _help_cmd "snowfox settings bluetooth [on|off]" "Bluetooth steuern"
     echo ""
 
     _help_section "Hardware & Sicherheit"
