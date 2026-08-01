@@ -191,12 +191,31 @@ settings_bluetooth() {
                 settings_bluetooth on
             fi
             ;;
+        boot-off)
+            sudo sed -i -E 's/^#?\s*AutoEnable\s*=.*/AutoEnable=false/' /etc/bluetooth/main.conf
+            ok "Bluetooth wird ab dem nächsten Booten standardmäßig AUS sein."
+            ;;
+        boot-on)
+            sudo sed -i -E 's/^#?\s*AutoEnable\s*=.*/AutoEnable=true/' /etc/bluetooth/main.conf
+            ok "Bluetooth wird ab dem nächsten Booten standardmäßig AN sein."
+            ;;
         *)
             local status="inaktiv"
             bluetoothctl show 2>/dev/null | grep -q "Powered: yes" && status="aktiv"
-            row "Bluetooth Status" "$status"
+            
+            local boot_status="AUS (Standard)"
+            if grep -iE '^\s*AutoEnable\s*=\s*true' /etc/bluetooth/main.conf &>/dev/null; then
+                boot_status="AN"
+            elif grep -iE '^\s*AutoEnable\s*=\s*false' /etc/bluetooth/main.conf &>/dev/null; then
+                boot_status="AUS"
+            fi
+
+            row "Bluetooth Status (aktuell)" "$status"
+            row "Autostart beim Booten"      "$boot_status"
             echo ""
-            info "Steuerung: snowfox settings bluetooth <on|off|toggle>"
+            info "Befehle:"
+            info "  snowfox settings bluetooth <on|off|toggle>"
+            info "  snowfox settings bluetooth <boot-on|boot-off>"
             ;;
     esac
 }
