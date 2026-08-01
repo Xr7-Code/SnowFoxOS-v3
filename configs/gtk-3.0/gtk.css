@@ -1,53 +1,52 @@
 /* ============================================================
    SnowFox — GTK3 Color Override
-   Wird über Arc-Dark geladen. Nur Farben + kleine Korrekturen.
    Ablegen unter: ~/.config/gtk-3.0/gtk.css
    ============================================================ */
 
 /* ── Palette ───────────────────────────────────────────────── */
-@define-color bg_color          #1e1e2e;
-@define-color bg_alt_color      #252538;
-@define-color bg_hover_color    #2e2e45;
-@define-color fg_color          #cdd6f4;
-@define-color fg_dim_color      #6c7086;
-@define-color selected_bg_color #8139e8;
+@define-color bg_color          #1a1825;
+@define-color bg_alt_color      #201e2e;
+@define-color bg_hover_color    #2a2840;
+@define-color fg_color          #e0d9f5;
+@define-color fg_dim_color      #6e6a8a;
+@define-color selected_bg_color #9d6fe8;
 @define-color selected_fg_color #ffffff;
-@define-color purple_hover      #9b5ef0;
-@define-color purple_active     #6a2fc0;
-@define-color error_color       #e05555;
-@define-color success_color     #5faf5f;
-@define-color warning_color     #ff9f5e;
-@define-color border_color      #3d2a5c;
+@define-color purple_hover      #b899ff;
+@define-color purple_active     #5c3d99;
+@define-color error_color       #e87a7a;
+@define-color success_color     #89c98a;
+@define-color warning_color     #e8c97a;
+@define-color border_color      #2a2840;
 
 /* Arc-Dark interne Tokens überschreiben */
-@define-color theme_bg_color        #1e1e2e;
-@define-color theme_fg_color        #cdd6f4;
-@define-color theme_base_color      #252538;
-@define-color theme_text_color      #cdd6f4;
-@define-color theme_selected_bg_color   #8139e8;
+@define-color theme_bg_color            #1a1825;
+@define-color theme_fg_color            #e0d9f5;
+@define-color theme_base_color          #201e2e;
+@define-color theme_text_color          #e0d9f5;
+@define-color theme_selected_bg_color   #9d6fe8;
 @define-color theme_selected_fg_color   #ffffff;
-@define-color theme_tooltip_bg_color    #252538;
-@define-color theme_tooltip_fg_color    #cdd6f4;
-@define-color insensitive_bg_color  #1e1e2e;
-@define-color insensitive_fg_color  #6c7086;
-@define-color insensitive_base_color #252538;
-@define-color borders               #3d2a5c;
-@define-color alt_borders           #3d2a5c;
-@define-color borders_edge          #3d2a5c;
-@define-color link_color            #9b5ef0;
-@define-color link_visited_color    #6a2fc0;
-@define-color warning_color         #ff9f5e;
-@define-color error_color           #e05555;
-@define-color success_color         #5faf5f;
-@define-color sidebar_bg_color      #252538;
-@define-color sidebar_fg_color      #cdd6f4;
-@define-color sidebar_border_color  #3d2a5c;
-@define-color wm_title_focused_bg   #252538;
-@define-color wm_title_unfocused_bg #1e1e2e;
-@define-color wm_title_focused_fg   #cdd6f4;
-@define-color wm_title_unfocused_fg #6c7086;
-@define-color wm_button_hover_bg    #8139e8;
-@define-color wm_button_close_bg    #e05555;
+@define-color theme_tooltip_bg_color    #2a2840;
+@define-color theme_tooltip_fg_color    #e0d9f5;
+@define-color insensitive_bg_color      #1a1825;
+@define-color insensitive_fg_color      #6e6a8a;
+@define-color insensitive_base_color    #201e2e;
+@define-color borders                   #2a2840;
+@define-color alt_borders               #2a2840;
+@define-color borders_edge              #2a2840;
+@define-color link_color                #b899ff;
+@define-color link_visited_color        #5c3d99;
+@define-color warning_color             #e8c97a;
+@define-color error_color               #e87a7a;
+@define-color success_color             #89c98a;
+@define-color sidebar_bg_color          #201e2e;
+@define-color sidebar_fg_color          #e0d9f5;
+@define-color sidebar_border_color      #2a2840;
+@define-color wm_title_focused_bg       #201e2e;
+@define-color wm_title_unfocused_bg     #1a1825;
+@define-color wm_title_focused_fg       #e0d9f5;
+@define-color wm_title_unfocused_fg     #6e6a8a;
+@define-color wm_button_hover_bg        #9d6fe8;
+@define-color wm_button_close_bg        #e87a7a;
 
 /* ── Basis-Flächen ─────────────────────────────────────────── */
 * {
@@ -126,7 +125,7 @@ entry, spinbutton {
 }
 
 entry:focus, spinbutton:focus {
-    border-color:     @selected_bg_color;
+    border-color: @selected_bg_color;
 }
 
 entry selection {
@@ -152,7 +151,7 @@ menu, .menu {
 }
 
 menuitem {
-    color:            @fg_color;
+    color: @fg_color;
 }
 
 menuitem:hover {
@@ -161,7 +160,7 @@ menuitem:hover {
 }
 
 menuitem:disabled {
-    color:            @fg_dim_color;
+    color: @fg_dim_color;
 }
 
 /* ── Sidebar & TreeView ────────────────────────────────────── */
@@ -311,9 +310,9 @@ statusbar {
 }
 
 /* ── Label ─────────────────────────────────────────────────── */
-label { color: @fg_color; }
+label           { color: @fg_color; }
 label.dim-label { color: @fg_dim_color; }
-label:disabled { color: @fg_dim_color; }
+label:disabled  { color: @fg_dim_color; }
 
 /* ── Links ─────────────────────────────────────────────────── */
 *:link    { color: @purple_hover; }
