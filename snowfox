@@ -25,6 +25,7 @@ source "$CLI_DIR/hardware.sh"
 source "$CLI_DIR/media.sh"
 source "$CLI_DIR/security.sh"
 source "$CLI_DIR/desktop.sh"
+source "$CLI_DIR/settings.sh"
 source "$CLI_DIR/doctor.sh"
 source "$CLI_DIR/mesh.sh"
 source "$CLI_DIR/ai.sh"
@@ -51,6 +52,7 @@ case "$1" in
     layout)    cmd_layout "$2" ;;
     apps)      cmd_apps "$2" "$3" ;;
     webapp)    cmd_webapp "$2" "$3" "$4" ;;
+    settings)  shift; cmd_settings "$@" ;;
     doctor)    cmd_doctor ;;
     mesh)      shift; cmd_mesh_wrapper "$@" ;;
     ai)        cmd_ai ;;
