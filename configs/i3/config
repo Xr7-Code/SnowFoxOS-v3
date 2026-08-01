@@ -6,12 +6,12 @@ set $mod Mod4
 set $term kitty
 
 # ── Farben ──────────────────────────────────────────────────
-set $purple    #8139e8
-set $purple_lt #a366ff
-set $bg        #1e1e2e
-set $bg2       #252538
-set $fg        #cdd6f4
-set $gray      #6c7086
+set $purple    #9d6fe8
+set $purple_lt #b899ff
+set $bg        #1a1825
+set $bg2       #201e2e
+set $fg        #e0d9f5
+set $gray      #6e6a8a
 set $orange    #ff79c6
 
 # ── Schrift ─────────────────────────────────────────────────
