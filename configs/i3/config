@@ -60,7 +60,7 @@ bindsym $mod+c      exec rofi -modi "clipboard:greenclip print" -show clipboard 
 bindsym $mod+e      exec pcmanfm
 bindsym $mod+n      exec ~/.config/snowfox-network.sh
 bindsym $mod+w      exec ~/.config/snowfox-wallpaper.sh
-bindsym $mod+l      exec i3lock -c 1e1e2e
+bindsym $mod+l      exec ~/.config/snowfox-lock.sh
 bindsym $mod+p      exec ~/.config/snowfox-display.sh
 
 # ── Screenshots ─────────────────────────────────────────────
