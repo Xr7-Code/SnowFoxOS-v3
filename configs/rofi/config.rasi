@@ -14,13 +14,13 @@ configuration {
 
 * {
     font:             "JetBrainsMono Nerd Font 10.5";
-    bg:               #1e1e2e;
-    bg-alt:           #181825;
+    bg:        #1a1825;
+    bg-alt:    #201e2e;
     bg-hover:         #313244;
     fg:               #cdd6f4;
     fg-alt:           #6c7086;
-    purple:           #8139e8;
-    purple-lt:        #a366ff;
+    purple:    #9d6fe8;
+    purple-lt: #b899ff;
     purple-dim:       rgba(129, 57, 232, 0.18);
     purple-border:    rgba(163, 102, 255, 0.5);
     orange:           #ff79c6;
