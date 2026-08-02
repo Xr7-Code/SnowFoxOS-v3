@@ -55,8 +55,6 @@ exec_always --no-startup-id dbus-update-activation-environment --systemd QT_QPA_
 bindsym $mod+Return exec $term
 bindsym $mod+space  exec rofi -show drun -show-icons -theme ~/.config/rofi/config.rasi
 bindsym $mod+Tab    exec rofi -show window -theme ~/.config/rofi/config.rasi
-bindsym $mod+c      exec rofi -modi "clipboard:greenclip print" -show clipboard \
-                         -run-command '{cmd}' -theme ~/.config/rofi/config.rasi
 bindsym $mod+e      exec pcmanfm
 bindsym $mod+n      exec ~/.config/snowfox-network.sh
 bindsym $mod+w      exec ~/.config/snowfox-wallpaper.sh
