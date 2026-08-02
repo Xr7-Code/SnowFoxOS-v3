@@ -29,7 +29,7 @@ configuration {
 }
 
 window {
-    background-color: @bg;
+    background-color: rgba(26, 24, 37, 0.85);
     border:           1.5px solid;
     border-color:     @purple-border;
     border-radius:    14px;
@@ -48,7 +48,7 @@ mainbox {
 
 /* ── Suchleiste ─────────────────────────────────────────── */
 inputbar {
-    background-color: @bg-alt;
+    background-color: rgba(32, 30, 46, 0.80);
     border-radius:    10px;
     border:           1px solid;
     border-color:     rgba(129, 57, 232, 0.25);
@@ -82,7 +82,7 @@ listview {
 }
 
 element {
-    background-color: transparent;
+    background-color: rgba(32, 30, 46, 0.80);
     border-radius:    8px;
     padding:          8px 12px;
     spacing:          12px;
