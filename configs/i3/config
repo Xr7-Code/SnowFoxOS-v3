@@ -47,8 +47,8 @@ exec --no-startup-id lxpolkit
 exec --no-startup-id xsettingsd
 exec --no-startup-id nm-applet --no-agent
 exec --no-startup-id redshift
-exec --no-startup-id greenclip daemon
-exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork -c 1e1e2e
+exec --no-startup-id ~/.config/i3/clip-saver.sh
+exec --no-startup-id xss-lock --transfer-sleep-lock -- ~/.config/snowfox-lock.sh
 exec_always --no-startup-id dbus-update-activation-environment --systemd QT_QPA_PLATFORMTHEME
 
 # ── Shortcuts ───────────────────────────────────────────────
