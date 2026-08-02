@@ -61,6 +61,7 @@ success "clipnotify installiert"
 
 # clip-saver.sh installieren
 if [[ -f "$SCRIPT_DIR/configs/i3/clip-saver.sh" ]]; then
+    mkdir -p "$TARGET_HOME/.config/i3"
     cp "$SCRIPT_DIR/configs/i3/clip-saver.sh" "$TARGET_HOME/.config/i3/clip-saver.sh"
     chmod +x "$TARGET_HOME/.config/i3/clip-saver.sh"
     success "clip-saver.sh installiert"
