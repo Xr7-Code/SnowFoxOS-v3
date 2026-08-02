@@ -52,7 +52,7 @@ success "i3 Desktop-Pakete installiert"
 
 # ── Clipnotify — aus Source bauen ────────────────────────────
 info "Installiere clipnotify..."
-apt-get install -y libx11-dev
+apt-get install -y libx11-dev libxfixes-dev
 git clone https://github.com/cdown/clipnotify.git /tmp/clipnotify
 make -C /tmp/clipnotify
 cp /tmp/clipnotify/clipnotify /usr/local/bin/clipnotify
