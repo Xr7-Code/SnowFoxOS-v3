@@ -23,6 +23,26 @@ Der `snowfox`-Befehl ist das Herzstück des Systems. Er verwaltet alles: von Sys
 
 ---
 
+## Screenshots
+
+<div align="center">
+
+**Desktop**
+![Desktop](assets/SnowFox-Desktop.png)
+
+**Tiling**
+![Tiling](assets/SnowFox-Tiling.png)
+
+**Floating**
+![Floating](assets/SnowFox-Floating.png)
+
+**Rofi App-Launcher**
+![Rofi](assets/SnowFox-Rofi.png)
+
+</div>
+
+---
+
 ## Philosophie
 
 Die meisten Betriebssysteme behandeln dich als Produkt. Sie sammeln deine Daten, verlangsamen deine Hardware mit jedem Update und sperren dich in Ökosysteme die du nie gewählt hast.
@@ -44,48 +64,50 @@ Dieses System ist für Menschen die ihre Hardware zurückhaben wollen. Es telefo
 - **i3 WM mit Smart Dynamic Floating** — Tiling Window Manager mit Smart Gaps. Automatische Umschaltung von Rahmen & Titelleisten:
   - **Wechsel zu Floating:** Fenster erhält automatisch eine greifbare Titelleiste, lila Rahmen, eine feste Standardgröße (`960x600`) und wird zentriert.
   - **Wechsel zurück zu Tiling:** Rahmen und Titelleisten werden vollautomatisch und nahtlos wieder entfernt.
-- **Polybar** — Statusleiste mit CPU, RAM, Akku, Netzwerk, Lautstärke und System-Tray
+- **Polybar** — Statusleiste mit RAM, Akku, Netzwerk, Lautstärke, Bluetooth und System-Tray
 - **Rofi** — schneller App-Launcher mit passendem Dark-Theme und ikonischem Design
-- **Kitty** — GPU-beschleunigtes Terminal mit SnowFox-Farbpalette und JetBrainsMono Nerd Font
+- **Kitty** — GPU-beschleunigtes Terminal mit SnowFox-Farbpalette, Starship-Prompt und JetBrainsMono Nerd Font
+- **Starship** — moderner Shell-Prompt mit Git-Integration, Ausführungszeit und SnowFox-Palette
+- **picom** — Compositor mit runden Ecken, weichen Schatten und subtilen Fading-Animationen
 - **Zen Browser** — privacy-fokussierter Browser auf Firefox-Basis, keine Telemetrie (optional)
 - **PipeWire** — moderner Audio-Stack (ersetzt PulseAudio), inklusive WirePlumber und grafischem Mixer (Pavucontrol)
-- **Dunst** — schlanker Notification-Daemon
-- **Greenclip** — schlanker Clipboard-Manager ohne GTK-Overhead
-- **fastfetch** — systeminfo mit SnowFox-Logo
+- **Dunst** — schlanker Notification-Daemon, abgestimmt auf die SnowFox-Palette
+- **Clip-Saver** — schlanker Clipboard-Watcher der Inhalte auch nach dem Schließen eines Fensters erhält (kein GTK-Overhead, kein History-Bloat)
+- **fastfetch** — Systeminfo mit SnowFox-Logo
 - **zram** — komprimierter Swap im RAM (lz4, 50%), Swappiness auf 10 gesetzt
 - **tlp** — automatische Akku-Optimierung, aktiv bei jedem Boot
 - **earlyoom** — verhindert System-Freeze bei sehr geringem freiem RAM
 - **ufw Firewall** — eingehende Verbindungen standardmäßig blockiert
 - **DNS-over-TLS** — via systemd-resolved mit Cloudflare + Quad9, keine DNS-Leaks
 - **GPU-Erkennung** — installiert automatisch die richtigen Treiber für AMD, NVIDIA oder Hybrid
+- **Automatischer Kernel-Fallback** — XanMod LTS (x64v3) auf moderner Hardware, automatischer Fallback auf Standard-Debian-Kernel wenn kein AVX2 erkannt wird
 - **Hybrid GPU Freeze Fix** — PSR-Deaktivierung via `dcfeaturemask=0x8` für stabile AMD+NVIDIA Dual-Monitor Setups
 - **Dark Mode** — SnowFox Palette (GTK2/3/4 + Qt) out of the box, konsistent über alle Apps und Ordnerfarben
 - **OnlyOffice** — vollständige Microsoft-Format-Kompatibilität (optional im Installer)
 - **SnowFox Console Launcher** — nativer Game-Launcher für Steam, GOG, Retro und eigene Spiele
-- **Multiarch (i386)** — Volle Unterstützung für 32-Bit-Anwendungen und Spiele (z.B. Steam).
-- **Core Utilities** — Vorkonfiguriertes Set an essentiellen Tools wie `fzf`, `aria2`, `btop`, `imagemagick`, `xclip`, `xdotool`, `lm-sensors`.
-- **`startx` ohne sudo** — Komfortabler Start der Desktop-Umgebung direkt von der TTY ohne Root-Rechte.
-- **System-Locales** — Konfiguration für `de_AT.UTF-8` und `en_US.UTF-8` zur Fehlervermeidung in Anwendungen wie Steam.
-- **Hardware-spezifische WLAN-Fixes** — Automatische Erkennung und Anwendung von Stabilitäts-Fixes für bestimmte WLAN-Chips (z.B. Realtek RTL8821CE, Fritz USB) inklusive Kernel-Parameter (`pci=noaer`).
-- **CPU Microcode Updates** — Automatische Installation der passenden Microcode-Updates für Intel- und AMD-CPUs.
-- **`thermald`** — Intelligentes Thermalmanagement für Laptops.
-- **Bibata-Modern-Classic Cursor** — Elegantes und konsistentes Cursor-Theme.
-- **`bluetui`** — Ein Terminal-basiertes UI zum Verwalten von Bluetooth-Geräten.
-- **Erweiterte Desktop-Integration** — Desktop-Einträge für `nmtui`, `bluetui`, `pcmanfm` für schnelle Erreichbarkeit via Rofi.
-- **Detaillierte Touchpad-Konfiguration** — Voreinstellungen für Tapping, Click-Method, Natural Scrolling und Deaktivierung während der Eingabe.
-- **Standard-Anwendungen** — Vorkonfigurierte Standard-Apps für Dateimanager (PCManFM), Texteditor (Mousepad/VSCodium), Bildanzeige (Ristretto), Archivverwaltung (File Roller) und Medienwiedergabe (MPV).
-- **Redshift** — Dynamische Anpassung der Bildschirmfarben an die Tageszeit.
-- **Scrot & Brightnessctl** — Werkzeuge für Screenshots und Helligkeitsregelung direkt über Tastenkürzel.
-- **Playerctl** — Steuerung von Medienplayern über globale Tastenkürzel.
-- **Druckerunterstützung (CUPS)** — Grundlegende Druckerunterstützung inklusive CUPS und Splix-Treiber.
-- **XanMod LTS Kernel (x64v3)** — Ein speziell optimierter Kernel für moderne CPUs (AVX2 erforderlich) für verbesserte Performance und niedrige Latenz.
-- **Boot-Screen** — Anpassbarer Plymouth Boot-Screen mit SnowFox-Logo.
-- **System-Identity** — Angepasste `os-release` und `lsb-release` zur klaren Identifizierung als SnowFoxOS.
-- **Papirus Ordnerfarben** — Violette Ordner-Icons für ein konsistentes SnowFox-Theme.
-- **NVIDIA Treiber Optimierungen** — Erweiterte Konfiguration für NVIDIA GPUs inklusive spezifischer `modprobe` Optionen für Stabilität und Performance (z.B. `modeset=1`, `NVreg_PreserveVideoMemoryAllocations=1`).
-- **Intel Media Driver Fix für Steam** — Verhindert Steam-Freezes beim Workspace-Wechsel auf Systemen mit Intel-Grafik.
-- **Ollama** — Lokale KI-Engine (ohne vorinstalliertes Modell), mit Anleitung zum Starten und Herunterladen von Modellen.
-- **`yt-dlp`** — Für effizientes Streaming und Herunterladen von Videos/Audios.
+- **Multiarch (i386)** — Volle Unterstützung für 32-Bit-Anwendungen und Spiele (z.B. Steam)
+- **Core Utilities** — Vorkonfiguriertes Set an essentiellen Tools wie `fzf`, `aria2`, `btop`, `imagemagick`, `xclip`, `xdotool`, `lm-sensors`
+- **`startx` ohne sudo** — Komfortabler Start der Desktop-Umgebung direkt von der TTY ohne Root-Rechte
+- **System-Locales** — Konfiguration für `de_AT.UTF-8` und `en_US.UTF-8` zur Fehlervermeidung in Anwendungen wie Steam
+- **Hardware-spezifische WLAN-Fixes** — Automatische Erkennung und Anwendung von Stabilitäts-Fixes für bestimmte WLAN-Chips (z.B. Realtek RTL8821CE, Fritz USB) inklusive Kernel-Parameter (`pci=noaer`)
+- **CPU Microcode Updates** — Automatische Installation der passenden Microcode-Updates für Intel- und AMD-CPUs
+- **`thermald`** — Intelligentes Thermalmanagement für Laptops
+- **Bibata-Modern-Classic Cursor** — Elegantes und konsistentes Cursor-Theme
+- **`bluetui`** — Terminal-basiertes UI zum Verwalten von Bluetooth-Geräten
+- **Erweiterte Desktop-Integration** — Desktop-Einträge für `nmtui`, `bluetui`, `pcmanfm` für schnelle Erreichbarkeit via Rofi
+- **Detaillierte Touchpad-Konfiguration** — Voreinstellungen für Tapping, Click-Method, Natural Scrolling und Deaktivierung während der Eingabe
+- **Standard-Anwendungen** — Vorkonfigurierte Standard-Apps für Dateimanager (PCManFM), Texteditor (Mousepad/VSCodium), Bildanzeige (Ristretto), Archivverwaltung (File Roller) und Medienwiedergabe (MPV)
+- **Redshift** — Dynamische Anpassung der Bildschirmfarben an die Tageszeit
+- **Scrot & Brightnessctl** — Werkzeuge für Screenshots und Helligkeitsregelung direkt über Tastenkürzel
+- **Playerctl** — Steuerung von Medienplayern über globale Tastenkürzel
+- **Druckerunterstützung (CUPS)** — Grundlegende Druckerunterstützung inklusive CUPS und Splix-Treiber
+- **Boot-Screen** — Anpassbarer Plymouth Boot-Screen mit SnowFox-Logo
+- **System-Identity** — Angepasste `os-release` und `lsb-release` zur klaren Identifizierung als SnowFoxOS
+- **Papirus Ordnerfarben** — Violette Ordner-Icons für ein konsistentes SnowFox-Theme
+- **NVIDIA Treiber Optimierungen** — Erweiterte Konfiguration für NVIDIA GPUs inklusive spezifischer `modprobe` Optionen für Stabilität und Performance (z.B. `modeset=1`, `NVreg_PreserveVideoMemoryAllocations=1`)
+- **Intel Media Driver Fix für Steam** — Verhindert Steam-Freezes beim Workspace-Wechsel auf Systemen mit Intel-Grafik
+- **Ollama** — Lokale KI-Engine (ohne vorinstalliertes Modell), mit Anleitung zum Starten und Herunterladen von Modellen
+- **`yt-dlp`** — Für effizientes Streaming und Herunterladen von Videos/Audios
 
 ---
 
@@ -101,34 +123,37 @@ SnowFoxOS ist darauf ausgelegt nicht im Weg zu stehen und so wenig Ressourcen wi
 - **IPv6 Privacy Extensions** (`net.ipv6.conf.all.use_tempaddr=2`) zum Schutz deiner Privatsphäre im Netzwerk.
 - **`fstab` Optimierungen** mit `noatime` für schnellere Dateisystem-Operationen und `tmpfs /tmp size=4G` für ein schnelles, RAM-basiertes `/tmp`.
 - **UFW Firewall** ist standardmäßig aktiv mit blockierten eingehenden und erlaubten ausgehenden Verbindungen.
-- **Netzwerkmanager Integration** — `ifupdown`-Einträge für WLAN/LAN werden deaktiviert, um volle Kontrolle durch NetworkManager zu gewährleisten. Zusätzliche WiFi-Energiesparmodi sind aktiviert (`wifi.powersave=2`).
 - **DNS-over-TLS (DoT)** über `systemd-resolved` mit Cloudflare und Quad9 als primären Servern, Fallback zu Google, und `DNSSEC=allow-downgrade` für verbesserte Sicherheit und Privatsphäre.
 - **Deaktivierung unnötiger System-Dienste** beim Install (cups-browsed, avahi, ModemManager, colord, blueman, apt-daily, apt-daily-upgrade).
 - **Maskierung von Online-Wait-Services** (`NetworkManager-wait-online.service`, `systemd-networkd-wait-online.service`) für schnelleren Boot.
 - **Entfernung von Bloatware** wie `zeitgeist`, `diodon`, `xterm`, `uxterm` und Maskierung der `xdg-desktop-portal` Dienste.
 - **`HandlePowerKey=ignore`** in `logind.conf` verhindert ungewolltes Herunterfahren bei kurzem Power-Button-Druck.
 - Kein Display Manager — i3 startet direkt von TTY1 für minimalen Ressourcenverbrauch.
-- Kein Compositor — kein picom, kein unnötiger GPU-Overhead im Idle.
 
-| Zustand | RAM (ungefähr) |
+### RAM-Verbrauch
+
+Die genaueste Messung für Desktop-RAM-Verbrauch ist **PSS (Proportional Set Size)** — shared Libraries werden anteilig gezählt, nicht doppelt. Die Werte aus `free -h` sind höher weil sie Page-Cache einschließen.
+
+| Zustand | RAM (PSS) |
 |---|---|
-| Desktop ohne offene Apps | ~350–420 MB |
-| + Zen Browser (1–5 Tabs) | ~900 MB – 1,3 GB |
+| Desktop-Stack idle (ohne Terminal) | ~177 MB |
+| + Kitty Terminal | ~200 MB |
+| + Zen Browser (5 Tabs) | ~900 MB – 1,3 GB |
 | + Zen Browser (viele Tabs) | 1,5–2,5 GB |
 | + OnlyOffice geöffnet | +500 MB |
 | + Steam im Hintergrund | +300 MB |
 
-Zum Vergleich:
+Zum Vergleich (gemessen mit `free -h`, üblicher Community-Standard):
 
-| System | Idle RAM (ungefähr) |
+| System | Idle RAM |
 |---|---|
 | Windows 11 | ~3,5 GB |
 | Ubuntu (GNOME) | ~1,5 GB |
 | KDE Plasma | ~900 MB |
 | Arch Linux mit i3 | ~400–500 MB |
-| **SnowFoxOS** | **~350–420 MB** |
+| **SnowFoxOS** | **~177 MB PSS** |
 
-> **Hinweis:** Linux nutzt freien RAM automatisch als Dateisystem-Cache. Das ist normal und kein Problem — der Cache wird sofort freigegeben sobald ein Programm ihn braucht. `free -h` zeigt in der Spalte `verfügbar` den tatsächlich nutzbaren Speicher.
+> **Hinweis:** Linux nutzt freien RAM automatisch als Dateisystem-Cache. Das ist normal und kein Problem — der Cache wird sofort freigegeben sobald ein Programm ihn braucht. Der tatsächlich verfügbare Speicher steht in `free -h` unter `verfügbar`.
 
 ---
 
@@ -181,7 +206,7 @@ SnowFoxOS kann auf drei verschiedene Arten als Node betrieben werden:
 
 | Befehl | Beschreibung |
 |---|---|
-| `snowfox node console` | Startet den SnowFox Console Launcher — nativer Game-hub für Steam, GOG, Retro und eigene Spiele |
+| `snowfox node console` | Startet den SnowFox Console Launcher — nativer Game-Hub für Steam, GOG, Retro und eigene Spiele |
 | `snowfox node server` | Server-Modus — minimaler Footprint, optimiert für Dauerbetrieb |
 | `snowfox node desktop` | Standard Desktop-Modus (Standard) |
 
@@ -262,7 +287,7 @@ Nach dem Neustart startet i3 automatisch von TTY1.
 | `Super + Return` | Terminal (Kitty) |
 | `Super + Tab` | Fenster wechseln (Switcher) |
 | `Super + Space` | App-Launcher (Rofi) |
-| `Super + E` | Dateimanager (PCmanFM) |
+| `Super + E` | Dateimanager (PCManFM) |
 | `Super + N` | Netzwerk-Manager |
 | `Super + W` | Wallpaper-Selector |
 | `Super + P` | Display-Konfiguration |
@@ -271,8 +296,8 @@ Nach dem Neustart startet i3 automatisch von TTY1.
 | `Super + F` | Vollbild umschalten |
 | `Super + H / V` | Split horizontal / vertikal |
 | `Super + Shift + Space` | Dynamic Floating Toggle (Auto-Size `960x600`, Auto-Border & Zentrierung) |
-| `Super + 1–5` | Workspace wechseln |
-| `Super + Shift + 1–5` | Fenster zu Workspace verschieben |
+| `Super + 1–9` | Workspace wechseln |
+| `Super + Shift + 1–9` | Fenster zu Workspace verschieben |
 | `Super + R` | Resize-Modus |
 | `Super + Shift + R` | i3 neu laden |
 | `Super + Shift + E` | Power-Menü |
@@ -289,21 +314,22 @@ Nach dem Neustart startet i3 automatisch von TTY1.
 | Statusleiste | polybar |
 | App-Launcher | rofi |
 | Terminal | kitty |
+| Shell-Prompt | starship |
 | Browser | zen-browser (optional) |
 | Audio | pipewire + wireplumber |
-| Compositor | — (kein picom, bewusst entfernt) |
+| Compositor | picom (runde Ecken, Schatten, Fading) |
 | Benachrichtigungen | dunst |
-| Clipboard | greenclip |
+| Clipboard | clip-saver + clipnotify |
 | Dateimanager | pcmanfm |
 | System-Info | fastfetch |
-| Bildschirmsperre | i3lock + xss-lock |
+| Bildschirmsperre | i3lock + xss-lock (Smart Lock) |
 | Media Player | mpv + yt-dlp |
 | Game Launcher | SnowFox Console Launcher |
 | Office | OnlyOffice (optional) |
 | Akku | tlp |
 | Firewall | ufw |
 | OOM-Schutz | earlyoom |
-| Kernel | XanMod LTS (x64v3) |
+| Kernel | XanMod LTS (x64v3) mit Fallback |
 | Bluetooth Terminal UI | bluetui |
 | Maus-Cursor | Bibata-Modern-Classic |
 | Night Light | redshift |
@@ -320,20 +346,20 @@ Nach dem Neustart startet i3 automatisch von TTY1.
 
 > ⚠️ Bitte vor der Installation vollständig lesen.
 
-### Kernel: AVX2 erforderlich
+### Kernel: AVX2 empfohlen
 
-Der Installer installiert `linux-xanmod-lts-x64v3`. Dieser Kernel nutzt **AVX2-CPU-Instruktionen** die erst ab folgenden Generationen verfügbar sind:
+Der Installer versucht `linux-xanmod-lts-x64v3` zu installieren. Dieser Kernel nutzt **AVX2-CPU-Instruktionen** die erst ab folgenden Generationen verfügbar sind:
 
 - Intel: **Haswell (2013)** und neuer
 - AMD: **Excavator (2015)** und neuer
 
-Auf älteren CPUs **bootet das System nach dem Reboot nicht**. Prüfen mit:
+Auf älteren CPUs erkennt der Installer das automatisch und fällt auf den Standard-Debian-Kernel zurück. Prüfen mit:
 
 ```bash
 grep avx2 /proc/cpuinfo
 ```
 
-Zeigt der Befehl eine Ausgabe, ist AVX2 vorhanden.
+Zeigt der Befehl eine Ausgabe, ist AVX2 vorhanden und XanMod wird installiert.
 
 ### NVIDIA: Nur Maxwell (2014) und neuer
 
@@ -350,9 +376,9 @@ SnowFoxOS enthält einen Fix für den bekannten `dma_fence_wait_timeout` Freeze 
 
 ### Ältere Systeme (vor 2013)
 
-SnowFoxOS ist nicht für alte Hardware ausgelegt. Auf Systemen vor 2013 können folgende Probleme auftreten:
+Auf Systemen vor 2013 können folgende Probleme auftreten:
 
-- Kernel bootet nicht (kein AVX2)
+- XanMod-Kernel wird nicht installiert (kein AVX2) — Fallback auf Standard-Kernel
 - NVIDIA-Treiber nicht kompatibel
 - Zen Browser zu ressourcenintensiv
 
@@ -360,7 +386,7 @@ Für sehr alte Hardware empfehlen sich stattdessen **AntiX**, **BunsenLabs** ode
 
 ### Dual-Monitor & Tray-Popups
 
-Auf Systemen mit mehreren Monitoren kann es vorkommen dass Tray-Popups (z.B. MEGASync, Blueman) nicht korrekt positioniert sind. Das ist ein bekanntes i3/GTK-Problem. Workaround: Popup mit `Super + Mausklick` manuell verschieben.
+Auf Systemen mit mehreren Monitoren kann es vorkommen dass Tray-Popups (z.B. MEGASync) nicht korrekt positioniert sind. Das ist ein bekanntes i3/GTK-Problem. Workaround: Popup mit `Super + Mausklick` manuell verschieben.
 
 ### Nur Debian 12
 
@@ -422,5 +448,5 @@ Please don't go, I want you to stay
 I'm begging you please, oh please don't leave here
 I don't want you to change;
 For all the hurt that you feel,
-This world is just illusion, always trying to change you 
+This world is just illusion, always trying to change you
 -->
