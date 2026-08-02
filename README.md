@@ -28,7 +28,9 @@ Der `snowfox`-Befehl ist das Herzstück des Systems. Er verwaltet alles: von Sys
 <div align="center">
 
 **Desktop**
-<br>
+
+
+
 ![Desktop](assets/SnowFox-Desktop.png)
 
 **Tiling**
