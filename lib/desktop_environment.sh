@@ -48,11 +48,15 @@ apt-get install -y \
 
 # Picom wurde entfernt — verursachte Grafikkonflikte auf AMD+NVIDIA Hybrid
 # und erhöhte unnötig RAM/GPU-Last. i3 braucht keinen Compositor zwingend.
-success "i3 Desktop-Pakete installiert (ohne picom)"
+success "i3 Desktop-Pakete installiert"
 
-# ── Clipnotify — Clipboard-Watcher ───────────────────────────
+# ── Clipnotify — aus Source bauen ────────────────────────────
 info "Installiere clipnotify..."
-apt-get install -y clipnotify
+apt-get install -y libx11-dev
+git clone https://github.com/cdown/clipnotify.git /tmp/clipnotify
+make -C /tmp/clipnotify
+cp /tmp/clipnotify/clipnotify /usr/local/bin/clipnotify
+rm -rf /tmp/clipnotify
 success "clipnotify installiert"
 
 # clip-saver.sh installieren
