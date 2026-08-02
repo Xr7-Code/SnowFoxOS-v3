@@ -34,12 +34,21 @@ Der `snowfox`-Befehl ist das Herzstück des Systems. Er verwaltet alles: von Sys
 ![Desktop](assets/SnowFox-Desktop.png)
 
 **Tiling**
+
+
+
 ![Tiling](assets/SnowFox-Tiling.png)
 
 **Floating**
+
+
+
 ![Floating](assets/SnowFox-Floating.png)
 
 **Rofi App-Launcher**
+
+
+
 ![Rofi](assets/SnowFox-Rofi.png)
 
 </div>
