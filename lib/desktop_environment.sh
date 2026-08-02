@@ -50,14 +50,16 @@ apt-get install -y \
 # und erhöhte unnötig RAM/GPU-Last. i3 braucht keinen Compositor zwingend.
 success "i3 Desktop-Pakete installiert (ohne picom)"
 
-# ── Greenclip — schlanker Clipboard-Manager ───────────────────
-info "Installiere Greenclip Clipboard-Manager..."
-if curl -L "https://github.com/erebe/greenclip/releases/latest/download/greenclip" \
-    -o /usr/local/bin/greenclip 2>/dev/null; then
-    chmod +x /usr/local/bin/greenclip
-    success "Greenclip installiert"
-else
-    warn "Greenclip Download fehlgeschlagen — manuell installieren"
+# ── Clipnotify — Clipboard-Watcher ───────────────────────────
+info "Installiere clipnotify..."
+apt-get install -y clipnotify
+success "clipnotify installiert"
+
+# clip-saver.sh installieren
+if [[ -f "$SCRIPT_DIR/configs/i3/clip-saver.sh" ]]; then
+    cp "$SCRIPT_DIR/configs/i3/clip-saver.sh" "$TARGET_HOME/.config/i3/clip-saver.sh"
+    chmod +x "$TARGET_HOME/.config/i3/clip-saver.sh"
+    success "clip-saver.sh installiert"
 fi
 
 # ── Bibata Cursor Theme installieren ─────────────────────────
