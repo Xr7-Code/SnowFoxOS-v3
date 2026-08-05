@@ -19,11 +19,10 @@ cmd_download() {
         exit 1
     fi
 
-    # Cookies aus Browser holen (einmal pro Tag)
+    # Cookies aus Browser holen
     COOKIE_FILE="$HOME/.config/snowfox/cookies.txt"
     mkdir -p "$(dirname "$COOKIE_FILE")"
     if [[ ! -f "$COOKIE_FILE" || $(find "$COOKIE_FILE" -mtime +1 2>/dev/null) ]]; then
-        # Versuche Cookies aus Firefox zu holen
         if command -v firefox &>/dev/null; then
             yt-dlp --cookies-from-browser firefox --cookies "$COOKIE_FILE" 2>/dev/null || true
         fi
@@ -44,22 +43,41 @@ cmd_download() {
     OUTDIR="$HOME/Downloads"
     mkdir -p "$OUTDIR"
 
-    # Moderne Optionen für YouTube
+    # Basis-Optionen: IPv4 + User-Agent + Cookies
     BASE_OPTS="--force-ipv4 \
-        --extractor-args youtube:skip=hls,dash,translated_subs \
         --user-agent 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' \
         $COOKIE_OPT"
 
     case "$FORMAT" in
         1) 
-            yt-dlp $BASE_OPTS -f "bestvideo+bestaudio" \
-                -o "$OUTDIR/%(title)s.%(ext)s" "$1" ;;
+            # Video: bestes Video + bestes Audio
+            yt-dlp $BASE_OPTS \
+                -f "bestvideo+bestaudio" \
+                --merge-output-format mkv \
+                -o "$OUTDIR/%(title)s.%(ext)s" \
+                "$1"
+            ;;
         2) 
-            yt-dlp $BASE_OPTS -f "140" \
-                -o "$OUTDIR/%(title)s.%(ext)s" "$1" ;;
+            # MP3: Extrahiere Audio und konvertiere zu MP3
+            yt-dlp $BASE_OPTS \
+                -x \
+                --audio-format mp3 \
+                --audio-quality 2 \
+                --embed-thumbnail \
+                --add-metadata \
+                -o "$OUTDIR/%(title)s.%(ext)s" \
+                "$1"
+            ;;
         3) 
-            yt-dlp $BASE_OPTS -f "251" \
-                -o "$OUTDIR/%(title)s.%(ext)s" "$1" ;;
+            # Opus: Extrahiere Audio und konvertiere zu Opus
+            yt-dlp $BASE_OPTS \
+                -x \
+                --audio-format opus \
+                --embed-thumbnail \
+                --add-metadata \
+                -o "$OUTDIR/%(title)s.%(ext)s" \
+                "$1"
+            ;;
         *) 
             err "Ungültige Auswahl." 
             return 1 ;;
@@ -71,7 +89,6 @@ cmd_download() {
         err "Download fehlgeschlagen. Versuche: yt-dlp --update"
     fi
 }
-
 
 # ============================================================
 # snowfox stream
