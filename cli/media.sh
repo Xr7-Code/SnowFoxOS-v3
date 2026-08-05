@@ -19,6 +19,21 @@ cmd_download() {
         exit 1
     fi
 
+    # Cookies aus Browser holen (einmal pro Tag)
+    COOKIE_FILE="$HOME/.config/snowfox/cookies.txt"
+    mkdir -p "$(dirname "$COOKIE_FILE")"
+    if [[ ! -f "$COOKIE_FILE" || $(find "$COOKIE_FILE" -mtime +1 2>/dev/null) ]]; then
+        # Versuche Cookies aus Firefox zu holen
+        if command -v firefox &>/dev/null; then
+            yt-dlp --cookies-from-browser firefox --cookies "$COOKIE_FILE" 2>/dev/null || true
+        fi
+    fi
+
+    COOKIE_OPT=""
+    if [[ -f "$COOKIE_FILE" && -s "$COOKIE_FILE" ]]; then
+        COOKIE_OPT="--cookies $COOKIE_FILE"
+    fi
+
     fox "Was möchtest du herunterladen?"
     echo -e "  ${CYAN}1${RESET}) Video (beste Qualität)"
     echo -e "  ${CYAN}2${RESET}) Nur Audio (mp3)"
@@ -29,14 +44,32 @@ cmd_download() {
     OUTDIR="$HOME/Downloads"
     mkdir -p "$OUTDIR"
 
+    # Moderne Optionen für YouTube
+    BASE_OPTS="--force-ipv4 \
+        --extractor-args youtube:skip=hls,dash,translated_subs \
+        --user-agent 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' \
+        $COOKIE_OPT"
+
     case "$FORMAT" in
-        1) yt-dlp --force-ipv4 -o "$OUTDIR/%(title)s.%(ext)s" "$1" ;;
-        2) yt-dlp --force-ipv4 -x --audio-format mp3 -o "$OUTDIR/%(title)s.%(ext)s" "$1" ;;
-        3) yt-dlp --force-ipv4 -x --audio-format opus -o "$OUTDIR/%(title)s.%(ext)s" "$1" ;;
-        *) err "Ungültige Auswahl." ;;
+        1) 
+            yt-dlp $BASE_OPTS -f "bestvideo+bestaudio" \
+                -o "$OUTDIR/%(title)s.%(ext)s" "$1" ;;
+        2) 
+            yt-dlp $BASE_OPTS -f "140" \
+                -o "$OUTDIR/%(title)s.%(ext)s" "$1" ;;
+        3) 
+            yt-dlp $BASE_OPTS -f "251" \
+                -o "$OUTDIR/%(title)s.%(ext)s" "$1" ;;
+        *) 
+            err "Ungültige Auswahl." 
+            return 1 ;;
     esac
 
-    ok "Gespeichert in: $OUTDIR"
+    if [[ $? -eq 0 ]]; then
+        ok "Gespeichert in: $OUTDIR"
+    else
+        err "Download fehlgeschlagen. Versuche: yt-dlp --update"
+    fi
 }
 
 
