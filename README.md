@@ -30,15 +30,27 @@ Der Installer richtet rund 10 Schritte automatisch ein: Kernel, Treiber, Desktop
 <div align="center">
 
 **Desktop**
+
+
+
 ![Desktop](assets/SnowFox-Desktop.png)
 
 **Tiling**
+
+
+
 ![Tiling](assets/SnowFox-Tiling.png)
 
 **Floating**
+
+
+
 ![Floating](assets/SnowFox-Floating.png)
 
 **Rofi App-Launcher**
+
+
+
 ![Rofi](assets/SnowFox-Rofi.png)
 
 </div>
