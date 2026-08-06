@@ -15,11 +15,13 @@
 
 ---
 
-## Überblick
+## Was ist SnowFoxOS?
 
-SnowFoxOS ist ein Ein-Script-Installer der eine minimale Debian 12 Installation in einen kontrollierten, performanten Desktop verwandelt. Kein Bloat, kein Display Manager, keine unnötigen Dienste — nur eine saubere i3-Umgebung vereint unter einem einzigen CLI-Tool: `snowfox`.
+SnowFoxOS ist ein Ein-Script-Installer der eine minimale Debian 12 Netinstall-Installation in einen konfigurierten i3-Desktop verwandelt. Es ist kein eigenes Betriebssystem — es ist Debian 12 mit einem durchdachten, privacy-fokussierten Setup das sonst Stunden manueller Konfiguration erfordert.
 
-Der `snowfox`-Befehl ist das Herzstück des Systems. Er verwaltet alles: von Systemstatus und GPU-Wechsel über Hardware-Kill-Switches bis hin zu Media-Streaming — alles von einem Ort, alles lokal.
+Der Installer richtet rund 10 Schritte automatisch ein: Kernel, Treiber, Desktop-Umgebung, Sicherheitskonfiguration, CLI-Tools. Das Ergebnis ist ein System das sofort nutzbar ist und bei dem die wichtigsten Privacy- und Performance-Einstellungen bereits aktiv sind.
+
+**Was SnowFoxOS nicht ist:** Ein Hochsicherheitssystem. Wer Schutz vor staatlichen Akteuren oder aktiven Angreifern braucht, sollte Tails oder Whonix verwenden.
 
 ---
 
@@ -28,134 +30,142 @@ Der `snowfox`-Befehl ist das Herzstück des Systems. Er verwaltet alles: von Sys
 <div align="center">
 
 **Desktop**
-
-
-
 ![Desktop](assets/SnowFox-Desktop.png)
 
 **Tiling**
-
-
-
 ![Tiling](assets/SnowFox-Tiling.png)
 
 **Floating**
-
-
-
 ![Floating](assets/SnowFox-Floating.png)
 
 **Rofi App-Launcher**
-
-
-
 ![Rofi](assets/SnowFox-Rofi.png)
 
 </div>
 
 ---
 
-## Philosophie
+## Warum dieses Projekt?
 
-Die meisten Betriebssysteme behandeln dich als Produkt. Sie sammeln deine Daten, verlangsamen deine Hardware mit jedem Update und sperren dich in Ökosysteme die du nie gewählt hast.
+Die meisten Desktop-Linux-Setups sind entweder zu komplex für Einsteiger oder zu kompromissbereit bei Privacy und Performance. SnowFoxOS versucht einen dritten Weg: ein System das out-of-the-box sinnvoll konfiguriert ist, ohne dass der Nutzer verstehen muss warum.
 
-SnowFoxOS basiert auf einer anderen Überzeugung:
+Die Grundüberzeugung dahinter: ein Computer sollte dem Nutzer gehören — nicht den Diensten die er nutzt. Das bedeutet konkret keine Telemetrie, kein Tracking, keine Abhängigkeit von Cloud-Diensten für grundlegende Funktionen.
 
 > *Dein Computer gehört dir. Nicht Microsoft. Niemandem sonst.*
-> *Keine Telemetrie, keine Datenweitergabe im Hintergrund. Keine Werbung. Keine Abonnements.*
-> *Du bist kein Produkt. Du bist keine Datei. Du bist ein Mensch.*
->
 > — Alexander Valentin Ludwig
 
-Dieses System ist für Menschen die ihre Hardware zurückhaben wollen. Es telefoniert nicht nach Hause. Es wird mit Updates nicht langsamer. Es verkauft deine Aufmerksamkeit nicht.
+Das ist eine persönliche Überzeugung, kein Versprechen. Ob SnowFoxOS das für dich erfüllt, kannst du mit den unten beschriebenen Mitteln selbst prüfen.
 
 ---
 
-## Features
+## Sicherheit & Privacy
 
-- **i3 WM mit Smart Dynamic Floating** — Tiling Window Manager mit Smart Gaps. Automatische Umschaltung von Rahmen & Titelleisten:
-  - **Wechsel zu Floating:** Fenster erhält automatisch eine greifbare Titelleiste, lila Rahmen, eine feste Standardgröße (`960x600`) und wird zentriert.
-  - **Wechsel zurück zu Tiling:** Rahmen und Titelleisten werden vollautomatisch und nahtlos wieder entfernt.
-- **Polybar** — Statusleiste mit RAM, Akku, Netzwerk, Lautstärke, Bluetooth und System-Tray
-- **Rofi** — schneller App-Launcher mit passendem Dark-Theme und ikonischem Design
-- **Kitty** — GPU-beschleunigtes Terminal mit SnowFox-Farbpalette, Starship-Prompt und JetBrainsMono Nerd Font
-- **Starship** — moderner Shell-Prompt mit Git-Integration, Ausführungszeit und SnowFox-Palette
-- **picom** — Compositor mit runden Ecken, weichen Schatten und subtilen Fading-Animationen
-- **Zen Browser** — privacy-fokussierter Browser auf Firefox-Basis, keine Telemetrie (optional)
-- **PipeWire** — moderner Audio-Stack (ersetzt PulseAudio), inklusive WirePlumber und grafischem Mixer (Pavucontrol)
-- **Dunst** — schlanker Notification-Daemon, abgestimmt auf die SnowFox-Palette
-- **Clip-Saver** — schlanker Clipboard-Watcher der Inhalte auch nach dem Schließen eines Fensters erhält (kein GTK-Overhead, kein History-Bloat)
-- **fastfetch** — Systeminfo mit SnowFox-Logo
-- **zram** — komprimierter Swap im RAM (lz4, 50%), Swappiness auf 10 gesetzt
-- **tlp** — automatische Akku-Optimierung, aktiv bei jedem Boot
-- **earlyoom** — verhindert System-Freeze bei sehr geringem freiem RAM
-- **ufw Firewall** — eingehende Verbindungen standardmäßig blockiert
-- **DNS-over-TLS** — via systemd-resolved mit Cloudflare + Quad9, keine DNS-Leaks
-- **GPU-Erkennung** — installiert automatisch die richtigen Treiber für AMD, NVIDIA oder Hybrid
-- **Automatischer Kernel-Fallback** — XanMod LTS (x64v3) auf moderner Hardware, automatischer Fallback auf Standard-Debian-Kernel wenn kein AVX2 erkannt wird
-- **Hybrid GPU Freeze Fix** — PSR-Deaktivierung via `dcfeaturemask=0x8` für stabile AMD+NVIDIA Dual-Monitor Setups
-- **Dark Mode** — SnowFox Palette (GTK2/3/4 + Qt) out of the box, konsistent über alle Apps und Ordnerfarben
-- **OnlyOffice** — vollständige Microsoft-Format-Kompatibilität (optional im Installer)
-- **SnowFox Console Launcher** — nativer Game-Launcher für Steam, GOG, Retro und eigene Spiele
-- **Multiarch (i386)** — Volle Unterstützung für 32-Bit-Anwendungen und Spiele (z.B. Steam)
-- **Core Utilities** — Vorkonfiguriertes Set an essentiellen Tools wie `fzf`, `aria2`, `btop`, `imagemagick`, `xclip`, `xdotool`, `lm-sensors`
-- **`startx` ohne sudo** — Komfortabler Start der Desktop-Umgebung direkt von der TTY ohne Root-Rechte
-- **System-Locales** — Konfiguration für `de_AT.UTF-8` und `en_US.UTF-8` zur Fehlervermeidung in Anwendungen wie Steam
-- **Hardware-spezifische WLAN-Fixes** — Automatische Erkennung und Anwendung von Stabilitäts-Fixes für bestimmte WLAN-Chips (z.B. Realtek RTL8821CE, Fritz USB) inklusive Kernel-Parameter (`pci=noaer`)
-- **CPU Microcode Updates** — Automatische Installation der passenden Microcode-Updates für Intel- und AMD-CPUs
-- **`thermald`** — Intelligentes Thermalmanagement für Laptops
-- **Bibata-Modern-Classic Cursor** — Elegantes und konsistentes Cursor-Theme
-- **`bluetui`** — Terminal-basiertes UI zum Verwalten von Bluetooth-Geräten
-- **Erweiterte Desktop-Integration** — Desktop-Einträge für `nmtui`, `bluetui`, `pcmanfm` für schnelle Erreichbarkeit via Rofi
-- **Detaillierte Touchpad-Konfiguration** — Voreinstellungen für Tapping, Click-Method, Natural Scrolling und Deaktivierung während der Eingabe
-- **Standard-Anwendungen** — Vorkonfigurierte Standard-Apps für Dateimanager (PCManFM), Texteditor (Mousepad/VSCodium), Bildanzeige (Ristretto), Archivverwaltung (File Roller) und Medienwiedergabe (MPV)
-- **Redshift** — Dynamische Anpassung der Bildschirmfarben an die Tageszeit
-- **Scrot & Brightnessctl** — Werkzeuge für Screenshots und Helligkeitsregelung direkt über Tastenkürzel
-- **Playerctl** — Steuerung von Medienplayern über globale Tastenkürzel
-- **Druckerunterstützung (CUPS)** — Grundlegende Druckerunterstützung inklusive CUPS und Splix-Treiber
-- **Boot-Screen** — Anpassbarer Plymouth Boot-Screen mit SnowFox-Logo
-- **System-Identity** — Angepasste `os-release` und `lsb-release` zur klaren Identifizierung als SnowFoxOS
-- **Papirus Ordnerfarben** — Violette Ordner-Icons für ein konsistentes SnowFox-Theme
-- **NVIDIA Treiber Optimierungen** — Erweiterte Konfiguration für NVIDIA GPUs inklusive spezifischer `modprobe` Optionen für Stabilität und Performance (z.B. `modeset=1`, `NVreg_PreserveVideoMemoryAllocations=1`)
-- **Intel Media Driver Fix für Steam** — Verhindert Steam-Freezes beim Workspace-Wechsel auf Systemen mit Intel-Grafik
-- **Ollama** — Lokale KI-Engine (ohne vorinstalliertes Modell), mit Anleitung zum Starten und Herunterladen von Modellen
-- **`yt-dlp`** — Für effizientes Streaming und Herunterladen von Videos/Audios
+### Was SnowFoxOS konkret tut
+
+**Kernel-Härtung** — folgende sysctl-Werte werden in `/etc/sysctl.d/99-snowfox-security.conf` gesetzt:
+
+```
+kernel.kptr_restrict=2              # Kernel-Pointer vor Userspace verstecken
+kernel.perf_event_paranoid=3        # Performance-Events einschränken
+kernel.unprivileged_bpf_disabled=1  # BPF nur für root
+net.core.bpf_jit_harden=2          # JIT-Spray-Schutz
+kernel.dmesg_restrict=1             # dmesg nur für root
+fs.protected_hardlinks=1            # Hardlink-Angriffe verhindern
+fs.protected_symlinks=1             # Symlink-Angriffe verhindern
+kernel.core_uses_pid=1              # Core Dumps mit PID
+fs.suid_dumpable=0                  # Keine Core Dumps für SUID-Programme
+```
+
+**Netzwerk-Härtung** — in `/etc/sysctl.d/99-snowfox.conf`:
+
+```
+net.ipv4.conf.all.rp_filter=1               # Reverse Path Filtering
+net.ipv4.conf.all.accept_redirects=0        # ICMP-Redirects ablehnen
+net.ipv4.tcp_syncookies=1                   # SYN-Flood-Schutz
+net.ipv6.conf.all.use_tempaddr=2            # IPv6 Privacy Extensions
+net.core.default_qdisc=fq                  # Fair Queuing
+net.ipv4.tcp_congestion_control=bbr        # BBR Congestion Control
+```
+
+**DNS-over-TLS** — `/etc/systemd/resolved.conf` wird so konfiguriert dass alle DNS-Anfragen verschlüsselt über Cloudflare (1.1.1.1) und Quad9 (9.9.9.9) laufen. Verifizieren mit:
+
+```bash
+resolvectl status
+# Zeigt: DNS over TLS: yes
+```
+
+**Firewall** — UFW mit default-deny eingehend, default-allow ausgehend. SSH wird deaktiviert und aus UFW entfernt. Prüfen mit:
+
+```bash
+sudo ufw status verbose
+```
+
+**SSH deaktiviert:**
+
+```bash
+systemctl is-enabled ssh
+# Ausgabe: disabled
+```
+
+### Was du selbst prüfen kannst
+
+Aktive Netzwerkverbindungen anzeigen:
+```bash
+snowfox audit
+# Oder direkt:
+ss -tulpn
+```
+
+DNS-Leak-Test:
+```bash
+# Tor-Modus aktivieren, dann:
+curl https://icanhazip.com
+# Sollte Tor-Exit-IP zeigen, nicht deine echte IP
+```
+
+Kernel-Parameter prüfen:
+```bash
+sysctl kernel.kptr_restrict
+sysctl net.core.bpf_jit_harden
+```
+
+### Grenzen — was SnowFoxOS nicht schützt
+
+**X11 ist strukturell unsicher.** Jede laufende Anwendung kann unter X11 den Bildschirminhalt aller anderen Anwendungen lesen und Tastatureingaben abfangen — ohne Root-Rechte. Das ist kein SnowFoxOS-Problem sondern ein fundamentales X11-Problem. Wer das vermeiden will braucht Wayland.
+
+**Kein AppArmor oder SELinux.** Prozesse laufen ohne Mandatory Access Control. Ein kompromittierter Prozess hat volle Benutzerrechte im eigenen Home-Verzeichnis.
+
+**`snowfox pass` ist kein Passwort-Manager.** Es ist eine GPG-verschlüsselte Textdatei — ohne Clipboard-Clearing, ohne Brute-Force-Schutz, ohne Memory-Protection. Für sensible Passwörter: KeePassXC oder `pass`.
+
+**Keine automatischen Sicherheitsupdates.** `snowfox update` muss manuell ausgeführt werden.
 
 ---
 
 ## Performance
 
-SnowFoxOS ist darauf ausgelegt nicht im Weg zu stehen und so wenig Ressourcen wie möglich zu verbrauchen.
+### RAM-Messung
 
-- **zram mit lz4-Kompression** ersetzt traditionellen Swap — schneller und RAM-effizienter mit 50% RAM-Nutzung und hoher Priorität (`PRIORITY=100`).
-- **`vm.swappiness=10`** hält Daten so lange wie möglich im RAM, optimiert für Desktop-Betrieb.
-- **`tlp`** optimiert CPU, USB und Festplatten-Powermanagement automatisch.
-- **`earlyoom`** schützt das System proaktiv vor Freezes bei zu wenig freiem RAM.
-- **Detaillierte `sysctl.d` Tunings** für RAM/Swap (`vm.vfs_cache_pressure`, `vm.dirty_background_ratio`), Netzwerk (`net.core.default_qdisc=fq`, `net.ipv4.tcp_congestion_control=bbr`), und CPU (`kernel.nmi_watchdog=0`).
-- **IPv6 Privacy Extensions** (`net.ipv6.conf.all.use_tempaddr=2`) zum Schutz deiner Privatsphäre im Netzwerk.
-- **`fstab` Optimierungen** mit `noatime` für schnellere Dateisystem-Operationen und `tmpfs /tmp size=4G` für ein schnelles, RAM-basiertes `/tmp`.
-- **UFW Firewall** ist standardmäßig aktiv mit blockierten eingehenden und erlaubten ausgehenden Verbindungen.
-- **DNS-over-TLS (DoT)** über `systemd-resolved` mit Cloudflare und Quad9 als primären Servern, Fallback zu Google, und `DNSSEC=allow-downgrade` für verbesserte Sicherheit und Privatsphäre.
-- **Deaktivierung unnötiger System-Dienste** beim Install (cups-browsed, avahi, ModemManager, colord, blueman, apt-daily, apt-daily-upgrade).
-- **Maskierung von Online-Wait-Services** (`NetworkManager-wait-online.service`, `systemd-networkd-wait-online.service`) für schnelleren Boot.
-- **Entfernung von Bloatware** wie `zeitgeist`, `diodon`, `xterm`, `uxterm` und Maskierung der `xdg-desktop-portal` Dienste.
-- **`HandlePowerKey=ignore`** in `logind.conf` verhindert ungewolltes Herunterfahren bei kurzem Power-Button-Druck.
-- Kein Display Manager — i3 startet direkt von TTY1 für minimalen Ressourcenverbrauch.
+Die folgende Messung wurde mit `smem` auf einem HP 250 G8 (Intel i5-1135G7, 8GB RAM) durchgeführt, direkt nach dem Start ohne offene Anwendungen außer dem Desktop-Stack:
 
-### RAM-Verbrauch
+```bash
+smem -tk -s pss -r | tail -1
+# Ergebnis: ~177 MB PSS (Proportional Set Size)
+```
 
-Die genaueste Messung für Desktop-RAM-Verbrauch ist **PSS (Proportional Set Size)** — shared Libraries werden anteilig gezählt, nicht doppelt. Die Werte aus `free -h` sind höher weil sie Page-Cache einschließen.
+PSS ist die genaueste Methode — shared Libraries werden anteilig gezählt statt doppelt. Der Wert aus `free -h` ist höher weil er Page-Cache einschließt, der bei Bedarf sofort freigegeben wird.
+
+**Laufende Prozesse bei der Messung:** Xorg, i3, polybar, picom, pipewire, wireplumber, dunst, lxpolkit, xsettingsd, nm-applet, clip-saver, xss-lock, dbus
 
 | Zustand | RAM (PSS) |
 |---|---|
-| Desktop-Stack idle (ohne Terminal) | ~177 MB |
+| Desktop-Stack idle | ~177 MB |
 | + Kitty Terminal | ~200 MB |
 | + Zen Browser (5 Tabs) | ~900 MB – 1,3 GB |
 | + Zen Browser (viele Tabs) | 1,5–2,5 GB |
-| + OnlyOffice geöffnet | +500 MB |
+| + OnlyOffice | +500 MB |
 | + Steam im Hintergrund | +300 MB |
 
-Zum Vergleich (gemessen mit `free -h`, üblicher Community-Standard):
+Zum Vergleich (Community-Benchmarks, `free -h` `used`-Wert — nicht direkt vergleichbar mit PSS):
 
 | System | Idle RAM |
 |---|---|
@@ -163,15 +173,58 @@ Zum Vergleich (gemessen mit `free -h`, üblicher Community-Standard):
 | Ubuntu (GNOME) | ~1,5 GB |
 | KDE Plasma | ~900 MB |
 | Arch Linux mit i3 | ~400–500 MB |
-| **SnowFoxOS** | **~177 MB PSS** |
+| **SnowFoxOS (PSS)** | **~177 MB** |
 
-> **Hinweis:** Linux nutzt freien RAM automatisch als Dateisystem-Cache. Das ist normal und kein Problem — der Cache wird sofort freigegeben sobald ein Programm ihn braucht. Der tatsächlich verfügbare Speicher steht in `free -h` unter `verfügbar`.
+> Die Vergleichswerte für andere Systeme stammen aus Community-Benchmarks und nutzen `free -h` — eine andere Messmethode als PSS. Ein direkter Vergleich ist daher nur eingeschränkt möglich. Was sicher gesagt werden kann: SnowFoxOS ist ein schlankes System.
+
+### Was Performance konkret bedeutet
+
+**zram** ersetzt traditionellen Swap — komprimierter Swap im RAM mit lz4, 50% RAM-Größe, `PRIORITY=100`. `vm.swappiness=10` hält Daten so lange wie möglich im RAM.
+
+**Kein Display Manager** — i3 startet direkt von TTY1, kein GDM/LightDM im Hintergrund.
+
+**Deaktivierte Dienste** beim Installer: `cups-browsed`, `avahi-daemon`, `ModemManager`, `colord`, `apt-daily`, `apt-daily-upgrade`, `NetworkManager-wait-online`.
+
+**`fstab` mit `noatime`** — keine Zugriffszeitstempel schreiben, reduziert Disk-I/O.
+
+---
+
+## Features
+
+- **i3 WM mit Smart Dynamic Floating** — Tiling Window Manager mit Smart Gaps. Floating-Fenster erhalten automatisch Titelleiste, lila Rahmen, feste Größe (`960x600`) und Zentrierung. Zurück zu Tiling: alles wird automatisch entfernt.
+- **Polybar** — Statusleiste mit RAM, Akku, Netzwerk, Lautstärke, Bluetooth und System-Tray
+- **Rofi** — App-Launcher mit SnowFox-Theme
+- **Kitty** — GPU-beschleunigtes Terminal mit SnowFox-Farbpalette, JetBrainsMono Nerd Font, 0.95 Transparenz
+- **Starship** — moderner Shell-Prompt mit Git-Integration und SnowFox-Palette
+- **picom** — Compositor mit runden Ecken, weichen Schatten, Fading-Animationen
+- **Zen Browser** — privacy-fokussierter Browser auf Firefox-Basis (optional)
+- **PipeWire** — moderner Audio-Stack mit WirePlumber
+- **Dunst** — Notification-Daemon, abgestimmt auf die SnowFox-Palette
+- **Clip-Saver** — hält Clipboard-Inhalte aktiv auch nach dem Schließen des Quellfensters (`clipnotify` + `xclip`, kein History-Bloat)
+- **fastfetch** — Systeminfo mit SnowFox-Logo
+- **zram** — komprimierter Swap im RAM (lz4, 50%)
+- **tlp** — Akku-Optimierung für Laptops
+- **earlyoom** — OOM-Schutz gegen System-Freeze
+- **ufw** — Firewall, default-deny eingehend
+- **DNS-over-TLS** — via systemd-resolved, Cloudflare + Quad9
+- **GPU-Erkennung** — automatische Treiber-Installation für AMD, NVIDIA, Intel, Hybrid
+- **Automatischer Kernel-Fallback** — XanMod LTS (x64v3) auf modernen CPUs, Standard-Debian-Kernel als Fallback wenn kein AVX2
+- **Hybrid GPU Freeze Fix** — PSR-Deaktivierung für AMD+NVIDIA Dual-Monitor Setups
+- **Dark Mode** — SnowFox Palette konsistent in GTK2/3/4 und Qt
+- **OnlyOffice** — Microsoft-Format-Kompatibilität (optional)
+- **SnowFox Console Launcher** — Game-Hub für Steam, GOG, Retro
+- **Multiarch (i386)** — 32-Bit-Unterstützung für Steam und ältere Spiele
+- **Smart Lock** — sperrt nicht wenn Video läuft oder Vollbild aktiv, geblurrtes Wallpaper als Hintergrund
+- **Tor-Modus** — `snowfox tor on/off` mit DNS-Schutz, IPv6-Deaktivierung, MAC-Randomisierung
+- **Mesh-Netzwerk** — P2P-Kommunikation via Reticulum ohne ISP (experimentell)
+- **Ollama** — lokale KI-Engine
+- **`yt-dlp`** — Video/Audio ohne Browser
 
 ---
 
 ## snowfox CLI
 
-`snowfox` ist die zentrale Steuerung von SnowFoxOS. Statt verstreuter Tools und Einstellungsmenüs ist alles über einen einzigen Befehl erreichbar — schnell, transparent und lokal.
+`snowfox` ist die zentrale Steuerung. Alle Funktionen sind über einen Befehl erreichbar.
 
 ### System
 
@@ -179,7 +232,7 @@ Zum Vergleich (gemessen mit `free -h`, üblicher Community-Standard):
 |---|---|
 | `snowfox status` | RAM, Disk, Uptime, GPU-Modus, Mikro/Kamera-Status, Netzwerk |
 | `snowfox battery` | Akkuladung, Energieverbrauch, geschätzte Laufzeit |
-| `snowfox profile [name]` | System-Profil wechseln: balanced, performance, battery, privacy |
+| `snowfox profile [name]` | Profil wechseln: balanced, performance, battery, privacy |
 | `snowfox update` | System-Update inkl. yt-dlp |
 | `snowfox audit` | Aktive Netzwerkverbindungen mit Prozess und Ziel-IP |
 
@@ -187,91 +240,79 @@ Zum Vergleich (gemessen mit `free -h`, üblicher Community-Standard):
 
 | Befehl | Beschreibung |
 |---|---|
-| `snowfox airmode on/off` | Alle Funkschnittstellen deaktivieren — WLAN, Bluetooth, alles |
+| `snowfox tor on/off` | Tor-Modus mit DNS-Schutz und MAC-Randomisierung |
+| `snowfox airmode on/off` | Alle Funkschnittstellen deaktivieren |
 | `snowfox kill mic` | Mikrofon auf Kernel-Ebene deaktivieren |
 | `snowfox kill cam` | Webcam deaktivieren |
-| `snowfox kill all` | Mikrofon + Kamera + Funk auf einmal deaktivieren |
-| `snowfox kill restore` | Alle Hardware-Kill-Switches zurücksetzen |
-| `snowfox pass` | Lokaler verschlüsselter Passwort-Manager — keine Cloud, keine Synchronisierung |
+| `snowfox kill all` | Mikrofon + Kamera + Funk auf einmal |
+| `snowfox kill restore` | Alle Kill-Switches zurücksetzen |
+| `snowfox pass` | Lokaler GPG-verschlüsselter Passwort-Speicher |
 
 ### Media
 
 | Befehl | Beschreibung |
 |---|---|
-| `snowfox stream [Suche/URL]` | Video/Audio suchen oder via URL direkt in mpv streamen — kein Browser, kein Tracking |
-| `snowfox download [Suche/URL]` | Video oder Audio suchen oder via URL herunterladen |
-| `snowfox fetch <URL>` | Highspeed Download einer Datei über 16 parallele Verbindungen |
+| `snowfox stream [Suche/URL]` | Video/Audio direkt in mpv streamen — kein Browser, kein Tracking |
+| `snowfox download [Suche/URL]` | Video oder Audio herunterladen |
+| `snowfox fetch <URL>` | Highspeed-Download über 16 parallele Verbindungen |
 
-### Tools & Konfiguration
+### Tools
 
 | Befehl | Beschreibung |
 |---|---|
-| `snowfox autostart [list\|enable\|disable]` | Autostart-Programme verwalten |
-| `snowfox layout [tiling\|floating]` | Fenstermodus wechseln (i3) |
-| `snowfox webapp [add\|list\|open\|remove]` | WebApps erstellen und verwalten |
+| `snowfox autostart [list\|enable\|disable]` | Autostart verwalten |
+| `snowfox layout [tiling\|floating]` | Fenstermodus wechseln |
+| `snowfox webapp [add\|list\|open\|remove]` | WebApps verwalten |
 | `snowfox network` | Netzwerk-Manager (nmtui) |
 | `snowfox ai` | Lokale KI (Ollama) |
+| `snowfox mesh` | P2P-Mesh-Netzwerk (Reticulum) |
 
 ### Node-Modi
 
-SnowFoxOS kann auf drei verschiedene Arten als Node betrieben werden:
-
 | Befehl | Beschreibung |
 |---|---|
-| `snowfox node console` | Startet den SnowFox Console Launcher — nativer Game-Hub für Steam, GOG, Retro und eigene Spiele |
-| `snowfox node server` | Server-Modus — minimaler Footprint, optimiert für Dauerbetrieb |
-| `snowfox node desktop` | Standard Desktop-Modus (Standard) |
+| `snowfox node console` | Game-Hub für Steam, GOG, Retro |
+| `snowfox node server` | Server-Modus, minimaler Footprint |
+| `snowfox node desktop` | Standard Desktop-Modus |
 
 ### System-Profile
 
-`snowfox profile` wechselt sofort zwischen vier Modi:
-
-| Profil | CPU | Swappiness | Netzwerk |
+| Profil | CPU-Governor | Swappiness | Netzwerk |
 |---|---|---|---|
 | `balanced` | schedutil | 10 | an |
 | `performance` | performance | 10 | an |
 | `battery` | powersave | 60 | an |
 | `privacy` | schedutil | 10 | alles aus |
 
-### Warum `snowfox stream`?
-
-Du könntest YouTube im Browser öffnen. Aber jedes Mal wenn du das tust, trackt Google dein Verhalten. Der Algorithmus ist darauf ausgelegt, dich auf der Plattform zu halten.
-
-`snowfox stream` erlaubt es dir, direkt vom Terminal aus zu suchen und das Ergebnis in mpv abzuspielen — kein JavaScript, kein Tracking, keine Empfehlungen, kein Autoplay. Nur das Medium.
-
-Deine Aufmerksamkeit gehört dir.
-
 ### System Reset
 
 | Befehl | Beschreibung |
 |---|---|
-| `snowfox reset` | Setzt das System auf einen Debian-Minimalzustand zurück (löscht alle Daten!) |
+| `snowfox reset` | Setzt auf Debian-Minimalzustand zurück — löscht alle Daten |
 
 ---
 
 ## Installation
 
-**Voraussetzung:** Eine frische **Debian 12 (Bookworm) minimal Installation** mit einem normalen (nicht-root) Benutzer.
+**Voraussetzung:** Frische **Debian 12 (Bookworm) minimal Installation** mit einem normalen (nicht-root) Benutzer. Nur Debian 12 wird unterstützt — Ubuntu, Mint, Kali und Derivate funktionieren nicht.
 
 ### Schritt 1 — Debian 12 minimal installieren
 
-Lade das Debian 12 Netinstall-ISO herunter: [debian.org/distrib/netinst](https://www.debian.org/distrib/netinst/)
+ISO herunterladen: [debian.org/distrib/netinst](https://www.debian.org/distrib/netinst/)
 
-Während der Installation bei der Software-Auswahl **alles abwählen** — auch den Desktop. Nur „Standard-Systemwerkzeuge" oder komplett leer lassen. Benutzername und Passwort sind frei wählbar.
+Bei der Software-Auswahl **alles abwählen** — auch den Desktop. Nur „Standard-Systemwerkzeuge" oder komplett leer lassen.
 
 ### Schritt 2 — Vorbereitung
-
-Nach dem ersten Boot als root anmelden und vorbereiten:
 
 ```bash
 su -
 apt-get install -y sudo git
 usermod -aG sudo DEINBENUTZERNAME
-exit   # root verlassen
-exit   # Session beenden, neu einloggen
+exit
+exit
 ```
 
-### Schritt 3 — Repo klonen & installieren
+### Schritt 3 — Installieren
 
 ```bash
 git clone https://github.com/Xr7-Code/SnowFoxOS-v3.git
@@ -280,7 +321,7 @@ chmod +x install.sh
 sudo bash install.sh
 ```
 
-Der Installer führt dich durch ca. 10 Schritte und fragt bei optionalen Paketen nach. Die gesamte Installation dauert je nach Internetgeschwindigkeit **20–60 Minuten**.
+Der Installer fragt bei optionalen Paketen nach. Dauer je nach Internetgeschwindigkeit **20–60 Minuten**.
 
 ### Schritt 4 — Neustart
 
@@ -288,7 +329,7 @@ Der Installer führt dich durch ca. 10 Schritte und fragt bei optionalen Paketen
 sudo reboot
 ```
 
-Nach dem Neustart startet i3 automatisch von TTY1.
+i3 startet automatisch von TTY1.
 
 ---
 
@@ -297,7 +338,7 @@ Nach dem Neustart startet i3 automatisch von TTY1.
 | Kürzel | Aktion |
 |---|---|
 | `Super + Return` | Terminal (Kitty) |
-| `Super + Tab` | Fenster wechseln (Switcher) |
+| `Super + Tab` | Fenster wechseln |
 | `Super + Space` | App-Launcher (Rofi) |
 | `Super + E` | Dateimanager (PCManFM) |
 | `Super + N` | Netzwerk-Manager |
@@ -307,7 +348,7 @@ Nach dem Neustart startet i3 automatisch von TTY1.
 | `Super + Q` | Fenster schließen |
 | `Super + F` | Vollbild umschalten |
 | `Super + H / V` | Split horizontal / vertikal |
-| `Super + Shift + Space` | Dynamic Floating Toggle (Auto-Size `960x600`, Auto-Border & Zentrierung) |
+| `Super + Shift + Space` | Floating Toggle (Auto-Size, Auto-Border, Zentrierung) |
 | `Super + 1–9` | Workspace wechseln |
 | `Super + Shift + 1–9` | Fenster zu Workspace verschieben |
 | `Super + R` | Resize-Modus |
@@ -329,7 +370,7 @@ Nach dem Neustart startet i3 automatisch von TTY1.
 | Shell-Prompt | starship |
 | Browser | zen-browser (optional) |
 | Audio | pipewire + wireplumber |
-| Compositor | picom (runde Ecken, Schatten, Fading) |
+| Compositor | picom |
 | Benachrichtigungen | dunst |
 | Clipboard | clip-saver + clipnotify |
 | Dateimanager | pcmanfm |
@@ -342,73 +383,45 @@ Nach dem Neustart startet i3 automatisch von TTY1.
 | Firewall | ufw |
 | OOM-Schutz | earlyoom |
 | Kernel | XanMod LTS (x64v3) mit Fallback |
-| Bluetooth Terminal UI | bluetui |
-| Maus-Cursor | Bibata-Modern-Classic |
+| Bluetooth UI | bluetui |
+| Cursor | Bibata-Modern-Classic |
 | Night Light | redshift |
-| Screenshot Tool | scrot |
-| Helligkeitsregelung | brightnessctl |
+| Screenshot | scrot |
+| Helligkeit | brightnessctl |
 | Mediensteuerung | playerctl |
-| Druckerunterstützung | cups |
-| GTK-Theme Management | lxappearance, lxpolkit |
-| Thermal Management | thermald |
+| Drucker | cups |
+| GTK-Theme | Arc-Dark + SnowFox-Overrides |
+| Thermal | thermald |
 
 ---
 
-## Bekannte Einschränkungen & Warnungen
+## Einschränkungen
 
-> ⚠️ Bitte vor der Installation vollständig lesen.
+### Hardware-Anforderungen
 
-### Kernel: AVX2 empfohlen
-
-Der Installer versucht `linux-xanmod-lts-x64v3` zu installieren. Dieser Kernel nutzt **AVX2-CPU-Instruktionen** die erst ab folgenden Generationen verfügbar sind:
-
-- Intel: **Haswell (2013)** und neuer
-- AMD: **Excavator (2015)** und neuer
-
-Auf älteren CPUs erkennt der Installer das automatisch und fällt auf den Standard-Debian-Kernel zurück. Prüfen mit:
+**XanMod-Kernel benötigt AVX2** — Intel Haswell (2013) oder neuer, AMD Excavator (2015) oder neuer. Der Installer erkennt das automatisch und fällt auf den Standard-Debian-Kernel zurück. Prüfen:
 
 ```bash
-grep avx2 /proc/cpuinfo
+grep avx2 /proc/cpuinfo | head -1
 ```
 
-Zeigt der Befehl eine Ausgabe, ist AVX2 vorhanden und XanMod wird installiert.
+**NVIDIA: Maxwell (2014) oder neuer** — GTX 750 / GTX 900-Serie und neuer, alle RTX-Generationen. Ältere Karten werden nicht unterstützt.
 
-### NVIDIA: Nur Maxwell (2014) und neuer
+**AMD + NVIDIA Hybrid** — der PSR-Freeze-Fix wird automatisch angewendet. Bei Problemen: `amdgpu dcfeaturemask=0x8` in `/etc/modprobe.d/amdgpu.conf` prüfen.
 
-Der Installer installiert `cuda-drivers-580`. Unterstützt werden ausschließlich:
+### Bekannte Probleme
 
-- GTX 750 / GTX 900-Serie und neuer (Maxwell+)
-- RTX alle Generationen
+**Dual-Monitor Tray-Popups** können auf dem falschen Monitor erscheinen — bekanntes i3/GTK-Problem. Workaround: `Super + Mausklick` zum Verschieben.
 
-Ältere Karten (GTX 600, GTX 500 und älter) werden **nicht unterstützt** und der Installer schlägt beim GPU-Schritt fehl.
+**VirtualBox** injiziert Wayland-Variablen in die Umgebung was picom und andere X11-Tools stört. SnowFoxOS ist für echte Hardware ausgelegt, nicht für VMs.
 
-### AMD + NVIDIA Hybrid (Dual-Monitor)
-
-SnowFoxOS enthält einen Fix für den bekannten `dma_fence_wait_timeout` Freeze auf Hybrid-Systemen mit AMD und NVIDIA GPUs an separaten Monitoren. Der Fix deaktiviert PSR (Panel Self Refresh) via `amdgpu dcfeaturemask=0x8` und Runtime Power Management (`runpm=0`). Der Installer erkennt Hybrid-Systeme automatisch und wendet den Fix an.
-
-### Ältere Systeme (vor 2013)
-
-Auf Systemen vor 2013 können folgende Probleme auftreten:
-
-- XanMod-Kernel wird nicht installiert (kein AVX2) — Fallback auf Standard-Kernel
-- NVIDIA-Treiber nicht kompatibel
-- Zen Browser zu ressourcenintensiv
-
-Für sehr alte Hardware empfehlen sich stattdessen **AntiX**, **BunsenLabs** oder **Void Linux** mit i3.
-
-### Dual-Monitor & Tray-Popups
-
-Auf Systemen mit mehreren Monitoren kann es vorkommen dass Tray-Popups (z.B. MEGASync) nicht korrekt positioniert sind. Das ist ein bekanntes i3/GTK-Problem. Workaround: Popup mit `Super + Mausklick` manuell verschieben.
-
-### Nur Debian 12
-
-Der Installer funktioniert ausschließlich auf **Debian 12 Bookworm**. Ubuntu, Mint, Kali und andere Derivate werden nicht unterstützt.
+**Nur Debian 12** — Ubuntu, Mint, Kali und andere Derivate werden nicht unterstützt.
 
 ---
 
 ## Lizenz
 
-SnowFoxOS wird unter der **SnowFox Public License v1.0** veröffentlicht — einer eigenen Lizenz die auf der Überzeugung basiert dass Software Menschen dienen sollte, nicht sie ausnutzen. Siehe [LICENSE](LICENSE) für Details.
+SnowFoxOS wird unter der **SnowFox Public License v1.0** veröffentlicht. Siehe [LICENSE](LICENSE).
 
 ---
 
