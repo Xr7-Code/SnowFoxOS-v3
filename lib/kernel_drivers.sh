@@ -20,9 +20,13 @@ locale-gen
 update-locale LANG=de_AT.UTF-8
 success "Locales gesetzt (de_AT.UTF-8, en_US.UTF-8)"
 
-info "Prüfe CPU-Kompatibilität für x64v3..."
-if ! grep -q "avx2" /proc/cpuinfo; then
-    warn "CPU unterstützt kein AVX2 — verwende Standard-Debian-Kernel statt XanMod"
+info "Prüfe CPU & System-Kompatibilität..."
+# HP EliteDesk 705 G4 erzwingt den stabilen Debian-Kernel wegen xHCI-Instabilität in XanMod
+if lspci | grep -qi "AMD" && DMI_SYS=$(cat /sys/class/dmi/id/product_name 2>/dev/null); [[ "$DMI_SYS" =~ "EliteDesk" ]]; then
+    warn "HP EliteDesk AMD-System erkannt — nutze stabilen Debian-Standard-Kernel"
+    USE_XANMOD=false
+elif ! grep -q "avx2" /proc/cpuinfo; then
+    warn "CPU unterstützt kein AVX2 — verwende Standard-Debian-Kernel"
     USE_XANMOD=false
 else
     USE_XANMOD=true
@@ -66,22 +70,20 @@ if ! $USE_XANMOD; then
 fi
 
 if [[ -f /etc/default/grub ]]; then
-    GRUB_PARAMS="quiet splash"
+    # Basis-Parameter gegen xHCI-USB-Crash & PCIe-AER-Loops auf HP/AMD
+    GRUB_PARAMS="quiet splash pci=noaer usbcore.autosuspend=-1"
 
     if lspci | grep -qi nvidia; then
         GRUB_PARAMS="$GRUB_PARAMS nvidia-drm.modeset=1"
     fi
 
-    if lspci | grep -qi nvidia && lspci | grep -qi amd; then
-        # Fix: AMD+NVIDIA Hybrid verursachte dma_fence_wait_timeout Freeze
-        # durch amdgpu Display-Engine Deadlock. amdgpu.dc=1 + amdgpu.dpm=1
-        # stabilisieren den Display-Controller, IOMMU verhindert DMA-Konflikte.
-        GRUB_PARAMS="$GRUB_PARAMS amd_iommu=on iommu=pt amdgpu.dc=1 amdgpu.dpm=1"
-        info "AMD+NVIDIA Hybrid erkannt: IOMMU + amdgpu Freeze-Fix gesetzt"
+    if lspci | grep -qi amd; then
+        # Stabilitäts-Fix für AMD APU / xHCI-Controller
+        GRUB_PARAMS="$GRUB_PARAMS iommu=pt amdgpu.noretry=0"
+        info "AMD-System erkannt: iommu=pt & xHCI-Fix gesetzt"
     fi
 
     if ! $USE_XANMOD; then
-        # Zusätzliche Kompatibilitäts-Parameter für ältere Hardware
         GRUB_PARAMS="$GRUB_PARAMS acpi_osi=Linux"
     fi
 
@@ -249,12 +251,13 @@ elif $HAS_AMD; then
         vulkan-tools \
         libgl1-mesa-dri libgl1-mesa-dri:i386
 
-    cat > /etc/modprobe.d/amdgpu.conf << 'EOF'
+cat > /etc/modprobe.d/amdgpu.conf << 'EOF'
 # SnowFoxOS — AMD GPU Konfiguration
 options amdgpu bpc=8
 options amdgpu dc=1 dcfeaturemask=0x8
 options amdgpu dpm=1
 options amdgpu audio=0
+options amdgpu runpm=0
 EOF
     success "AMD Stack installiert"
 
