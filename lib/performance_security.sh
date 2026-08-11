@@ -8,14 +8,27 @@
 source "$SCRIPT_DIR/lib/utils.sh"
 
 # Global variables from main script (assumed to be sourced/exported):
-# TARGET_USER
+# TARGET_USER, IS_LAPTOP
 
 step "8/10 — Performance & Sicherheit"
 
 wait_apt
 apt-get install -y zram-tools earlyoom ufw
-command -v tlp &>/dev/null || apt-get install -y tlp tlp-rdw
 
+# ── TLP nur auf Laptops ausführen ────────────────────────────
+# Auf Desktops/Mini-PCs verursacht TLP aggressive xHCI-USB-Crashes
+if $IS_LAPTOP; then
+    command -v tlp &>/dev/null || apt-get install -y tlp tlp-rdw
+    systemctl enable tlp 2>/dev/null || true
+else
+    # Falls TLP installiert ist, auf Desktops stoppen & USB-Powersave deaktivieren
+    systemctl disable --now tlp 2>/dev/null || true
+    if [[ -f /etc/tlp.conf ]]; then
+        sed -i 's/^USB_AUTOSUSPEND=.*/USB_AUTOSUSPEND=0/' /etc/tlp.conf
+    fi
+fi
+
+# ── zRAM Konfiguration ───────────────────────────────────────
 cat > /etc/default/zramswap << 'EOF'
 ALGO=lz4
 PERCENT=50
@@ -27,8 +40,9 @@ if [[ -f /etc/initramfs-tools/initramfs.conf ]]; then
     update-initramfs -u 2>/dev/null || true
 fi
 
-systemctl enable zramswap earlyoom tlp 2>/dev/null || true
+systemctl enable zramswap earlyoom 2>/dev/null || true
 
+# ── Kernel / Sysctl Tuning ───────────────────────────────────
 cat > /etc/sysctl.d/99-snowfox.conf << 'EOF'
 # RAM & Swap
 vm.swappiness=10
