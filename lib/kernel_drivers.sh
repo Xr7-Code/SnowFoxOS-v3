@@ -65,7 +65,7 @@ fi
 
 if ! $USE_XANMOD; then
     info "Installiere Standard-Debian-Kernel (kompatibel mit älterer Hardware)..."
-    apt-get install -y linux-image-amd64 linux-headers-amd64 linux-firmware
+    apt-get install -y linux-image-amd64 linux-headers-amd64 firmware-linux
     success "Standard-Debian-Kernel installiert"
 fi
 
