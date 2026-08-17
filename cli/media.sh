@@ -28,9 +28,9 @@ cmd_download() {
         fi
     fi
 
-    COOKIE_OPT=""
+    COOKIE_OPT=()
     if [[ -f "$COOKIE_FILE" && -s "$COOKIE_FILE" ]]; then
-        COOKIE_OPT="--cookies $COOKIE_FILE"
+        COOKIE_OPT=(--cookies "$COOKIE_FILE")
     fi
 
     fox "Was möchtest du herunterladen?"
@@ -43,15 +43,17 @@ cmd_download() {
     OUTDIR="$HOME/Downloads"
     mkdir -p "$OUTDIR"
 
-    # Basis-Optionen: IPv4 + User-Agent + Cookies
-    BASE_OPTS="--force-ipv4 \
-        --user-agent 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' \
-        $COOKIE_OPT"
+    # Basis-Optionen: IPv4 + User-Agent + Cookies (als Array)
+    BASE_OPTS=(
+        --force-ipv4
+        --user-agent "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        "${COOKIE_OPT[@]}"
+    )
 
     case "$FORMAT" in
         1) 
             # Video: bestes Video + bestes Audio
-            yt-dlp $BASE_OPTS \
+            yt-dlp "${BASE_OPTS[@]}" \
                 -f "bestvideo+bestaudio" \
                 --merge-output-format mkv \
                 -o "$OUTDIR/%(title)s.%(ext)s" \
@@ -59,7 +61,7 @@ cmd_download() {
             ;;
         2) 
             # MP3: Extrahiere Audio und konvertiere zu MP3
-            yt-dlp $BASE_OPTS \
+            yt-dlp "${BASE_OPTS[@]}" \
                 -x \
                 --audio-format mp3 \
                 --audio-quality 2 \
@@ -70,7 +72,7 @@ cmd_download() {
             ;;
         3) 
             # Opus: Extrahiere Audio und konvertiere zu Opus
-            yt-dlp $BASE_OPTS \
+            yt-dlp "${BASE_OPTS[@]}" \
                 -x \
                 --audio-format opus \
                 --embed-thumbnail \
