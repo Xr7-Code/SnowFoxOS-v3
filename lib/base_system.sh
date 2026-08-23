@@ -61,6 +61,7 @@ apt-get install -y \
     xdg-utils \
     xdg-user-dirs \
     rfkill \
+    systemd-resolved \
     iw wireless-tools \
     imagemagick \
     bc \
@@ -75,6 +76,36 @@ apt-get install -y \
     qt5ct \
     qt5-style-plugins \
     qt6ct
+
+# ── dnsmasq deaktivieren (Konflikt mit systemd-resolved) ──
+info "Deaktiviere dnsmasq..."
+systemctl stop dnsmasq 2>/dev/null || true
+systemctl disable dnsmasq 2>/dev/null || true
+systemctl mask dnsmasq 2>/dev/null || true
+success "dnsmasq deaktiviert"
+
+# ── systemd-resolved aktivieren ──────────────────────────────
+info "Aktiviere systemd-resolved..."
+systemctl enable --now systemd-resolved 2>/dev/null || true
+ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf 2>/dev/null || true
+success "systemd-resolved aktiviert"
+
+# ── PATH-Erweiterung für /usr/sbin ────────────────────────────
+info "Füge /usr/sbin zum PATH hinzu..."
+if ! grep -q "export PATH=\$PATH:/usr/sbin" /etc/profile; then
+    echo 'export PATH=$PATH:/usr/sbin' >> /etc/profile
+    success "PATH-Erweiterung zu /etc/profile hinzugefügt"
+else
+    info "PATH-Erweiterung bereits vorhanden"
+fi
+
+# Auch für den Benutzer in ~/.bashrc
+if ! grep -q "export PATH=\$PATH:/usr/sbin" "/home/$TARGET_USER/.bashrc"; then
+    echo 'export PATH=$PATH:/usr/sbin' >> "/home/$TARGET_USER/.bashrc"
+    success "PATH-Erweiterung zu ~/.bashrc hinzugefügt"
+else
+    info "PATH-Erweiterung in ~/.bashrc bereits vorhanden"
+fi
 
 sudo -u "$TARGET_USER" xdg-user-dirs-update
 success "System aktualisiert"
