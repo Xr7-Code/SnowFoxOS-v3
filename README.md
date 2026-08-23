@@ -228,7 +228,7 @@ Zum Vergleich (Community-Benchmarks, `free -h` `used`-Wert — nicht direkt verg
 - **Multiarch (i386)** — 32-Bit-Unterstützung für Steam und ältere Spiele
 - **Smart Lock** — sperrt nicht wenn Video läuft oder Vollbild aktiv, geblurrtes Wallpaper als Hintergrund
 - **Tor-Modus** — `snowfox tor on/off` mit DNS-Schutz, IPv6-Deaktivierung, MAC-Randomisierung
-- **Mesh-Netzwerk** — P2P-Kommunikation via Reticulum ohne ISP (experimentell)
+<!-- - **Mesh-Netzwerk** — P2P-Kommunikation via Reticulum ohne ISP (experimentell) -->
 - **Ollama** — lokale KI-Engine
 - **`yt-dlp`** — Video/Audio ohne Browser
 
@@ -277,7 +277,7 @@ Zum Vergleich (Community-Benchmarks, `free -h` `used`-Wert — nicht direkt verg
 | `snowfox webapp [add\|list\|open\|remove]` | WebApps verwalten |
 | `snowfox network` | Netzwerk-Manager (nmtui) |
 | `snowfox ai` | Lokale KI (Ollama) |
-| `snowfox mesh` | P2P-Mesh-Netzwerk (Reticulum) |
+<!-- | `snowfox mesh` | P2P-Mesh-Netzwerk (Reticulum) | -->
 
 ### Node-Modi
 
