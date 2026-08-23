@@ -64,7 +64,7 @@ cmd_help() {
     _help_cmd "snowfox download <URL>"            "Video/Audio herunterladen"
     _help_cmd "snowfox stream <Suche|URL>"        "Video/Musik streamen"
     _help_cmd "snowfox tor [on|off|status]"       "Tor-Modus: IP, DNS, MAC anonymisieren"
-    _help_cmd "snowfox mesh"                      "P2P-Mesh (autark, verschlüsselt)"
+    # _help_cmd "snowfox mesh"                      "P2P-Mesh (autark, verschlüsselt)"
     _help_cmd "snowfox ai"                        "Offline-KI (Ollama)"
     echo ""
 
