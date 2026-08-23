@@ -32,6 +32,13 @@ source "$CLI_DIR/ai.sh"
 source "$CLI_DIR/tor.sh"
 source "$CLI_DIR/help.sh"
 
+# ── Version ────────────────────────────────────────────────────
+if [[ "$1" == "--version" ]] || [[ "$1" == "-v" ]]; then
+    echo "SnowFoxOS v3 (CLI v3.0.0)"
+    echo "Kernel: $(uname -r)"
+    exit 0
+fi
+
 # ── Dispatcher ───────────────────────────────────────────────
 case "$1" in
     status)    cmd_status ;;
