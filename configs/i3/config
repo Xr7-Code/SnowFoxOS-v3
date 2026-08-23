@@ -45,7 +45,6 @@ exec --no-startup-id ~/.config/polybar/launch.sh
 exec --no-startup-id dunst
 exec --no-startup-id lxpolkit
 exec --no-startup-id xsettingsd
-exec --no-startup-id nm-applet --no-agent
 exec --no-startup-id redshift
 exec --no-startup-id ~/.config/i3/clip-saver.sh
 exec --no-startup-id xss-lock --transfer-sleep-lock -- ~/.config/snowfox-lock.sh
