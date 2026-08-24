@@ -320,21 +320,36 @@ cmd_webapp() {
 
             # ── Browser wählen ────────────────────────────────
             echo ""
-            echo -e "  ${CYAN}1${RESET}) Librewolf   (WebApp-Modus — kein Browser-UI, empfohlen)"
-            echo -e "  ${CYAN}2${RESET}) Librewolf   (mit Addons — nutzt Hauptprofil)"
-            echo -e "  ${CYAN}3${RESET}) Helium      (App-Modus — kein Browser-UI)"
-            echo -e "  ${CYAN}4${RESET}) Helium      (mit Addons — nutzt Hauptprofil)"
-            echo -e "  ${CYAN}5${RESET}) Zen Browser"
-            echo -e "  ${CYAN}6${RESET}) Chromium"
-            echo -e "  ${CYAN}7${RESET}) Brave"
-            echo -e "  ${CYAN}8${RESET}) Firefox-ESR"
+            echo -e "  ${CYAN}1${RESET}) Min Browser   (WebApp-Modus — minimal, empfohlen)"
+            echo -e "  ${CYAN}2${RESET}) Min Browser   (mit Session-Persistenz)"
+            echo -e "  ${CYAN}3${RESET}) Librewolf     (WebApp-Modus — kein Browser-UI)"
+            echo -e "  ${CYAN}4${RESET}) Librewolf     (mit Addons — nutzt Hauptprofil)"
+            echo -e "  ${CYAN}5${RESET}) Chromium      (App-Modus)"
+            echo -e "  ${CYAN}6${RESET}) Brave         (App-Modus)"
             echo ""
-            read -rp "$(echo -e ${PURPLE}${BOLD}"Browser wählen [1-8] (Default: 1): "${RESET})" WA_BR
+            read -rp "$(echo -e ${PURPLE}${BOLD}"Browser wählen [1-6] (Default: 1): "${RESET})" WA_BR
             WA_BR=${WA_BR:-1}
 
             local WA_BIN WA_EXEC WA_PROFILE
             case "$WA_BR" in
                 1)
+                    # Min Browser - WebApp-Modus (minimal)
+                    WA_BIN="min"
+                    WA_EXEC="$WA_BIN --new-window \"$WA_URL\" --class=snowfox-webapp-$WA_SAFE"
+                    
+                    # Desktop-Eintrag mit --new-window und --class
+                    WA_EXEC="$WA_BIN --new-window \"$WA_URL\" --class=snowfox-webapp-$WA_SAFE"
+                    ;;
+                2)
+                    # Min Browser mit Session-Persistenz
+                    WA_BIN="min"
+                    WA_PROFILE="$WAPP_DIR/$WA_SAFE/min-profile"
+                    mkdir -p "$WA_PROFILE"
+                    
+                    # Min Browser startet mit eigenem Profil
+                    WA_EXEC="$WA_BIN --new-window \"$WA_URL\" --class=snowfox-webapp-$WA_SAFE --profile-directory=\"$WA_PROFILE\""
+                    ;;
+                3)
                     # Librewolf WebApp-Modus - komplett ohne Browser-UI
                     WA_BIN="librewolf"
                     WA_PROFILE="$WAPP_DIR/$WA_SAFE/librewolf-profile"
@@ -348,71 +363,40 @@ user_pref("browser.sessionstore.resume_from_crash", false);
 user_pref("browser.tabs.warnOnClose", false);
 user_pref("browser.warnOnQuit", false);
 user_pref("dom.disable_open_during_load", false);
-// UI komplett ausblenden für WebApp-Modus
 user_pref("browser.uidensity", 1);
 user_pref("browser.urlbar.suggest.history", false);
 user_pref("browser.urlbar.suggest.bookmark", false);
 user_pref("browser.urlbar.suggest.openpage", false);
-// Keine Toolbars oder Menüs
 user_pref("browser.uiCustomization.state", "{\"placements\":{\"widget-overflow-fixed-list\":[],\"nav-bar\":[\"back-button\",\"forward-button\",\"stop-reload-button\",\"urlbar-container\",\"downloads-button\"],\"toolbar-menubar\":[],\"TabsToolbar\":[],\"PersonalToolbar\":[]},\"seen\":[\"developer-button\"],\"dirtyAreaCache\":[]}");
-// Keine Tabs-Leiste
 user_pref("browser.tabs.drawInTitlebar", false);
 user_pref("browser.tabs.allowTabDetach", false);
 user_pref("browser.tabs.loadInBackground", true);
-// Vollbild-API erlauben
 user_pref("full-screen-api.enabled", true);
 user_pref("full-screen-api.allow-trusted-requests-only", false);
 EOF
                     
-                    # Desktop-Eintrag mit --new-window und --class für WebApp-Modus
                     WA_EXEC="$WA_BIN --new-window \"$WA_URL\" --class=snowfox-webapp-$WA_SAFE --profile \"$WA_PROFILE\""
-                    ;;
-                2)
-                    # Librewolf mit Addons (nutzt Hauptprofil)
-                    WA_BIN="librewolf"
-                    # Hauptprofil finden
-                    local LW_MAIN_PROFILE
-                    LW_MAIN_PROFILE=$(find "$HOME/.librewolf" -maxdepth 2 -name "*.default" -type d 2>/dev/null | head -1)
-                    if [[ -z "$LW_MAIN_PROFILE" ]]; then
-                        LW_MAIN_PROFILE="$HOME/.librewolf/default"
-                    fi
-                    WA_EXEC="$WA_BIN --new-window \"$WA_URL\" --class=snowfox-webapp-$WA_SAFE --profile \"$LW_MAIN_PROFILE\""
-                    ;;
-                3)
-                    WA_BIN="$HOME/Applications/helium.AppImage"
-                    WA_EXEC="$WA_BIN --app=$WA_URL --class=snowfox-webapp-$WA_SAFE"
                     ;;
                 4)
-                    WA_BIN="$HOME/Applications/helium.AppImage"
-                    local WA_PROF="$WAPP_DIR/$WA_SAFE/profile"
-                    mkdir -p "$WA_PROF"
-                    local WA_MAIN
-                    WA_MAIN=$(find "$HOME/.config/net.imput.helium" -maxdepth 2 -name "Extensions" -type d 2>/dev/null | head -1)
-                    [[ -n "$WA_MAIN" ]] && ln -sf "$WA_MAIN" "$WA_PROF/Extensions" 2>/dev/null || true
-                    WA_EXEC="$WA_BIN --app=$WA_URL --user-data-dir=$WA_PROF --class=snowfox-webapp-$WA_SAFE"
+                    # Librewolf mit Addons (nutzt Hauptprofil)
+                    WA_BIN="librewolf"
+                    local LW_MAIN_PROFILE
+                    LW_MAIN_PROFILE=$(find "$HOME/.librewolf" -maxdepth 2 -name "*.default" -type d 2>/dev/null | head -1)
+                    [[ -z "$LW_MAIN_PROFILE" ]] && LW_MAIN_PROFILE="$HOME/.librewolf/default"
+                    WA_EXEC="$WA_BIN --new-window \"$WA_URL\" --class=snowfox-webapp-$WA_SAFE --profile \"$LW_MAIN_PROFILE\""
                     ;;
                 5)
-                    WA_BIN="/opt/zen-browser.AppImage"
-                    WA_EXEC="$WA_BIN --app=$WA_URL --class=snowfox-webapp-$WA_SAFE"
+                    WA_BIN="chromium"
+                    WA_EXEC="$WA_BIN --app=\"$WA_URL\" --class=snowfox-webapp-$WA_SAFE"
                     ;;
                 6)
-                    WA_BIN="chromium"
-                    WA_EXEC="$WA_BIN --app=$WA_URL --class=snowfox-webapp-$WA_SAFE"
-                    ;;
-                7)
                     WA_BIN="brave-browser"
-                    WA_EXEC="$WA_BIN --app=$WA_URL --class=snowfox-webapp-$WA_SAFE"
-                    ;;
-                8)
-                    WA_BIN="firefox-esr"
-                    WA_EXEC="$WA_BIN --ssb=$WA_URL"
+                    WA_EXEC="$WA_BIN --app=\"$WA_URL\" --class=snowfox-webapp-$WA_SAFE"
                     ;;
                 *)
-                    # Fallback auf Librewolf WebApp-Modus
-                    WA_BIN="librewolf"
-                    WA_PROFILE="$WAPP_DIR/$WA_SAFE/librewolf-profile"
-                    mkdir -p "$WA_PROFILE"
-                    WA_EXEC="$WA_BIN --new-window \"$WA_URL\" --class=snowfox-webapp-$WA_SAFE --profile \"$WA_PROFILE\""
+                    # Fallback auf Min Browser
+                    WA_BIN="min"
+                    WA_EXEC="$WA_BIN --new-window \"$WA_URL\" --class=snowfox-webapp-$WA_SAFE"
                     ;;
             esac
 
@@ -447,7 +431,7 @@ data.append({
     'safe':'$WA_SAFE',
     'icon':'$WA_ICON',
     'browser':'$WA_BIN',
-    'mode': 'webapp' if '$WA_BR' in ['1', '2'] else 'app'
+    'mode': 'webapp' if '$WA_BR' in ['1', '2', '3'] else 'app'
 })
 with open(path, 'w') as f:
     json.dump(data, f, indent=2)
@@ -459,7 +443,7 @@ with open(path, 'w') as f:
             info "  In Rofi:  '$WA_NAME' suchen"
             
             if [[ "$WA_BR" == "1" ]]; then
-                info "  ${GREEN}✓ Librewolf im WebApp-Modus (kein Browser-UI)${RESET}"
+                info "  ${GREEN}✓ Min Browser im WebApp-Modus (minimal, kein Browser-UI)${RESET}"
             fi
             ;;
 
@@ -479,8 +463,9 @@ with open('$WAPP_JSON') as f:
 for i, a in enumerate(data, 1):
     mode = a.get('mode', 'app')
     mode_str = '🌐 WebApp' if mode == 'webapp' else '📱 App'
+    browser = a.get('browser', 'unbekannt')
     print(f\"  {i}) {a['name']}  →  {a['url']}\")
-    print(f\"     {mode_str} | Browser: {a.get('browser', 'unbekannt')}\")
+    print(f\"     {mode_str} | Browser: {browser}\")
 " 2>/dev/null
             echo ""
             divider
