@@ -333,21 +333,56 @@ cmd_webapp() {
             local WA_BIN WA_EXEC WA_PROFILE
             case "$WA_BR" in
                 1)
-                    # Min Browser - WebApp-Modus (minimal)
+                    # Min Browser - WebApp-Modus (minimal, keine Tabs)
                     WA_BIN="min"
-                    WA_EXEC="$WA_BIN --new-window \"$WA_URL\" --class=snowfox-webapp-$WA_SAFE"
                     
-                    # Desktop-Eintrag mit --new-window und --class
-                    WA_EXEC="$WA_BIN --new-window \"$WA_URL\" --class=snowfox-webapp-$WA_SAFE"
+                    # Min-spezifische Konfiguration für WebApp-Modus
+                    local MIN_CONFIG_DIR="$HOME/.config/Min"
+                    mkdir -p "$MIN_CONFIG_DIR"
+                    
+                    # WebApp-spezifische Konfiguration für Min
+                    cat > "$MIN_CONFIG_DIR/webapp-prefs.json" << 'EOF'
+{
+  "showTabs": false,
+  "showBookmarksBar": false,
+  "showNavigationBar": false,
+  "showSidebar": false,
+  "showDownloads": false,
+  "showHistory": false,
+  "showExtensions": false,
+  "enableFullscreen": true,
+  "allowPopups": true,
+  "javascriptEnabled": true,
+  "webGLEnabled": true
+}
+EOF
+                    
+                    WA_EXEC="$WA_BIN --new-window \"$WA_URL\" --class=snowfox-webapp-$WA_SAFE --preferences-file=\"$MIN_CONFIG_DIR/webapp-prefs.json\""
                     ;;
                 2)
-                    # Min Browser mit Session-Persistenz
+                    # Min Browser mit Session-Persistenz und eigener Konfiguration
                     WA_BIN="min"
                     WA_PROFILE="$WAPP_DIR/$WA_SAFE/min-profile"
                     mkdir -p "$WA_PROFILE"
                     
-                    # Min Browser startet mit eigenem Profil
-                    WA_EXEC="$WA_BIN --new-window \"$WA_URL\" --class=snowfox-webapp-$WA_SAFE --profile-directory=\"$WA_PROFILE\""
+                    # Min-Konfiguration für das Profil
+                    cat > "$WA_PROFILE/prefs.json" << 'EOF'
+{
+  "showTabs": false,
+  "showBookmarksBar": false,
+  "showNavigationBar": false,
+  "showSidebar": false,
+  "showDownloads": false,
+  "showHistory": false,
+  "showExtensions": false,
+  "enableFullscreen": true,
+  "allowPopups": true,
+  "javascriptEnabled": true,
+  "webGLEnabled": true
+}
+EOF
+                    
+                    WA_EXEC="$WA_BIN --new-window \"$WA_URL\" --class=snowfox-webapp-$WA_SAFE --profile-directory=\"$WA_PROFILE\" --preferences-file=\"$WA_PROFILE/prefs.json\""
                     ;;
                 3)
                     # Librewolf WebApp-Modus - komplett ohne Browser-UI
@@ -394,9 +429,9 @@ EOF
                     WA_EXEC="$WA_BIN --app=\"$WA_URL\" --class=snowfox-webapp-$WA_SAFE"
                     ;;
                 *)
-                    # Fallback auf Min Browser
+                    # Fallback auf Min Browser ohne Tabs
                     WA_BIN="min"
-                    WA_EXEC="$WA_BIN --new-window \"$WA_URL\" --class=snowfox-webapp-$WA_SAFE"
+                    WA_EXEC="$WA_BIN --new-window \"$WA_URL\" --class=snowfox-webapp-$WA_SAFE --show-tabs=false"
                     ;;
             esac
 
@@ -442,8 +477,8 @@ with open(path, 'w') as f:
             info "  Starten:  snowfox webapp open $WA_SAFE"
             info "  In Rofi:  '$WA_NAME' suchen"
             
-            if [[ "$WA_BR" == "1" ]]; then
-                info "  ${GREEN}✓ Min Browser im WebApp-Modus (minimal, kein Browser-UI)${RESET}"
+            if [[ "$WA_BR" == "1" ]] || [[ "$WA_BR" == "2" ]]; then
+                info "  ${GREEN}✓ Min Browser im WebApp-Modus (Tabs-Leiste ausgeblendet)${RESET}"
             fi
             ;;
 
