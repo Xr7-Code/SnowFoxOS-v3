@@ -1,23 +1,28 @@
 #!/bin/bash
 
-# Prüfe WLAN mit ip
-WLAN_SSID=$(ip link show | grep -o 'wlan[0-9]' | head -1)
-if [ -n "$WLAN_SSID" ]; then
-    # Versuche SSID mit nmcli oder iwgetid zu bekommen
-    if command -v nmcli &> /dev/null; then
-        SSID=$(nmcli -t -f ACTIVE,SSID dev wifi | grep '^ja:' | cut -d: -f2)
-        if [ -n "$SSID" ]; then
-            echo "󰤨 $SSID"
-            exit 0
-        fi
-    elif command -v iwgetid &> /dev/null; then
-        SSID=$(iwgetid -r)
-        if [ -n "$SSID" ]; then
-            echo "󰤨 $SSID"
-            exit 0
-        fi
-    else
-        echo "󰤨 WLAN"
+# Prüfe mit nmcli
+if command -v nmcli &> /dev/null; then
+    # WLAN SSID
+    SSID=$(nmcli -t -f ACTIVE,SSID dev wifi | grep '^ja:' | cut -d: -f2)
+    if [ -n "$SSID" ]; then
+        echo "󰤨 $SSID"
+        exit 0
+    fi
+    
+    # Prüfe LAN
+    CONNECTIONS=$(nmcli -t -f TYPE,STATE device status | grep '^ethernet:verbunden' || true)
+    if [ -n "$CONNECTIONS" ]; then
+        echo "󰌘 LAN"
+        exit 0
+    fi
+fi
+
+# Fallback: manuelle Prüfung
+# Prüfe WLAN mit iwgetid
+if command -v iwgetid &> /dev/null; then
+    SSID=$(iwgetid -r)
+    if [ -n "$SSID" ]; then
+        echo "󰤨 $SSID"
         exit 0
     fi
 fi
