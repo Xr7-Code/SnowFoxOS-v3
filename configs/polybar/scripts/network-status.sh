@@ -1,10 +1,25 @@
 #!/bin/bash
 
-# Prüfe WLAN
-WLAN_SSID=$(iw dev | grep ssid | awk '{print $2}')
+# Prüfe WLAN mit ip
+WLAN_SSID=$(ip link show | grep -o 'wlan[0-9]' | head -1)
 if [ -n "$WLAN_SSID" ]; then
-    echo "󰤨 $WLAN_SSID"
-    exit 0
+    # Versuche SSID mit nmcli oder iwgetid zu bekommen
+    if command -v nmcli &> /dev/null; then
+        SSID=$(nmcli -t -f ACTIVE,SSID dev wifi | grep '^ja:' | cut -d: -f2)
+        if [ -n "$SSID" ]; then
+            echo "󰤨 $SSID"
+            exit 0
+        fi
+    elif command -v iwgetid &> /dev/null; then
+        SSID=$(iwgetid -r)
+        if [ -n "$SSID" ]; then
+            echo "󰤨 $SSID"
+            exit 0
+        fi
+    else
+        echo "󰤨 WLAN"
+        exit 0
+    fi
 fi
 
 # Prüfe LAN (Kabel)
