@@ -28,4 +28,4 @@ fi
 
 # ── Polybar immer im Vordergrund halten ──────────────────
 sleep 1
-i3-msg '[class="Polybar"] border none, focus disable, sticky enable'
+i3-msg '[class="Polybar"] border none, sticky enable'
