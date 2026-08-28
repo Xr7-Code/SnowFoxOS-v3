@@ -25,7 +25,3 @@ if $IS_LAPTOP; then
 else
     MONITOR=$PRIMARY polybar snowfox 2>/tmp/polybar.log &
 fi
-
-# ── Polybar immer im Vordergrund halten ──────────────────
-sleep 1
-i3-msg '[class="Polybar"] border none, sticky enable'
