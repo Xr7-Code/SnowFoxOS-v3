@@ -213,7 +213,7 @@ For comparison (community benchmarks, `free -h` `used` value — not directly co
 - **DNS-over-TLS** — via systemd-resolved, Cloudflare + Quad9
 - **GPU detection** — automatic driver installation for AMD, NVIDIA, Intel, Hybrid
 - **Automatic kernel fallback** — XanMod LTS (x64v3) on modern CPUs, standard Debian kernel as fallback when no AVX2
-- **Hybrid GPU freeze fix** — PSR deactivation for AMD+NVIDIA dual-monitor setups
+- **Hybrid GPU freeze fix** — PSR deactivation and Scatter-Gather Display fix for AMD+NVIDIA dual-monitor setups
 - **Dark mode** — SnowFox palette consistent across GTK2/3/4 and Qt
 - **OnlyOffice** — Microsoft format compatibility (optional)
 - **SnowFox Console Launcher** — game hub for Steam, GOG, Retro
@@ -411,7 +411,26 @@ grep avx2 /proc/cpuinfo | head -1
 
 **NVIDIA: Maxwell (2014) or newer** — GTX 750 / GTX 900 series and newer, all RTX generations. Older cards are not supported.
 
-**AMD + NVIDIA Hybrid** — the PSR freeze fix is applied automatically. If problems occur: check `amdgpu dcfeaturemask=0x8` in `/etc/modprobe.d/amdgpu.conf`.
+**AMD + NVIDIA Hybrid** — two fixes are applied automatically by the installer:
+
+1. **PSR fix** — `dcfeaturemask=0x8` disables Panel Self Refresh in the AMD display engine, which caused `dma_fence_wait_timeout` deadlocks on wakeup. Set in `/etc/modprobe.d/amdgpu.conf`.
+
+2. **Scatter-Gather Display fix** — `sg_display=0` disables Scatter-Gather memory for the AMD display controller. On PRIME setups where AMD acts as output-slave to NVIDIA, the AMD display engine can enter a `dma_fence_wait_timeout` deadlock while waiting for a fence signal from the NVIDIA side that never arrives — for example when a browser renders content or Rofi opens a menu. Since AMD renders nothing itself in this configuration, Scatter-Gather provides no benefit and only causes instability. Also set in `/etc/modprobe.d/amdgpu.conf`.
+
+Additionally, picom is configured with `backend = "glx"` instead of `xrender`. The xrender backend has no native synchronisation with the NVIDIA driver and causes the AMD output to freeze when the compositor tries to render across both GPUs simultaneously.
+
+If you experience display freezes on an AMD+NVIDIA system, verify all three settings are in place:
+
+```bash
+cat /etc/modprobe.d/amdgpu.conf
+# Should contain:
+# options amdgpu dcfeaturemask=0x8
+# options amdgpu runpm=0
+# options amdgpu sg_display=0
+
+grep "backend" ~/.config/picom.conf
+# Should show: backend = "glx";
+```
 
 ### Known Issues
 
