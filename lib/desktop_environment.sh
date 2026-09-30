@@ -46,8 +46,10 @@ apt-get install -y \
     cups cups-bsd cups-client \
     printer-driver-splix
 
-# Picom wurde entfernt — verursachte Grafikkonflikte auf AMD+NVIDIA Hybrid
-# und erhöhte unnötig RAM/GPU-Last. i3 braucht keinen Compositor zwingend.
+# Picom läuft mit backend = "glx" (nicht "xrender") und fading = false.
+# xrender hat keine native Synchronisation mit dem NVIDIA-Treiber und
+# verursachte Freezes beim Öffnen von Rofi-Menüs.
+# fading = false reduziert die Compositor-Last — v2.2-Verhalten.
 success "i3 Desktop-Pakete installiert"
 
 # ── Clipnotify — aus Source bauen ────────────────────────────
