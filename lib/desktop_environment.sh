@@ -193,20 +193,14 @@ export QT_STYLE_OVERRIDE=gtk2
 export QT_AUTO_SCREEN_SCALE_FACTOR=0
 export ELECTRON_OZONE_PLATFORM_HINT=auto
 export _JAVA_AWT_WM_NONREPARENTING=1
+export XDG_CURRENT_DESKTOP=i3
 
 xsettingsd &
 
 if [ -f /usr/bin/dbus-launch ]; then
     eval $(/usr/bin/dbus-launch --sh-syntax --exit-with-session)
-fi
-
-# Fix: AMD+NVIDIA Hybrid — xrandr Provider verbinden damit AMD als
-# Output-Slave für den zweiten Monitor fungiert ohne eigene Fence-Ops.
-# Verhindert dma_fence_wait_timeout Freeze (amdgpu Display-Engine Deadlock).
-# HAS_NVIDIA and HAS_AMD are assumed to be exported/sourced from main script.
-if lspci | grep -qi nvidia && lspci | grep -qi amd; then
-    xrandr --setprovideroutputsource 1 0
-    xrandr --auto
+    dbus-update-activation-environment --systemd \
+        DISPLAY XAUTHORITY XDG_CURRENT_DESKTOP QT_QPA_PLATFORMTHEME
 fi
 
 exec i3
