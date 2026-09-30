@@ -79,15 +79,26 @@ if ask_install "SnowFox Console Launcher (Game Hub für Steam & GOG)"; then
         info "Klone SnowFox Console Launcher..."
         if [[ -d "$LAUNCHER_DIR" ]]; then
             info "Bereits vorhanden — aktualisiere..."
-            git -C "$LAUNCHER_DIR" pull 2>/dev/null                 && ok "Console Launcher aktualisiert"                 || warn "Update fehlgeschlagen — manuell prüfen"
+            if git -C "$LAUNCHER_DIR" pull 2>/dev/null; then
+                success "Console Launcher aktualisiert"
+            else
+                warn "Update fehlgeschlagen — manuell prüfen"
+            fi
         else
-            sudo -u "$TARGET_USER" git clone                 https://github.com/Xr7-Code/SnowFox-Console-Launcher.git                 "$LAUNCHER_DIR" 2>/dev/null                 && ok "Console Launcher installiert → $LAUNCHER_DIR"                 || warn "Clone fehlgeschlagen — Netzwerk prüfen"
+            if sudo -u "$TARGET_USER" git clone \
+                https://github.com/Xr7-Code/SnowFox-Console-Launcher.git \
+                "$LAUNCHER_DIR" 2>/dev/null; then
+                success "Console Launcher installiert → $LAUNCHER_DIR"
+            else
+                warn "Clone fehlgeschlagen — Netzwerk prüfen"
+            fi
         fi
+
         # Execute-Bit setzen
         if [[ -f "$LAUNCHER_DIR/snowfox_launcher" ]]; then
             chmod +x "$LAUNCHER_DIR/snowfox_launcher"
             chown "$TARGET_USER:$TARGET_USER" "$LAUNCHER_DIR/snowfox_launcher"
-            ok "snowfox_launcher ist ausführbar"
+            success "snowfox_launcher ist ausführbar"
         fi
     else
         warn "git nicht gefunden — Console Launcher nicht installiert"
