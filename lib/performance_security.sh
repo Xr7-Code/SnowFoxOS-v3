@@ -118,8 +118,6 @@ apt-get purge -y zeitgeist zeitgeist-core zeitgeist-datahub 2>/dev/null || true
 apt-get purge -y diodon 2>/dev/null || true
 apt-get purge -y xterm uxterm 2>/dev/null || true
 apt-get autoremove -y 2>/dev/null || true
-sudo -u "$TARGET_USER" systemctl --user mask xdg-desktop-portal.service \
-    xdg-desktop-portal-gtk.service xdg-desktop-portal-gnome.service 2>/dev/null || true
 success "Ballast entfernt (zeitgeist, diodon, xterm, uxterm)"
 
 sed -i 's/#HandlePowerKey=.*/HandlePowerKey=ignore/' /etc/systemd/logind.conf
