@@ -42,6 +42,8 @@ if ask_install "VLC Media Player"; then
 fi
 
 # ── Code-Editor / IDE ────────────────────────────────────────
+# Geany: leichtgewichtig, schnell. Plugins selektiv — nicht das
+# Metapaket, um Ballast zu vermeiden.
 apt-get install -y geany \
     geany-plugin-addons \
     geany-plugin-autoclose \
