@@ -1,6 +1,7 @@
 #!/bin/bash
 # ============================================================
-#  SnowFoxOS — CLI Modul: Hilfe & Befehlsübersicht
+#  SnowFoxOS — CLI Module: Help & Command Overview
+#  Copyright (c) 2026 Alexander Valentin Ludwig (Xr7-Code)
 # ============================================================
 
 cmd_help() {
@@ -20,55 +21,63 @@ cmd_help() {
 
     _help_cmd() {
         local cmd="$1" desc="$2"
-        printf "  ${CYAN}${BOLD}  %-38s${RESET}${DGRAY}%s${RESET}\n" "$cmd" "$desc"
+        printf "  ${CYAN}${BOLD}  %-34s${RESET}${DGRAY}%s${RESET}\n" "$cmd" "$desc"
     }
 
     _help_section "System & Status"
-    _help_cmd "snowfox status"                    "System-Übersicht"
-    _help_cmd "snowfox battery"                   "Akku, Verbrauch & Gesundheit"
-    _help_cmd "snowfox update"                    "System & CLI aktualisieren"
-    _help_cmd "snowfox profile [name]"            "balanced · performance · battery · privacy"
-    _help_cmd "snowfox node [desktop|server|console]" "Systemmodus wechseln"
-    _help_cmd "snowfox doctor"                    "Diagnose: RAM, Treiber, Configs"
-    _help_cmd "snowfox reset"                     "Werkszustand / System zurücksetzen"
+    _help_cmd "snowfox st"                 "System overview"
+    _help_cmd "snowfox bat"                "Battery, consumption & health"
+    _help_cmd "snowfox up"                 "Update system & CLI"
+    _help_cmd "snowfox prof [name]"        "balanced · performance · battery · privacy"
+    _help_cmd "snowfox doc"                "Diagnostics: RAM, drivers, configs"
+    _help_cmd "snowfox rst"                "Factory reset — deletes all data"
     echo ""
 
-    _help_section "Einstellungen & Konfiguration"
-    _help_cmd "snowfox settings"                  "Übersicht aller Einstellungen"
-    _help_cmd "snowfox settings defaults"         "Standard-Apps (LibreWolf, Codium, PCManFM, Kitty)"
-    _help_cmd "snowfox settings keyboard [layout]" "Tastaturlayout anzeigen / ändern (z.B. de)"
-    _help_cmd "snowfox settings language [locale]" "Systemsprache festlegen (z.B. de_DE.UTF-8)"
-    _help_cmd "snowfox settings time [zone]"      "Zeitzone & Uhrzeit (z.B. Europe/Berlin)"
-    _help_cmd "snowfox settings user [passwd|add|del]" "Nutzer & Passwörter verwalten"
-    _help_cmd "snowfox settings bluetooth [on|off]" "Bluetooth steuern"
+    _help_section "Hardware & Privacy"
+    _help_cmd "snowfox gpu"                "Switch GPU mode (Hybrid)"
+    _help_cmd "snowfox kill [mic|cam|all|restore]" "Hardware kill switches"
+    _help_cmd "snowfox air [on|off|status]" "Disable all wireless interfaces"
+    _help_cmd "snowfox audit"              "Active network connections"
+    _help_cmd "snowfox pass [add|get|list|remove]" "Password manager"
+    _help_cmd "snowfox tip"                "Security tip"
+    _help_cmd "snowfox tor [on|off|status]" "Tor mode: IP, DNS, MAC anonymization"
     echo ""
 
-    _help_section "Hardware & Sicherheit"
-    _help_cmd "snowfox gpu"                       "GPU-Modus wechseln (Hybrid)"
-    _help_cmd "snowfox kill [mic|cam|all|restore]" "Hardware-Kill"
-    _help_cmd "snowfox airmode [on|off|status]"   "Funk komplett deaktivieren"
-    _help_cmd "snowfox audit"                     "Aktive Netzwerkverbindungen"
-    _help_cmd "snowfox pass [add|get|list|remove]" "Passwort-Manager"
-    _help_cmd "snowfox tip"                       "Sicherheitstipp"
+    _help_section "Media"
+    _help_cmd "snowfox stream <search|URL>" "Stream video/audio via mpv"
+    _help_cmd "snowfox dl <URL>"            "Download video or audio"
+    _help_cmd "snowfox fetch <URL>"         "High-speed download (16 connections)"
     echo ""
 
     _help_section "Desktop"
-    _help_cmd "snowfox autostart [list|enable|disable]" "Autostart verwalten"
-    _help_cmd "snowfox layout [tiling|floating]"  "Fenstermodus wechseln"
-    _help_cmd "snowfox apps [list|remove]"        "Rofi-Apps verwalten"
-    _help_cmd "snowfox webapp [add|list|open|remove]" "WebApps verwalten"
-    _help_cmd "snowfox network"                   "Netzwerk-Manager"
+    _help_cmd "snowfox auto [list|enable|disable]" "Manage autostart"
+    _help_cmd "snowfox lay [tiling|floating]" "Switch window mode"
+    _help_cmd "snowfox apps [list|remove]"  "Manage Rofi apps"
+    _help_cmd "snowfox web [add|list|open|remove]" "Manage web apps"
+    _help_cmd "snowfox net"                 "Network manager"
+    _help_cmd "snowfox wall"                "Wallpaper selector"
+    _help_cmd "snowfox disp"                "Display configuration"
+    _help_cmd "snowfox lock"                "Lock screen"
     echo ""
 
-    _help_section "Medien & KI"
-    _help_cmd "snowfox download <URL>"            "Video/Audio herunterladen"
-    _help_cmd "snowfox stream <Suche|URL>"        "Video/Musik streamen"
-    _help_cmd "snowfox tor [on|off|status]"       "Tor-Modus: IP, DNS, MAC anonymisieren"
-    # _help_cmd "snowfox mesh"                      "P2P-Mesh (autark, verschlüsselt)"
-    _help_cmd "snowfox ai"                        "Offline-KI (Ollama)"
+    _help_section "Settings"
+    _help_cmd "snowfox set"                 "Settings overview (terminal)"
+    _help_cmd "snowfox set gui"             "Settings overview (Rofi menu)"
+    _help_cmd "snowfox bt [on|off|toggle]"  "Bluetooth control"
+    _help_cmd "snowfox kb [layout]"         "Keyboard layout (e.g. de, us)"
+    _help_cmd "snowfox lang [locale]"       "System language (e.g. en_US.UTF-8)"
+    _help_cmd "snowfox tz [zone]"           "Timezone (e.g. Europe/Berlin)"
+    _help_cmd "snowfox user [passwd|add|del]" "User management"
+    _help_cmd "snowfox def [set] <key> <val>" "Default applications"
+    echo ""
+
+    _help_section "Node & AI"
+    _help_cmd "snowfox node [desktop|server|console]" "System mode"
+    _help_cmd "snowfox ai"                  "Offline AI (Ollama)"
+    # _help_cmd "snowfox mesh"              "P2P mesh (Reticulum)"
     echo ""
 
     divider
-    info "snowfox <Befehl> --help  für Details zu einem Befehl"
+    info "snowfox <command> --help  for details on a command"
     echo ""
 }
