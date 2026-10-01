@@ -1,37 +1,90 @@
 #!/bin/bash
-
 # ============================================================
-#  SnowFoxOS v3.0 — Installer Utils
+#  SnowFoxOS — CLI Utilities (Colors & Output Helpers)
+#  Copyright (c) 2026 Alexander Valentin Ludwig (Xr7-Code)
 # ============================================================
 
+# ── Colors ───────────────────────────────────────────────────
 PURPLE='\033[0;35m'
+LPURPLE='\033[1;35m'
 ORANGE='\033[0;33m'
 GREEN='\033[0;32m'
 RED='\033[0;31m'
-GRAY='\033[0;37m'
 CYAN='\033[0;36m'
+GRAY='\033[0;37m'
+DGRAY='\033[2;37m'
 BOLD='\033[1m'
+DIM='\033[2m'
 RESET='\033[0m'
 
-info()    { echo -e "${PURPLE}${BOLD}[SnowFox]${RESET} $1"; }
-success() { echo -e "${GREEN}${BOLD}[  OK  ]${RESET} $1"; }
-warn()    { echo -e "${ORANGE}${BOLD}[ WARN ]${RESET} $1"; }
-error()   { echo -e "${RED}${BOLD}[FEHLER]${RESET} $1"; exit 1; }
-step()    { echo -e "\n${PURPLE}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}";
-            echo -e "${PURPLE}${BOLD}  $1${RESET}";
-            echo -e "${PURPLE}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}\n"; }
-
-ask_install() {
+# ── Output Helpers ───────────────────────────────────────────
+header() {
+    local title="$1"
+    local width=48
+    local pad=$(( (width - ${#title} - 2) / 2 ))
+    local line
+    line=$(printf '─%.0s' $(seq 1 $width))
+    echo -e ""
+    echo -e "${PURPLE}${BOLD}  ┌${line}┐${RESET}"
+    echo -e "${PURPLE}${BOLD}  │$(printf '%*s' $((width)) '')│${RESET}"
+    printf "${PURPLE}${BOLD}  │%*s${LPURPLE}🦊 %s${PURPLE}%*s│${RESET}\n" \
+        $pad "" "$title" $pad ""
+    echo -e "${PURPLE}${BOLD}  │$(printf '%*s' $((width)) '')│${RESET}"
+    echo -e "${PURPLE}${BOLD}  └${line}┘${RESET}"
     echo ""
-    read -rp "$(echo -e ${PURPLE}${BOLD}"[SnowFox] $1 installieren? [j/n]: "${RESET})" choice
-    [[ "$choice" =~ ^[jJ]$ ]]
 }
 
-wait_apt() {
-    local i=0
-    while fuser /var/lib/dpkg/lock-frontend /var/lib/apt/lists/lock > /dev/null 2>&1; do
-        [[ $i -eq 0 ]] && info "Warte auf apt-Lock..."
-        sleep 2; i=$((i+1))
-        [[ $i -gt 60 ]] && error "apt-Lock nach 120s nicht frei"
-    done
+divider() {
+    echo -e "${PURPLE}${DIM}  ────────────────────────────────────────────────${RESET}"
+}
+
+section() {
+    echo ""
+    echo -e "${LPURPLE}${BOLD}  $1${RESET}"
+    divider
+}
+
+row() {
+    # row "Label" "Value" [color]
+    local label="$1"
+    local value="$2"
+    local color="${3:-$RESET}"
+    printf "  ${DGRAY}%-16s${RESET} ${color}${BOLD}%s${RESET}\n" "$label" "$value"
+}
+
+bool_row() {
+    # bool_row "Label" true|false [true_label] [false_label]
+    local label="$1"
+    local state="$2"
+    local true_label="${3:-active}"
+    local false_label="${4:-inactive}"
+    if [[ "$state" == "true" ]]; then
+        row "$label" "$true_label" "$GREEN"
+    else
+        row "$label" "$false_label" "$RED"
+    fi
+}
+
+hint() {
+    # Subtle hint below a row
+    echo -e "  ${DGRAY}  $1${RESET}"
+}
+
+ok()   { echo -e "  ${GREEN}${BOLD}✓${RESET}  $1"; }
+warn() { echo -e "  ${ORANGE}${BOLD}⚠${RESET}  $1"; }
+err()  { echo -e "  ${RED}${BOLD}✗${RESET}  $1"; }
+info() { echo -e "  ${DGRAY}$1${RESET}"; }
+fox()  { echo -e "\n  ${LPURPLE}${BOLD}🦊  $1${RESET}\n"; }
+
+# Progress bar: bar 75 100
+bar() {
+    local val=$1 max=$2 width=20
+    local filled=$(( val * width / max ))
+    local empty=$(( width - filled ))
+    local b="${PURPLE}${BOLD}"
+    local d="${DGRAY}"
+    printf "  ["
+    printf "${b}%0.s█${RESET}" $(seq 1 $filled)
+    printf "${d}%0.s░${RESET}" $(seq 1 $empty)
+    printf "] ${BOLD}%s%%${RESET}\n" "$val"
 }
