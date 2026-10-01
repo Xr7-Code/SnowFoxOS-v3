@@ -1,5 +1,5 @@
 /* ============================================================
-   SnowFox — GTK3 Color Override
+   SnowFox — GTK3 Color Override (komplett, mit Polish)
    Ablegen unter: ~/.config/gtk-3.0/gtk.css
    ============================================================ */
 
@@ -79,9 +79,16 @@ headerbar:backdrop, .titlebar:backdrop {
 /* ── Buttons ───────────────────────────────────────────────── */
 button {
     background-color: @bg_alt_color;
+    background-image: none;
+    box-shadow:       none;
+    text-shadow:      none;
     color:            @fg_color;
     border-color:     @border_color;
+    border-width:     1px;
+    border-style:     solid;
     border-radius:    5px;
+    padding:          4px 10px;
+    min-height:       22px;
 }
 
 button:hover {
@@ -118,23 +125,69 @@ button.destructive-action {
     border-color:     @error_color;
 }
 
+/* ── Werkzeugleiste ────────────────────────────────────────── */
+toolbar, .toolbar {
+    background-color: @bg_color;
+    padding:          3px 4px;
+}
+
+toolbar button {
+    background-color: transparent;
+    border-color:     transparent;
+    border-radius:    6px;
+    padding:          4px 6px;
+}
+
+toolbar button:hover {
+    background-color: @bg_hover_color;
+    border-color:     alpha(@selected_bg_color, 0.5);
+}
+
+toolbar button:checked,
+toolbar button:active {
+    background-color: @purple_active;
+    border-color:     @selected_bg_color;
+    color:            @selected_fg_color;
+}
+
+toolbar separator {
+    background-color: @border_color;
+    min-width:        1px;
+    margin:           4px 4px;
+}
+
 /* ── Eingabefelder & Textflächen ───────────────────────────── */
 entry, spinbutton {
     background-color: @bg_alt_color;
+    background-image: none;
+    box-shadow:       none;
     color:            @fg_color;
-    border-color:     @border_color;
-    border-radius:    5px;
     caret-color:      @selected_bg_color;
+    border-width:     1px;
+    border-style:     solid;
+    border-color:     alpha(@fg_dim_color, 0.45);
+    border-radius:    5px;
+    padding:          4px 8px;
+    min-height:       22px;
+}
+
+entry:hover, spinbutton:hover {
+    border-color: alpha(@purple_hover, 0.6);
 }
 
 entry:focus, spinbutton:focus {
     border-color: @selected_bg_color;
+    box-shadow:   0 0 0 1px alpha(@selected_bg_color, 0.35);
 }
 
 textview, textview text {
     background-color: @bg_alt_color;
     color:            @fg_color;
     caret-color:      @selected_bg_color;
+}
+
+textview border {
+    background-color: transparent;
 }
 
 /* ── TEXT-MARKIERUNG (Browser, Textfelder, Labels, Editoren) ─ */
@@ -166,6 +219,11 @@ menubar {
     color:            @fg_color;
 }
 
+menubar > menuitem {
+    padding:       4px 8px;
+    border-radius: 5px;
+}
+
 menubar > menuitem:hover {
     background-color: @bg_hover_color;
     color:            @fg_color;
@@ -174,12 +232,19 @@ menubar > menuitem:hover {
 menu, .menu {
     background-color: @bg_alt_color;
     color:            @fg_color;
-    border-color:     @border_color;
+    border:           1px solid alpha(@fg_dim_color, 0.45);
+    border-radius:    8px;
+    padding:          4px;
 }
 
 menuitem {
-    color: @fg_color;
+    color:            @fg_color;
     background-color: transparent;
+}
+
+menu menuitem {
+    padding:       5px 10px;
+    border-radius: 5px;
 }
 
 menuitem:hover {
@@ -189,6 +254,12 @@ menuitem:hover {
 
 menuitem:disabled {
     color: @fg_dim_color;
+}
+
+menu separator {
+    background-color: @border_color;
+    min-height:       1px;
+    margin:           4px 6px;
 }
 
 /* ── Sidebar ───────────────────────────────────────────────── */
@@ -216,6 +287,10 @@ treeview, treeview.view, .view {
 treeview row {
     background-color: transparent;
     color:            @fg_color;
+}
+
+treeview.view cell {
+    padding: 2px 4px;   /* Zeilenabstand; von manchen Apps ignoriert */
 }
 
 treeview.view:hover,
@@ -278,11 +353,44 @@ cell:selected:backdrop {
     color:            @selected_fg_color;
 }
 
-/* Header von Tabellen */
+/* Baum-Pfeile (Expander) */
+treeview.view.expander {
+    -gtk-icon-source: -gtk-icontheme("pan-end-symbolic");
+    color:            @fg_dim_color;
+}
+
+treeview.view.expander:hover {
+    color: @purple_hover;
+}
+
+treeview.view.expander:checked {
+    -gtk-icon-source: -gtk-icontheme("pan-down-symbolic");
+    color:            @selected_bg_color;
+}
+
+/* Spaltenköpfe von Tabellen */
 treeview header button {
     background-color: @bg_alt_color;
+    background-image: none;
+    box-shadow:       none;
+    color:            @fg_dim_color;
+    padding:          4px 6px;
+    min-height:       0;
+    border-radius:    0;
+    border-style:     solid;
+    border-width:     0 1px 1px 0;
+    border-color:     alpha(@fg_dim_color, 0.35);
+}
+
+treeview header button:hover {
+    background-color: @bg_hover_color;
     color:            @fg_color;
-    border-color:     @border_color;
+}
+
+treeview header button:active,
+treeview header button:checked {
+    background-color: @purple_active;
+    color:            @selected_fg_color;
 }
 
 /* ── Notebook (Tabs) ───────────────────────────────────────── */
@@ -294,6 +402,9 @@ notebook > header {
 notebook > header > tabs > tab {
     background-color: transparent;
     color:            @fg_dim_color;
+    padding:          5px 12px;
+    border:           0 solid transparent;
+    border-radius:    0;
 }
 
 notebook > header > tabs > tab:checked {
@@ -306,17 +417,64 @@ notebook > header > tabs > tab:hover {
     color:            @fg_color;
 }
 
-/* ── Scrollbar ─────────────────────────────────────────────── */
+/* Farbige Linie am aktiven Tab, je nach Tab-Position */
+notebook > header.top > tabs > tab:checked {
+    border-bottom: 2px solid @selected_bg_color;
+}
+
+notebook > header.bottom > tabs > tab:checked {
+    border-top: 2px solid @selected_bg_color;
+}
+
+notebook > header.left > tabs > tab:checked {
+    border-right: 2px solid @selected_bg_color;
+}
+
+notebook > header.right > tabs > tab:checked {
+    border-left: 2px solid @selected_bg_color;
+}
+
+/* ── Scrollfenster & Scrollbar ─────────────────────────────── */
+scrolledwindow.frame,
+scrolledwindow {
+    border-color: alpha(@fg_dim_color, 0.35);
+}
+
+scrolledwindow undershoot.top,
+scrolledwindow undershoot.bottom,
+scrolledwindow undershoot.left,
+scrolledwindow undershoot.right,
+scrolledwindow overshoot.top,
+scrolledwindow overshoot.bottom,
+scrolledwindow overshoot.left,
+scrolledwindow overshoot.right {
+    background-image: none;
+}
+
+scrollbar {
+    background-color: transparent;
+    border:           none;
+}
+
 scrollbar trough {
     background-color: @bg_alt_color;
 }
 
 scrollbar slider {
     background-color: @fg_dim_color;
+    background-clip:  padding-box;
+    min-width:        8px;
+    min-height:       8px;
+    border:           2px solid transparent;
     border-radius:    8px;
 }
 
+scrollbar:hover slider,
 scrollbar slider:hover {
+    background-color: @purple_hover;
+}
+
+scrollbar slider:active {
     background-color: @selected_bg_color;
 }
 
@@ -329,7 +487,7 @@ tooltip {
 }
 
 tooltip label {
-    color: @fg_color;
+    color:            @fg_color;
     background-color: transparent;
 }
 
@@ -385,6 +543,9 @@ scale slider {
 /* ── Paned ─────────────────────────────────────────────────── */
 paned > separator {
     background-color: @bg_hover_color;
+    background-image: none;
+    min-width:        3px;
+    min-height:       3px;
 }
 
 paned > separator:hover {
@@ -395,6 +556,7 @@ paned > separator:hover {
 statusbar {
     background-color: @bg_color;
     color:            @fg_dim_color;
+    padding:          2px 6px;
 }
 
 /* ── Label ─────────────────────────────────────────────────── */
@@ -407,7 +569,7 @@ label:disabled  { color: @fg_dim_color; }
 *:visited { color: @purple_active; }
 
 /* ── Abgerundete Ecken ─────────────────────────────────────── */
-button, entry, menu, menuitem, popover,
-notebook > header > tabs > tab {
+/* (Tabs bewusst ausgenommen: sie haben eckige Form mit Akzentlinie) */
+button, entry, menu, menuitem, popover {
     border-radius: 5px;
 }
