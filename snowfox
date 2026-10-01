@@ -5,19 +5,19 @@
 #  SnowFox Public License v1.0
 # ============================================================
 
-# Installierter Pfad der CLI-Module
+# Installed path of the CLI modules
 CLI_DIR="/usr/local/lib/snowfox/cli"
 
 if [[ ! -d "$CLI_DIR" ]]; then
-    echo -e "\033[0;31m\033[1m[ERROR]\033[0m CLI-Module nicht gefunden in $CLI_DIR"
-    echo "  Bitte snowfox neu installieren:"
+    echo -e "\033[0;31m\033[1m[ERROR]\033[0m CLI modules not found in $CLI_DIR"
+    echo "  Please reinstall snowfox:"
     echo "    sudo cp snowfox /usr/local/bin/snowfox"
     echo "    sudo mkdir -p /usr/local/lib/snowfox/cli"
     echo "    sudo cp cli/*.sh /usr/local/lib/snowfox/cli/"
     exit 1
 fi
 
-# ── Module laden ─────────────────────────────────────────────
+# ── Load modules ─────────────────────────────────────────────
 source "$CLI_DIR/utils.sh"
 source "$CLI_DIR/status.sh"
 source "$CLI_DIR/system.sh"
@@ -32,43 +32,70 @@ source "$CLI_DIR/ai.sh"
 source "$CLI_DIR/tor.sh"
 source "$CLI_DIR/help.sh"
 
-# ── Version ────────────────────────────────────────────────────
-if [[ "$1" == "--version" ]] || [[ "$1" == "-v" ]]; then
-    echo "SnowFoxOS v3 (CLI v3.0.0)"
+# ── Version ──────────────────────────────────────────────────
+if [[ "$1" == "-v" ]] || [[ "$1" == "v" ]] || [[ "$1" == "version" ]]; then
+    echo "SnowFoxOS v3 (CLI v3.1.0)"
     echo "Kernel: $(uname -r)"
     exit 0
 fi
 
 # ── Dispatcher ───────────────────────────────────────────────
 case "$1" in
-    status)    cmd_status ;;
-    battery)   cmd_battery ;;
-    update)    cmd_update ;;
-    reset)     function_reset_system ;;
-    profile)   cmd_profile "$2" ;;
-    node)      cmd_node "$2" ;;
-    gpu)       cmd_gpu ;;
-    kill)      cmd_kill "$2" ;;
-    airmode)   cmd_airmode "$2" ;;
-    download)  cmd_download "$2" ;;
-    stream)    cmd_stream "${@:2}" ;;
-    pass)      cmd_pass "$2" "$3" ;;
-    audit)     cmd_audit ;;
-    tip)       cmd_tip ;;
-    autostart) cmd_start "$2" "$3" ;;
-    layout)    cmd_layout "$2" ;;
-    apps)      cmd_apps "$2" "$3" ;;
-    webapp)    cmd_webapp "$2" "$3" "$4" ;;
-    settings)  shift; cmd_settings "$@" ;;
-    doctor)    cmd_doctor ;;
-    mesh)      shift; cmd_mesh_wrapper "$@" ;;
-    ai)        cmd_ai ;;
-    tor)       cmd_tor "$2" ;;
-    network)   exec ~/.config/snowfox-network.sh ;;
-    help|"")   cmd_help ;;
+    # ── Help ─────────────────────────────────────────────────
+    h|help|"")      cmd_help ;;
+
+    # ── System & Status ──────────────────────────────────────
+    st|status)      cmd_status ;;
+    bat|battery)    cmd_battery ;;
+    up|update)      cmd_update ;;
+    prof|profile)   cmd_profile "$2" ;;
+    doc|doctor)     cmd_doctor ;;
+    rst|reset)      function_reset_system ;;
+
+    # ── Hardware & Privacy ───────────────────────────────────
+    gpu)            cmd_gpu ;;
+    kill)           cmd_kill "$2" ;;
+    air|airmode)    cmd_airmode "$2" ;;
+    audit)          cmd_audit ;;
+    pass)           cmd_pass "$2" "$3" ;;
+    tip)            cmd_tip ;;
+    tor)            cmd_tor "$2" ;;
+
+    # ── Media ────────────────────────────────────────────────
+    stream)         cmd_stream "${@:2}" ;;
+    dl|download)    cmd_download "$2" ;;
+    fetch)          cmd_fetch "$2" ;;
+
+    # ── Desktop ──────────────────────────────────────────────
+    auto|autostart) cmd_start "$2" "$3" ;;
+    lay|layout)     cmd_layout "$2" ;;
+    apps)           cmd_apps "$2" "$3" ;;
+    web|webapp)     cmd_webapp "$2" "$3" "$4" ;;
+    net|network)    exec ~/.config/snowfox-network.sh ;;
+    wall|wallpaper) exec ~/.config/snowfox-wallpaper.sh ;;
+    disp|display)   exec ~/.config/snowfox-display.sh ;;
+    lock)           exec ~/.config/snowfox-lock.sh ;;
+
+    # ── Settings ─────────────────────────────────────────────
+    set|settings)   shift; cmd_settings "$@" ;;
+    bt|bluetooth)   cmd_bluetooth "$2" ;;
+    kb|keyboard)    cmd_keyboard "$2" ;;
+    lang|language)  cmd_language "$2" ;;
+    tz|timezone)    cmd_timezone "$2" ;;
+    user)           cmd_user "$2" "$3" ;;
+    def|defaults)   cmd_defaults "$2" "$3" ;;
+
+    # ── Node ─────────────────────────────────────────────────
+    node)           cmd_node "$2" ;;
+
+    # ── AI & Mesh ────────────────────────────────────────────
+    ai)             cmd_ai ;;
+    mesh)           shift; cmd_mesh_wrapper "$@" ;;
+
+    # ── Fallback ─────────────────────────────────────────────
     *)
-        err "Unbekannter Befehl: $1"
-        echo -e "  Hilfe: ${CYAN}snowfox help${RESET}"
+        err "Unknown command: $1"
+        echo -e "  Help: ${CYAN}snowfox h${RESET}"
         exit 1
         ;;
 esac
