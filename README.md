@@ -199,7 +199,6 @@ For comparison (community benchmarks, `free -h` `used` value — not directly co
 - **Polybar** — status bar with RAM, battery, network, volume, Bluetooth and system tray
 - **Rofi** — app launcher with SnowFox theme
 - **Kitty** — GPU-accelerated terminal with SnowFox color palette, JetBrainsMono Nerd Font, 0.95 transparency
-- **Starship** — modern shell prompt with Git integration and SnowFox palette
 - **picom** — compositor with rounded corners, soft shadows, fading animations
 - **Zen Browser** — privacy-focused browser based on Firefox (optional)
 - **PipeWire** — modern audio stack with WirePlumber
@@ -371,7 +370,6 @@ i3 starts automatically from TTY1.
 | Status bar | polybar |
 | App launcher | rofi |
 | Terminal | kitty |
-| Shell prompt | starship |
 | Browser | zen-browser (optional) |
 | Audio | pipewire + wireplumber |
 | Compositor | picom |
