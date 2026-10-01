@@ -41,7 +41,24 @@ if ask_install "VLC Media Player"; then
     apt-get install -y vlc && success "VLC installiert"
 fi
 
-if ask_install "GIMP (Bildbearbeitung)"; then
+# ── Code-Editor / IDE ────────────────────────────────────────
+apt-get install -y geany \
+    geany-plugin-addons \
+    geany-plugin-autoclose \
+    geany-plugin-codenav \
+    geany-plugin-ctags \
+    geany-plugin-git-changebar \
+    geany-plugin-projectorganizer \
+    geany-plugin-spellcheck \
+    geany-plugin-treebrowser
+success "Geany + Plugins installiert"
+
+# ── Screenshot-Tool ──────────────────────────────────────────
+apt-get install -y flameshot
+success "Flameshot installiert"
+
+# ── GIMP nur noch optional ───────────────────────────────────
+if ask_install "GIMP (professionelle Bildbearbeitung, ~300 MB)"; then
     apt-get install -y gimp && success "GIMP installiert"
 fi
 
