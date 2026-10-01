@@ -4,54 +4,57 @@
    ============================================================ */
 
 /* ── Palette ───────────────────────────────────────────────── */
-@define-color bg_color          #1a1825;
-@define-color bg_alt_color      #201e2e;
-@define-color bg_hover_color    #2a2840;
-@define-color fg_color          #e0d9f5;
-@define-color fg_dim_color      #6e6a8a;
+@define-color bg_color         #1a1825;
+@define-color bg_alt_color     #201e2e;
+@define-color bg_hover_color   #2a2840;
+@define-color fg_color         #e0d9f5;
+@define-color fg_dim_color     #6e6a8a;
 @define-color selected_bg_color #9d6fe8;
 @define-color selected_fg_color #ffffff;
-@define-color purple_hover      #b899ff;
-@define-color purple_active     #5c3d99;
-@define-color error_color       #e87a7a;
-@define-color success_color     #89c98a;
-@define-color warning_color     #e8c97a;
-@define-color border_color      #2a2840;
+@define-color purple_hover     #b899ff;
+@define-color purple_active    #5c3d99;
+@define-color error_color      #e87a7a;
+@define-color success_color    #89c98a;
+@define-color warning_color    #e8c97a;
+@define-color border_color     #2a2840;
 
 /* Arc-Dark interne Tokens überschreiben */
-@define-color theme_bg_color            #1a1825;
-@define-color theme_fg_color            #e0d9f5;
-@define-color theme_base_color          #201e2e;
-@define-color theme_text_color          #e0d9f5;
-@define-color theme_selected_bg_color   #9d6fe8;
-@define-color theme_selected_fg_color   #ffffff;
-@define-color theme_tooltip_bg_color    #2a2840;
-@define-color theme_tooltip_fg_color    #e0d9f5;
-@define-color insensitive_bg_color      #1a1825;
-@define-color insensitive_fg_color      #6e6a8a;
-@define-color insensitive_base_color    #201e2e;
-@define-color borders                   #2a2840;
-@define-color alt_borders               #2a2840;
-@define-color borders_edge              #2a2840;
-@define-color link_color                #b899ff;
-@define-color link_visited_color        #5c3d99;
-@define-color warning_color             #e8c97a;
-@define-color error_color               #e87a7a;
-@define-color success_color             #89c98a;
-@define-color sidebar_bg_color          #201e2e;
-@define-color sidebar_fg_color          #e0d9f5;
-@define-color sidebar_border_color      #2a2840;
-@define-color wm_title_focused_bg       #201e2e;
-@define-color wm_title_unfocused_bg     #1a1825;
-@define-color wm_title_focused_fg       #e0d9f5;
-@define-color wm_title_unfocused_fg     #6e6a8a;
-@define-color wm_button_hover_bg        #9d6fe8;
-@define-color wm_button_close_bg        #e87a7a;
+@define-color theme_bg_color             #1a1825;
+@define-color theme_fg_color             #e0d9f5;
+@define-color theme_base_color           #201e2e;
+@define-color theme_text_color           #e0d9f5;
+@define-color theme_selected_bg_color    #9d6fe8;
+@define-color theme_selected_fg_color    #ffffff;
+@define-color theme_unfocused_bg_color             #1a1825;
+@define-color theme_unfocused_fg_color             #6e6a8a;
+@define-color theme_unfocused_base_color           #201e2e;
+@define-color theme_unfocused_text_color           #e0d9f5;
+@define-color theme_unfocused_selected_bg_color    #5c3d99;
+@define-color theme_unfocused_selected_fg_color    #ffffff;
+@define-color theme_tooltip_bg_color     #2a2840;
+@define-color theme_tooltip_fg_color     #e0d9f5;
+@define-color insensitive_bg_color       #1a1825;
+@define-color insensitive_fg_color       #6e6a8a;
+@define-color insensitive_base_color     #201e2e;
+@define-color borders                    #2a2840;
+@define-color alt_borders                #2a2840;
+@define-color borders_edge               #2a2840;
+@define-color link_color                 #b899ff;
+@define-color link_visited_color         #5c3d99;
+@define-color sidebar_bg_color           #201e2e;
+@define-color sidebar_fg_color           #e0d9f5;
+@define-color sidebar_border_color       #2a2840;
+@define-color wm_title_focused_bg        #201e2e;
+@define-color wm_title_unfocused_bg      #1a1825;
+@define-color wm_title_focused_fg        #e0d9f5;
+@define-color wm_title_unfocused_fg      #6e6a8a;
+@define-color wm_button_hover_bg         #9d6fe8;
+@define-color wm_button_close_bg         #e87a7a;
 
 /* ── Basis-Flächen ─────────────────────────────────────────── */
 * {
     color:            @fg_color;
-    background-color: @bg_color;
+    background-color: transparent;
     border-color:     @border_color;
     outline-color:    @selected_bg_color;
 }
@@ -115,7 +118,7 @@ button.destructive-action {
     border-color:     @error_color;
 }
 
-/* ── Eingabefelder ─────────────────────────────────────────── */
+/* ── Eingabefelder & Textflächen ───────────────────────────── */
 entry, spinbutton {
     background-color: @bg_alt_color;
     color:            @fg_color;
@@ -128,8 +131,32 @@ entry:focus, spinbutton:focus {
     border-color: @selected_bg_color;
 }
 
-entry selection {
+textview, textview text {
+    background-color: @bg_alt_color;
+    color:            @fg_color;
+    caret-color:      @selected_bg_color;
+}
+
+/* ── TEXT-MARKIERUNG (Browser, Textfelder, Labels, Editoren) ─ */
+selection,
+entry selection,
+spinbutton selection,
+textview text selection,
+label selection,
+.view selection,
+*:selected {
     background-color: @selected_bg_color;
+    color:            @selected_fg_color;
+}
+
+/* Fenster/Widget nicht aktiv: etwas dunkler, aber weiterhin sichtbar */
+selection:backdrop,
+entry selection:backdrop,
+textview text selection:backdrop,
+label selection:backdrop,
+.view selection:backdrop,
+*:selected:backdrop {
+    background-color: @purple_active;
     color:            @selected_fg_color;
 }
 
@@ -152,6 +179,7 @@ menu, .menu {
 
 menuitem {
     color: @fg_color;
+    background-color: transparent;
 }
 
 menuitem:hover {
@@ -163,7 +191,7 @@ menuitem:disabled {
     color: @fg_dim_color;
 }
 
-/* ── Sidebar & TreeView ────────────────────────────────────── */
+/* ── Sidebar ───────────────────────────────────────────────── */
 .sidebar, placessidebar, .placessidebar {
     background-color: @bg_alt_color;
     color:            @fg_color;
@@ -179,18 +207,82 @@ menuitem:disabled {
     color:            @selected_fg_color;
 }
 
-treeview, treeview.view {
+/* ── TreeView / Listen / Dateimanager ──────────────────────── */
+treeview, treeview.view, .view {
     background-color: @bg_color;
     color:            @fg_color;
 }
 
-treeview:selected, treeview row:selected {
+treeview row {
+    background-color: transparent;
+    color:            @fg_color;
+}
+
+treeview.view:hover,
+treeview row:hover {
+    background-color: @bg_hover_color;
+}
+
+/* Ausgewählte Zeilen (Geany-Dateiliste, Nautilus, Thunar, etc.)
+   Kein !important – GTK3 unterstützt das nicht.
+   Höhere Spezifität + :focus/:backdrop/:hover-Varianten ersetzen es. */
+treeview.view:selected,
+treeview.view:selected:focus,
+treeview.view:selected:hover,
+treeview.view row:selected,
+treeview.view row:selected:focus,
+treeview.view row:selected:hover,
+treeview row:selected,
+treeview row:selected:focus,
+treeview row:selected:hover,
+iconview:selected,
+iconview:selected:focus,
+.view:selected,
+.view:selected:focus,
+.view:selected:hover,
+list row:selected,
+list row:selected:focus,
+list row:selected:hover,
+listbox row:selected,
+listbox row:selected:focus,
+listbox row:selected:hover,
+row:selected,
+row:selected:focus,
+row:selected:hover,
+cell:selected,
+cell:selected:focus {
     background-color: @selected_bg_color;
     color:            @selected_fg_color;
 }
 
-treeview:hover {
-    background-color: @bg_hover_color;
+/* Selektierte Kinder-Widgets (Labels, Icons in Zeilen) */
+treeview row:selected label,
+list row:selected label,
+listbox row:selected label,
+row:selected label,
+row:selected image {
+    color: @selected_fg_color;
+}
+
+/* Fenster/Widget nicht aktiv */
+treeview.view:selected:backdrop,
+treeview.view row:selected:backdrop,
+treeview row:selected:backdrop,
+iconview:selected:backdrop,
+.view:selected:backdrop,
+list row:selected:backdrop,
+listbox row:selected:backdrop,
+row:selected:backdrop,
+cell:selected:backdrop {
+    background-color: @purple_active;
+    color:            @selected_fg_color;
+}
+
+/* Header von Tabellen */
+treeview header button {
+    background-color: @bg_alt_color;
+    color:            @fg_color;
+    border-color:     @border_color;
 }
 
 /* ── Notebook (Tabs) ───────────────────────────────────────── */
@@ -238,6 +330,7 @@ tooltip {
 
 tooltip label {
     color: @fg_color;
+    background-color: transparent;
 }
 
 /* ── Popover ───────────────────────────────────────────────── */
@@ -255,11 +348,6 @@ list, listbox {
 
 list row:hover, listbox row:hover {
     background-color: @bg_hover_color;
-}
-
-list row:selected, listbox row:selected {
-    background-color: @selected_bg_color;
-    color:            @selected_fg_color;
 }
 
 /* ── Check & Radio ─────────────────────────────────────────── */
@@ -310,7 +398,7 @@ statusbar {
 }
 
 /* ── Label ─────────────────────────────────────────────────── */
-label           { color: @fg_color; }
+label           { color: @fg_color; background-color: transparent; }
 label.dim-label { color: @fg_dim_color; }
 label:disabled  { color: @fg_dim_color; }
 
