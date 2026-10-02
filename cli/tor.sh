@@ -1,377 +1,402 @@
 #!/bin/bash
 # ============================================================
-#  SnowFoxOS — Tor Modul (KORRIGIERT - DNS FIX)
+#  SnowFoxOS — CLI Module: Tor (Transparent Proxy)
+#  Routes all network traffic through Tor via iptables.
+#  Copyright (c) 2026 Alexander Valentin Ludwig (Xr7-Code)
 # ============================================================
 
-readonly TOR_SOCKS="9050"
-readonly TOR_DNS="9053"
+readonly TOR_TRANS_PORT="9040"
+readonly TOR_DNS_PORT="5353"
+readonly TOR_SOCKS_PORT="9050"
 readonly TOR_CONFIG_DIR="/etc/tor"
 readonly TORRC="${TOR_CONFIG_DIR}/torrc"
+readonly TOR_SERVICE="tor"
 readonly SNOWFOX_CONFIG_DIR="${HOME}/.config/snowfox"
 readonly TOR_MODE_FILE="${SNOWFOX_CONFIG_DIR}/tor-mode"
 readonly RESOLV_BAK="/etc/resolv.conf.snowfox-bak"
-readonly RESOLV_ORIG="/etc/resolv.conf.orig"
-readonly TOR_SERVICE="tor-snowfox.service"
+readonly IPTABLES_SAVE="/etc/iptables.snowfox-tor.rules"
+readonly IPTABLES_SAVE_IP6="/etc/ip6tables.snowfox-tor.rules"
 
-# ─── Dependency Check ──────────────────────────────────────
+# ─── Helper: Tor UID ─────────────────────────────────────────
+_tor_get_uid() {
+    local uid
+    uid=$(id -ur debian-tor 2>/dev/null) || uid=$(id -ur tor 2>/dev/null)
+    echo "$uid"
+}
+
+# ─── Helper: Dependencies ────────────────────────────────────
 _tor_check_deps() {
     local missing=()
-    local deps=(tor torsocks macchanger curl nc dig systemctl)
+    local deps=(tor iptables ip6tables torsocks curl)
     
     for dep in "${deps[@]}"; do
         command -v "$dep" &>/dev/null || missing+=("$dep")
     done
     
     if [[ ${#missing[@]} -gt 0 ]]; then
-        warn "Fehlende Pakete: ${missing[*]}"
-        info "Installieren mit: sudo apt-get install -y ${missing[*]}"
+        warn "Missing packages: ${missing[*]}"
+        info "Install with: sudo apt-get install -y ${missing[*]}"
         return 1
     fi
     return 0
 }
 
-# ─── Helper: Service prüfen ──────────────────────────────
+# ─── Helper: Service check ───────────────────────────────────
 _tor_service_running() {
     systemctl is-active --quiet "$TOR_SERVICE" 2>/dev/null
 }
 
-# ─── Helper: Port prüfen ──────────────────────────────────
+# ─── Helper: Port check ──────────────────────────────────────
 _tor_port_open() {
     local port="$1"
-    nc -z 127.0.0.1 "$port" 2>/dev/null
+    ss -tulpn 2>/dev/null | grep -q ":${port} " || nc -z 127.0.0.1 "$port" 2>/dev/null
 }
 
-# ─── Helper: IPv6 Status ──────────────────────────────────
-_ipv6_is_disabled() {
+# ─── Helper: IPv6 status ─────────────────────────────────────
+_tor_ipv6_disabled() {
     [[ "$(cat /proc/sys/net/ipv6/conf/all/disable_ipv6 2>/dev/null)" == "1" ]]
 }
 
-# ─── Helper: DNS via Tor ──────────────────────────────────
-_dns_via_tor() {
+# ─── Helper: DNS via Tor ─────────────────────────────────────
+_tor_dns_via_tor() {
     grep -q "^nameserver 127.0.0.1" /etc/resolv.conf 2>/dev/null
 }
 
-# ─── Helper: MAC randomisieren ────────────────────────────
-_randomize_mac() {
-    local iface="$1"
-    sudo ip link set "$iface" down 2>/dev/null || return 1
-    sudo macchanger -r "$iface" 2>/dev/null | grep -q "New MAC"
-    local result=$?
-    sudo ip link set "$iface" up 2>/dev/null
-    return $result
+# ─── Helper: Backup resolv.conf ──────────────────────────────
+_tor_backup_resolv() {
+    if [[ ! -f "$RESOLV_BAK" ]] && [[ -f /etc/resolv.conf ]]; then
+        sudo cp /etc/resolv.conf "$RESOLV_BAK"
+    fi
 }
 
-# ─── Helper: Interface Liste ──────────────────────────────
-_get_network_interfaces() {
-    ip link show | awk -F': ' '/^[0-9]+: (en|wl|eth)/{print $2}'
-}
-
-# ─── Helper: Standard DNS wiederherstellen ────────────────
-_restore_standard_dns() {
-    info "Stelle Standard-DNS wieder her..."
+# ─── Helper: Restore resolv.conf ─────────────────────────────
+_tor_restore_resolv() {
+    info "Restoring system DNS..."
     sudo chattr -i /etc/resolv.conf 2>/dev/null || true
     
-    if [[ -f "$RESOLV_ORIG" ]]; then
-        sudo cp "$RESOLV_ORIG" /etc/resolv.conf
-        ok "DNS aus Original-Backup wiederhergestellt"
-    elif [[ -f "$RESOLV_BAK" ]]; then
+    if [[ -f "$RESOLV_BAK" ]]; then
         sudo cp "$RESOLV_BAK" /etc/resolv.conf
-        ok "DNS aus Backup wiederhergestellt"
+        ok "DNS restored from backup"
     else
-        # Standard-DNS setzen
-        cat > /tmp/resolv.conf << 'EOF'
-nameserver 8.8.8.8
-nameserver 1.1.1.1
-EOF
-        sudo cp /tmp/resolv.conf /etc/resolv.conf
-        rm /tmp/resolv.conf
-        ok "DNS auf Standard zurückgesetzt"
+        printf "nameserver 1.1.1.1\nnameserver 9.9.9.9\n" | sudo tee /etc/resolv.conf > /dev/null
+        ok "DNS reset to defaults"
     fi
     
-    # NetworkManager neu starten falls vorhanden
     if command -v NetworkManager &>/dev/null; then
         sudo systemctl restart NetworkManager 2>/dev/null || true
     fi
 }
 
-# ─── HELPER: Tor Service fixen ────────────────────────────
-_tor_fix_service() {
-    info "Prüfe Tor-Service..."
+# ─── Helper: Configure torrc ─────────────────────────────────
+_tor_configure_torrc() {
+    info "Configuring Tor transparent proxy..."
     
-    if [[ ! -f /etc/systemd/system/tor-snowfox.service ]]; then
-        warn "tor-snowfox.service nicht gefunden. Erstelle..."
-        
-        sudo tee /etc/systemd/system/tor-snowfox.service << 'EOF'
-[Unit]
-Description=Tor SnowFox Service
-After=network.target
+    # Backup existing torrc once
+    if [[ ! -f "${TORRC}.snowfox-bak" && -f "$TORRC" ]]; then
+        sudo cp "$TORRC" "${TORRC}.snowfox-bak"
+    fi
+    
+    sudo tee "$TORRC" > /dev/null << 'EOF'
+## SnowFoxOS — Tor Transparent Proxy Configuration
 
-[Service]
-Type=simple
-User=debian-tor
-Group=debian-tor
-ExecStart=/usr/bin/tor -f /etc/tor/torrc
-Restart=on-failure
-RestartSec=10
-LimitNOFILE=65536
-
-[Install]
-WantedBy=multi-user.target
-EOF
-        sudo systemctl daemon-reload
-        ok "tor-snowfox.service erstellt"
-    fi
-    
-    if ! _tor_service_running; then
-        info "Starte Tor-Service..."
-        sudo systemctl start "$TOR_SERVICE" 2>/dev/null || {
-            warn "Konnte Service nicht starten, starte Tor direkt..."
-            sudo -u debian-tor tor -f "$TORRC" > /dev/null 2>&1 &
-        }
-        sleep 3
-    fi
-    
-    if ! _tor_service_running && ! pgrep -f "tor.*torrc" > /dev/null; then
-        err "Tor läuft nicht!"
-        return 1
-    fi
-    
-    ok "Tor-Service läuft ✓"
-    return 0
-}
-
-# ─── HELPER: Torrc fixen ──────────────────────────────────
-_tor_fix_torrc() {
-    info "Prüfe Torrc-Konfiguration..."
-    local needs_fix=false
-    
-    if [[ ! -f "$TORRC" ]]; then
-        warn "Torrc nicht gefunden. Erstelle..."
-        needs_fix=true
-    fi
-    
-    if ! grep -q "^DNSPort" "$TORRC" 2>/dev/null; then
-        warn "DNSPort fehlt in Torrc"
-        needs_fix=true
-    fi
-    
-    if ! grep -q "^SocksPort" "$TORRC" 2>/dev/null; then
-        warn "SocksPort fehlt in Torrc"
-        needs_fix=true
-    fi
-    
-    if [[ "$needs_fix" == true ]]; then
-        info "Erstelle korrekte Torrc..."
-        sudo cp "$TORRC" "${TORRC}.old" 2>/dev/null || true
-        
-        sudo tee "$TORRC" > /dev/null << 'EOF'
-## SnowFoxOS Tor Configuration
 SocksPort 127.0.0.1:9050
-SocksPolicy accept 127.0.0.1/8
-SocksPolicy reject *
-DNSPort 127.0.0.1:9053
+TransPort 127.0.0.1:9040
+DNSPort 127.0.0.1:5353
+
+## Automap .onion addresses
+VirtualAddrNetworkIPv4 10.192.0.0/10
 AutomapHostsOnResolve 1
 AutomapHostsSuffixes .exit,.onion
+
+## Logging
 Log notice file /var/log/tor/notices.log
+
+## Safety
 SafeSocks 1
 TestSocks 1
+
+## Performance
 CircuitBuildTimeout 60
 NumEntryGuards 4
 EOF
 
-        sudo chown debian-tor:debian-tor "$TORRC"
-        sudo chmod 644 "$TORRC"
-        ok "Torrc korrigiert"
-        
-        sudo systemctl restart "$TOR_SERVICE" 2>/dev/null || sudo pkill -f "tor.*torrc"
-        sleep 3
-    else
-        ok "Torrc ist korrekt ✓"
-    fi
-    
-    return 0
+    sudo chown debian-tor:debian-tor "$TORRC" 2>/dev/null || sudo chown tor:tor "$TORRC" 2>/dev/null || true
+    sudo chmod 644 "$TORRC"
+    ok "Tor configured (TransPort: ${TOR_TRANS_PORT}, DNSPort: ${TOR_DNS_PORT})"
 }
 
-# ─── HELPER: DNS fixen ────────────────────────────────────
-_tor_fix_dns() {
-    info "Prüfe DNS-Konfiguration..."
-    
-    # Backup der originalen resolv.conf (einmalig)
-    if [[ ! -f "$RESOLV_ORIG" ]] && [[ -f /etc/resolv.conf ]]; then
-        sudo cp /etc/resolv.conf "$RESOLV_ORIG"
-    fi
-    
-    # Teste DNS über Tor
-    if dig @"127.0.0.1" -p "$TOR_DNS" google.com +short 2>/dev/null | grep -qE '^[0-9.]+$'; then
-        ok "DNS über Tor funktioniert ✓"
-        
-        if ! _dns_via_tor; then
-            info "Stelle DNS auf Tor um..."
-            if [[ ! -f "$RESOLV_BAK" ]]; then
-                sudo cp /etc/resolv.conf "$RESOLV_BAK"
-            fi
-            echo "nameserver 127.0.0.1" | sudo tee /etc/resolv.conf > /dev/null
-            sudo chattr +i /etc/resolv.conf 2>/dev/null || true
-            ok "DNS auf Tor umgestellt"
-        fi
-        return 0
-    else
-        warn "DNS über Tor funktioniert nicht"
-        _restore_standard_dns
-        return 1
-    fi
-}
-
-# ─── HELPER: IPv6 fixen ────────────────────────────────────
-_tor_fix_ipv6() {
-    info "Prüfe IPv6-Konfiguration..."
-    
-    if _ipv6_is_disabled; then
-        ok "IPv6 bereits deaktiviert ✓"
+# ─── Helper: Start Tor service ───────────────────────────────
+_tor_start_service() {
+    if _tor_service_running; then
+        info "Tor service already running"
         return 0
     fi
     
-    info "Deaktiviere IPv6..."
-    sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1 &>/dev/null
-    sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1 &>/dev/null
-    sudo sysctl -w net.ipv6.conf.lo.disable_ipv6=1 &>/dev/null
+    info "Starting Tor service..."
+    sudo systemctl restart "$TOR_SERVICE" 2>/dev/null || {
+        warn "systemd service failed, starting Tor directly..."
+        sudo -u debian-tor tor -f "$TORRC" > /dev/null 2>&1 &
+    }
     
-    ok "IPv6 deaktiviert ✓"
-    return 0
-}
-
-# ─── HELPER: MAC fixen ────────────────────────────────────
-_tor_fix_mac() {
-    info "Randomisiere MAC-Adressen..."
-    local mac_count=0
-    
-    for iface in $(_get_network_interfaces); do
-        if _randomize_mac "$iface"; then
-            ((mac_count++))
+    # Wait for ports to be ready (max 15s)
+    local i=0
+    while [[ $i -lt 15 ]]; do
+        if _tor_port_open "$TOR_TRANS_PORT" && _tor_port_open "$TOR_DNS_PORT"; then
+            ok "Tor ports are ready"
+            return 0
         fi
+        sleep 1
+        ((i++))
     done
     
-    if [[ $mac_count -gt 0 ]]; then
-        ok "${mac_count} MAC-Adresse(n) randomisiert ✓"
-    fi
-    return 0
-}
-
-# ─── HELPER: Tor Verbindung testen ────────────────────────
-_tor_test_connection() {
-    info "Teste Tor-Verbindung..."
-    sleep 2
-    
-    local tor_ip
-    tor_ip=$(torsocks curl -s --max-time 5 https://icanhazip.com 2>/dev/null | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}')
-    
-    if [[ -n "$tor_ip" ]]; then
-        ok "Tor-IP: $tor_ip ✓"
-        return 0
-    fi
-    
-    warn "Verbindungstest fehlgeschlagen"
-    info "Manueller Test: torsocks curl https://icanhazip.com"
+    err "Tor failed to open ports within 15 seconds"
     return 1
 }
 
-# ─── Hauptfunktion: Tor aktivieren ──────────────────────
+# ─── Helper: Apply iptables rules ────────────────────────────
+_tor_apply_iptables() {
+    local tor_uid
+    tor_uid=$(_tor_get_uid)
+    
+    if [[ -z "$tor_uid" ]]; then
+        err "Could not determine Tor user UID"
+        return 1
+    fi
+    
+    info "Applying iptables rules (Tor UID: $tor_uid)..."
+    
+    # Save current rules for restore
+    sudo iptables-save | sudo tee "$IPTABLES_SAVE" > /dev/null
+    sudo ip6tables-save | sudo tee "$IPTABLES_SAVE_IP6" > /dev/null 2>&1 || true
+    
+    # ── IPv4 NAT table ──────────────────────────────────────
+    sudo iptables -t nat -F OUTPUT
+    
+    # Tor user traffic bypasses
+    sudo iptables -t nat -A OUTPUT -m owner --uid-owner "$tor_uid" -j RETURN
+    # Localhost bypass
+    sudo iptables -t nat -A OUTPUT -d 127.0.0.0/8 -j RETURN
+    # Local network bypass
+    sudo iptables -t nat -A OUTPUT -d 192.168.0.0/16 -j RETURN
+    sudo iptables -t nat -A OUTPUT -d 10.0.0.0/8 -j RETURN
+    sudo iptables -t nat -A OUTPUT -d 172.16.0.0/12 -j RETURN
+    # DNS redirect
+    sudo iptables -t nat -A OUTPUT -p udp --dport 53 -j REDIRECT --to-ports "$TOR_DNS_PORT"
+    sudo iptables -t nat -A OUTPUT -p tcp --dport 53 -j REDIRECT --to-ports "$TOR_DNS_PORT"
+    # All TCP redirect
+    sudo iptables -t nat -A OUTPUT -p tcp --syn -j REDIRECT --to-ports "$TOR_TRANS_PORT"
+    
+    # ── IPv4 filter table ──────────────────────────────────
+    sudo iptables -F OUTPUT
+    
+    # Established connections
+    sudo iptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+    # Localhost
+    sudo iptables -A OUTPUT -d 127.0.0.0/8 -j ACCEPT
+    # Local network
+    sudo iptables -A OUTPUT -d 192.168.0.0/16 -j ACCEPT
+    sudo iptables -A OUTPUT -d 10.0.0.0/8 -j ACCEPT
+    sudo iptables -A OUTPUT -d 172.16.0.0/12 -j ACCEPT
+    # Tor user
+    sudo iptables -A OUTPUT -m owner --uid-owner "$tor_uid" -j ACCEPT
+    # Tor ports
+    sudo iptables -A OUTPUT -p tcp --dport "$TOR_SOCKS_PORT" -j ACCEPT
+    sudo iptables -A OUTPUT -p tcp --dport "$TOR_TRANS_PORT" -j ACCEPT
+    sudo iptables -A OUTPUT -p udp --dport "$TOR_DNS_PORT" -j ACCEPT
+    # Reject everything else (fail-closed)
+    sudo iptables -A OUTPUT -j REJECT --reject-with icmp-port-unreachable
+    
+    # ── IPv6: block everything ─────────────────────────────
+    sudo ip6tables -F OUTPUT 2>/dev/null || true
+    sudo ip6tables -A OUTPUT -m owner --uid-owner "$tor_uid" -j ACCEPT 2>/dev/null || true
+    sudo ip6tables -A OUTPUT -d ::1/128 -j ACCEPT 2>/dev/null || true
+    sudo ip6tables -A OUTPUT -j DROP 2>/dev/null || true
+    
+    ok "iptables rules applied (fail-closed)"
+}
+
+# ─── Helper: Remove iptables rules ───────────────────────────
+_tor_remove_iptables() {
+    info "Removing iptables rules..."
+    
+    if [[ -f "$IPTABLES_SAVE" ]]; then
+        sudo iptables-restore < "$IPTABLES_SAVE" 2>/dev/null || {
+            sudo iptables -F OUTPUT
+            sudo iptables -t nat -F OUTPUT
+        }
+    else
+        sudo iptables -F OUTPUT
+        sudo iptables -t nat -F OUTPUT
+    fi
+    
+    if [[ -f "$IPTABLES_SAVE_IP6" ]]; then
+        sudo ip6tables-restore < "$IPTABLES_SAVE_IP6" 2>/dev/null || sudo ip6tables -F OUTPUT 2>/dev/null || true
+    fi
+    
+    ok "iptables rules removed"
+}
+
+# ─── Helper: Configure DNS ───────────────────────────────────
+_tor_configure_dns() {
+    _tor_backup_resolv
+    
+    info "Pointing DNS to Tor..."
+    sudo chattr -i /etc/resolv.conf 2>/dev/null || true
+    printf "nameserver 127.0.0.1\n" | sudo tee /etc/resolv.conf > /dev/null
+    sudo chattr +i /etc/resolv.conf 2>/dev/null || true
+    ok "DNS set to 127.0.0.1 (Tor DNSPort)"
+}
+
+# ─── Helper: Disable IPv6 ────────────────────────────────────
+_tor_disable_ipv6() {
+    if _tor_ipv6_disabled; then
+        info "IPv6 already disabled"
+        return 0
+    fi
+    
+    info "Disabling IPv6 (Tor does not support it)..."
+    sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1 &>/dev/null
+    sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1 &>/dev/null
+    sudo sysctl -w net.ipv6.conf.lo.disable_ipv6=1 &>/dev/null
+    ok "IPv6 disabled"
+}
+
+# ─── Helper: Enable IPv6 ─────────────────────────────────────
+_tor_enable_ipv6() {
+    info "Re-enabling IPv6..."
+    sudo sysctl -w net.ipv6.conf.all.disable_ipv6=0 &>/dev/null
+    sudo sysctl -w net.ipv6.conf.default.disable_ipv6=0 &>/dev/null
+    ok "IPv6 re-enabled"
+}
+
+# ─── Helper: Test connection ─────────────────────────────────
+_tor_test_connection() {
+    info "Testing Tor connection..."
+    sleep 2
+    
+    local tor_ip
+    tor_ip=$(torsocks curl -s --max-time 10 https://check.torproject.org/api/ip 2>/dev/null | grep -oE '"IP":"[0-9.]+"' | cut -d'"' -f4)
+    
+    if [[ -n "$tor_ip" ]]; then
+        ok "Tor is working (Exit IP: $tor_ip)"
+        return 0
+    fi
+    
+    warn "Tor connection test failed"
+    info "Manual test: torsocks curl https://check.torproject.org/api/ip"
+    return 1
+}
+
+# ─── Enable Tor mode ─────────────────────────────────────────
 _tor_enable() {
-    fox "Aktiviere Tor-Modus..."
+    fox "Enabling Tor transparent proxy..."
 
     _tor_check_deps || return 1
-    _tor_fix_torrc || return 1
-    _tor_fix_service || return 1
-    _tor_fix_ipv6 || return 1
-    _tor_fix_dns || {
-        warn "DNS über Tor nicht möglich, aber HTTP funktioniert"
-    }
-    _tor_fix_mac
+    _tor_configure_torrc || return 1
+    _tor_start_service || return 1
+    _tor_disable_ipv6 || return 1
+    _tor_configure_dns || return 1
+    _tor_apply_iptables || return 1
     _tor_test_connection
 
     mkdir -p "$SNOWFOX_CONFIG_DIR"
     echo "tor" > "$TOR_MODE_FILE"
     chmod 600 "$TOR_MODE_FILE"
 
+    echo ""
     divider
-    ok "Tor-Modus erfolgreich aktiviert! 🦊"
+    ok "Tor mode enabled — all traffic routed through Tor"
     echo ""
-    info "SOCKS5-Proxy: 127.0.0.1:${TOR_SOCKS}"
-    info "DNS-Port: 127.0.0.1:${TOR_DNS}"
+    info "SOCKS5:    127.0.0.1:${TOR_SOCKS_PORT}"
+    info "TransPort: 127.0.0.1:${TOR_TRANS_PORT}"
+    info "DNSPort:   127.0.0.1:${TOR_DNS_PORT}"
     echo ""
-    info "Teste Verbindung:"
-    echo "  torsocks curl https://icanhazip.com"
-    echo "  torsocks curl https://check.torproject.org/api/ip"
+    warn "Network is fail-closed: if Tor stops, no traffic leaves"
     echo ""
 }
 
-# ─── Tor deaktivieren ──────────────────────────────────────
+# ─── Disable Tor mode ────────────────────────────────────────
 _tor_disable() {
-    fox "Deaktiviere Tor-Modus..."
+    fox "Disabling Tor mode..."
 
-    _restore_standard_dns
-
-    info "Aktiviere IPv6 wieder..."
-    sudo sysctl -w net.ipv6.conf.all.disable_ipv6=0 &>/dev/null
-    sudo sysctl -w net.ipv6.conf.default.disable_ipv6=0 &>/dev/null
-    ok "IPv6 reaktiviert"
+    _tor_remove_iptables
+    _tor_restore_resolv
+    _tor_enable_ipv6
 
     rm -f "$TOR_MODE_FILE"
 
+    echo ""
     divider
-    ok "Tor-Modus deaktiviert"
-    info "Tor-Service läuft weiter ($TOR_SERVICE)"
-    info "Zum Stoppen: sudo systemctl stop $TOR_SERVICE"
+    ok "Tor mode disabled — normal network restored"
+    echo ""
+    info "Tor service still running: ${TOR_SERVICE}"
+    info "Stop with: sudo systemctl stop ${TOR_SERVICE}"
     echo ""
 }
 
-# ─── Tor Status ──────────────────────────────────────────
+# ─── Tor status ──────────────────────────────────────────────
 _tor_status() {
     header "Tor Status"
-    
+
     if [[ ! -f "$TOR_MODE_FILE" ]]; then
-        row "Tor-Modus" "inaktiv" "$DGRAY"
+        row "Tor mode" "inactive" "$DGRAY"
+        echo ""
+        info "Enable: snowfox tor on"
         echo ""
         return
     fi
 
     if _tor_service_running; then
-        row "Tor-Dienst" "läuft ✓" "$GREEN"
+        row "Tor service" "running" "$GREEN"
     else
-        row "Tor-Dienst" "gestoppt ✗" "$RED"
+        row "Tor service" "stopped" "$RED"
     fi
 
-    if _tor_port_open "$TOR_SOCKS"; then
-        row "SOCKS5" "127.0.0.1:${TOR_SOCKS} ✓" "$GREEN"
+    if _tor_port_open "$TOR_TRANS_PORT"; then
+        row "TransPort" "127.0.0.1:${TOR_TRANS_PORT}" "$GREEN"
     else
-        row "SOCKS5" "nicht erreichbar ✗" "$RED"
+        row "TransPort" "not reachable" "$RED"
     fi
 
-    if _dns_via_tor; then
-        row "DNS" "via Tor ✓" "$GREEN"
+    if _tor_port_open "$TOR_DNS_PORT"; then
+        row "DNSPort" "127.0.0.1:${TOR_DNS_PORT}" "$GREEN"
     else
-        row "DNS" "Standard" "$YELLOW"
+        row "DNSPort" "not reachable" "$RED"
+    fi
+
+    if _tor_dns_via_tor; then
+        row "DNS" "via Tor" "$GREEN"
+    else
+        row "DNS" "standard" "$ORANGE"
+    fi
+
+    if _tor_ipv6_disabled; then
+        row "IPv6" "disabled" "$GREEN"
+    else
+        row "IPv6" "enabled (leak risk)" "$RED"
     fi
 
     echo ""
-    info "Prüfe externe IP..."
+    info "Checking external IP..."
+
     local tor_ip
-    tor_ip=$(torsocks curl -s --max-time 5 https://icanhazip.com 2>/dev/null | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}')
+    tor_ip=$(torsocks curl -s --max-time 10 https://check.torproject.org/api/ip 2>/dev/null | grep -oE '"IP":"[0-9.]+"' | cut -d'"' -f4)
+
     if [[ -n "$tor_ip" ]]; then
-        row "Tor-IP" "$tor_ip" "$GREEN"
+        row "Exit IP" "$tor_ip" "$GREEN"
     else
-        row "Tor-IP" "❌ Nicht erreichbar" "$RED"
+        row "Exit IP" "not reachable" "$RED"
     fi
     echo ""
 }
 
-# ─── Hauptbefehl ────────────────────────────────────────────
+# ─── Main command ────────────────────────────────────────────
 cmd_tor() {
     case "$1" in
-        on|enable|start)
+        on|enable)
             _tor_enable
             ;;
-        off|disable|stop)
+        off|disable)
             _tor_disable
             ;;
         status|"")
@@ -385,10 +410,14 @@ cmd_tor() {
         *)
             header "snowfox tor"
             echo ""
-            row "snowfox tor on"     "Tor-Modus aktivieren"
-            row "snowfox tor off"    "Tor-Modus deaktivieren"
-            row "snowfox tor status" "Status anzeigen"
-            row "snowfox tor restart" "Tor neu starten"
+            row "snowfox tor on"     "Enable transparent Tor proxy"
+            row "snowfox tor off"    "Disable Tor mode"
+            row "snowfox tor status" "Show current status"
+            row "snowfox tor restart" "Restart Tor"
+            echo ""
+            divider
+            info "Tor routes all TCP traffic and DNS queries through the Tor network."
+            info "When enabled, non-Tor traffic is blocked (fail-closed)."
             echo ""
             ;;
     esac
