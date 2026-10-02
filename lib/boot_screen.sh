@@ -1,7 +1,7 @@
 #!/bin/bash
-
 # ============================================================
 #  SnowFoxOS v3.0 — Boot Screen Setup (Plymouth)
+#  Copyright (c) 2026 Alexander Valentin Ludwig (Xr7-Code)
 # ============================================================
 
 # Load utilities (assumes SCRIPT_DIR is set before sourcing)
@@ -10,7 +10,7 @@ source "$SCRIPT_DIR/lib/utils.sh"
 # Global variables from main script (assumed to be sourced/exported):
 # SCRIPT_DIR
 
-step "9/10 — Plymouth & Boot-Screen"
+step "9/10 — Plymouth & Boot Screen"
 
 apt-get install -y plymouth plymouth-themes 2>/dev/null || true
 PLYMOUTH_DIR="/usr/share/plymouth/themes/snowfox"
@@ -45,11 +45,10 @@ convert -size 1920x1080 xc:#0f0f0f "$PLYMOUTH_DIR/background.png" 2>/dev/null ||
 plymouth-set-default-theme -R snowfox 2>/dev/null || \
     { plymouth-set-default-theme snowfox 2>/dev/null || true; update-initramfs -u 2>/dev/null || true; }
 
-success "Boot-Screen bereit"
+success "Boot screen ready"
 
-# ── GRUB-Theme & Systemversion ────────────────────────────────
-# set_grub_theme() und set_system_version() aus lib/system_setup.sh.
-# Beide Funktionen sind bereits durch das frühere source von system_setup.sh
-# im Scope verfügbar.
+# ── GRUB theme & system version ──────────────────────────────
+# set_grub_theme() and set_system_version() from lib/system_setup.sh.
+# Both functions are already in scope from the earlier source of system_setup.sh.
 set_grub_theme
-info "GRUB-Theme und Boot-Konfiguration abgeschlossen"
+info "GRUB theme and boot configuration complete"
