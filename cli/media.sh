@@ -1,185 +1,235 @@
 #!/bin/bash
 # ============================================================
-#  SnowFoxOS — CLI Modul: Download & Stream
-#  Wird von /usr/local/bin/snowfox gesourced.
+#  SnowFoxOS — CLI Module: Media (Download & Stream)
+#  Copyright (c) 2026 Alexander Valentin Ludwig (Xr7-Code)
 # ============================================================
 
+COOKIE_FILE="$HOME/.config/snowfox/cookies.txt"
+DOWNLOAD_DIR="$HOME/Downloads"
 
 # ============================================================
-# snowfox download
+# snowfox fetch — High-speed download via aria2
 # ============================================================
-cmd_download() {
-    if ! command -v yt-dlp &>/dev/null; then
-        err "yt-dlp nicht gefunden. Installieren: sudo apt install yt-dlp"
+cmd_fetch() {
+    if ! command -v aria2c &>/dev/null; then
+        err "aria2c not found. Install: sudo apt install aria2"
         exit 1
     fi
 
     if [[ -z "$1" ]]; then
-        err "Verwendung: snowfox download <URL>"
+        err "Usage: snowfox fetch <URL>"
         exit 1
     fi
 
-    # Cookies aus Browser holen
-    COOKIE_FILE="$HOME/.config/snowfox/cookies.txt"
+    local URL="$1"
+    local OUTDIR="${2:-$DOWNLOAD_DIR}"
+    mkdir -p "$OUTDIR"
+
+    header "Fetch"
+    row "URL" "$URL"
+    row "Destination" "$OUTDIR"
+    row "Connections" "16 parallel"
+    echo ""
+
+    info "Starting download..."
+    echo ""
+
+    aria2c \
+        --max-connection-per-server=16 \
+        --split=16 \
+        --min-split-size=1M \
+        --file-allocation=none \
+        --continue=true \
+        --summary-interval=1 \
+        --console-log-level=warn \
+        --dir="$OUTDIR" \
+        "$URL"
+
+    if [[ $? -eq 0 ]]; then
+        echo ""
+        ok "Download complete: $OUTDIR"
+    else
+        echo ""
+        err "Download failed."
+        exit 1
+    fi
+}
+
+# ============================================================
+# snowfox dl — Download video/audio via yt-dlp
+# ============================================================
+cmd_download() {
+    if ! command -v yt-dlp &>/dev/null; then
+        err "yt-dlp not found. Install: sudo apt install yt-dlp"
+        exit 1
+    fi
+
+    if [[ -z "$1" ]]; then
+        err "Usage: snowfox dl <URL>"
+        exit 1
+    fi
+
+    local URL="$1"
     mkdir -p "$(dirname "$COOKIE_FILE")"
-    if [[ ! -f "$COOKIE_FILE" || $(find "$COOKIE_FILE" -mtime +1 2>/dev/null) ]]; then
+
+    # Refresh cookies if older than 1 day
+    if [[ ! -f "$COOKIE_FILE" ]] || [[ $(find "$COOKIE_FILE" -mtime +1 2>/dev/null) ]]; then
         if command -v firefox &>/dev/null; then
             yt-dlp --cookies-from-browser firefox --cookies "$COOKIE_FILE" 2>/dev/null || true
         fi
     fi
 
-    COOKIE_OPT=()
+    local COOKIE_OPT=()
     if [[ -f "$COOKIE_FILE" && -s "$COOKIE_FILE" ]]; then
         COOKIE_OPT=(--cookies "$COOKIE_FILE")
     fi
 
-    fox "Was möchtest du herunterladen?"
-    echo -e "  ${CYAN}1${RESET}) Video (beste Qualität)"
-    echo -e "  ${CYAN}2${RESET}) Nur Audio (mp3)"
-    echo -e "  ${CYAN}3${RESET}) Nur Audio (opus, kleiner)"
+    header "Download"
+    row "URL" "$URL"
     echo ""
-    read -rp "$(echo -e ${PURPLE}${BOLD}"Auswahl [1-3]: "${RESET})" FORMAT
 
-    OUTDIR="$HOME/Downloads"
-    mkdir -p "$OUTDIR"
+    echo -e "  ${CYAN}1${RESET}) Video (best quality)"
+    echo -e "  ${CYAN}2${RESET}) Audio only (mp3)"
+    echo -e "  ${CYAN}3${RESET}) Audio only (opus, smaller)"
+    echo ""
+    read -rp "$(echo -e ${PURPLE}${BOLD}"Format [1-3]: "${RESET})" FORMAT
 
-    # Basis-Optionen: IPv4 + User-Agent + Cookies (als Array)
-    BASE_OPTS=(
+    mkdir -p "$DOWNLOAD_DIR"
+
+    local BASE_OPTS=(
         --force-ipv4
         --user-agent "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         "${COOKIE_OPT[@]}"
     )
 
+    echo ""
+
     case "$FORMAT" in
-        1) 
-            # Video: bestes Video + bestes Audio
+        1)
             yt-dlp "${BASE_OPTS[@]}" \
                 -f "bestvideo+bestaudio" \
                 --merge-output-format mkv \
-                -o "$OUTDIR/%(title)s.%(ext)s" \
-                "$1"
+                -o "$DOWNLOAD_DIR/%(title)s.%(ext)s" \
+                "$URL"
             ;;
-        2) 
-            # MP3: Extrahiere Audio und konvertiere zu MP3
+        2)
             yt-dlp "${BASE_OPTS[@]}" \
                 -x \
                 --audio-format mp3 \
                 --audio-quality 2 \
                 --embed-thumbnail \
                 --add-metadata \
-                -o "$OUTDIR/%(title)s.%(ext)s" \
-                "$1"
+                -o "$DOWNLOAD_DIR/%(title)s.%(ext)s" \
+                "$URL"
             ;;
-        3) 
-            # Opus: Extrahiere Audio und konvertiere zu Opus
+        3)
             yt-dlp "${BASE_OPTS[@]}" \
                 -x \
                 --audio-format opus \
                 --embed-thumbnail \
                 --add-metadata \
-                -o "$OUTDIR/%(title)s.%(ext)s" \
-                "$1"
+                -o "$DOWNLOAD_DIR/%(title)s.%(ext)s" \
+                "$URL"
             ;;
-        *) 
-            err "Ungültige Auswahl." 
-            return 1 ;;
+        *)
+            err "Invalid selection."
+            exit 1
+            ;;
     esac
 
     if [[ $? -eq 0 ]]; then
-        ok "Gespeichert in: $OUTDIR"
+        echo ""
+        ok "Saved to: $DOWNLOAD_DIR"
     else
-        err "Download fehlgeschlagen. Versuche: yt-dlp --update"
+        echo ""
+        err "Download failed. Try: yt-dlp --update"
+        exit 1
     fi
 }
 
 # ============================================================
-# snowfox stream
+# snowfox stream — Stream video/audio via mpv
 # ============================================================
 cmd_stream() {
     if ! command -v mpv &>/dev/null; then
-        err "mpv nicht gefunden. Installieren: sudo apt install mpv"
+        err "mpv not found. Install: sudo apt install mpv"
         exit 1
     fi
 
     if ! command -v yt-dlp &>/dev/null; then
-        err "yt-dlp nicht gefunden. Installieren: sudo apt install yt-dlp"
+        err "yt-dlp not found. Install: sudo apt install yt-dlp"
         exit 1
     fi
 
-    AUDIO_ONLY=false
+    local AUDIO_ONLY=false
     if [[ "$1" == "-a" || "$1" == "--audio" ]]; then
         AUDIO_ONLY=true
         shift
     fi
 
-    QUERY="$*"
+    local QUERY="$*"
     if [[ -z "$QUERY" ]]; then
-        read -rp "$(echo -e ${PURPLE}${BOLD}"Suche (Video/Musik): "${RESET})" QUERY
-        [[ -z "$QUERY" ]] && return
+        read -rp "$(echo -e ${PURPLE}${BOLD}"Search (video/music): "${RESET})" QUERY
+        [[ -z "$QUERY" ]] && exit 0
     fi
 
+    local URL
     if [[ "$QUERY" =~ ^http ]]; then
         URL="$QUERY"
     else
-        fox "Suche auf YouTube: ${BOLD}$QUERY${RESET}..."
+        header "Stream"
+        fox "Searching YouTube: ${BOLD}$QUERY${RESET}"
 
-        # Ein yt-dlp-Aufruf mit | als Trennzeichen
+        local -a RESULTS
         mapfile -t RESULTS < <(yt-dlp --force-ipv4 \
             --print "%(title)s|%(id)s" \
             --flat-playlist "ytsearch5:$QUERY" 2>/dev/null)
 
         if [[ ${#RESULTS[@]} -eq 0 ]]; then
-            err "Keine Ergebnisse gefunden."
-            return
+            err "No results found."
+            exit 1
         fi
 
         divider
         for i in "${!RESULTS[@]}"; do
-            title="${RESULTS[$i]%|*}"
+            local title="${RESULTS[$i]%|*}"
             echo -e "  ${CYAN}$((i+1))${RESET}) $title"
         done
         divider
+        echo ""
 
-        read -rp "$(echo -e ${PURPLE}${BOLD}"Auswahl [1-${#RESULTS[@]}]: "${RESET})" CHOICE
-        [[ -z "$CHOICE" || ! "$CHOICE" =~ ^[0-9]+$ ]] && return
-        [[ "$CHOICE" -lt 1 || "$CHOICE" -gt "${#RESULTS[@]}" ]] && return
+        read -rp "$(echo -e ${PURPLE}${BOLD}"Select [1-${#RESULTS[@]}]: "${RESET})" CHOICE
+        [[ -z "$CHOICE" || ! "$CHOICE" =~ ^[0-9]+$ ]] && exit 0
+        [[ "$CHOICE" -lt 1 || "$CHOICE" -gt "${#RESULTS[@]}" ]] && exit 0
 
-        # ID extrahieren und validieren
-        ID="${RESULTS[$((CHOICE-1))]##*|}"
+        local ID="${RESULTS[$((CHOICE-1))]##*|}"
         if [[ ! "$ID" =~ ^[A-Za-z0-9_-]{11}$ ]]; then
-            TITLE="${RESULTS[$((CHOICE-1))]%|*}"
+            local TITLE="${RESULTS[$((CHOICE-1))]%|*}"
             URL="ytsearch1:$TITLE"
         else
             URL="https://www.youtube.com/watch?v=$ID"
         fi
     fi
 
-    # Headless-Erkennung & Audio-Only Option
-    EXTRA_OPTS=""
+    local EXTRA_OPTS=""
     if $AUDIO_ONLY; then
-        info "Audio-Modus aktiv..."
+        info "Audio-only mode active."
         EXTRA_OPTS="--no-video"
     elif [[ -z "$DISPLAY" ]]; then
-        info "Keine grafische Sitzung (DISPLAY) erkannt. Stream startet im reinen Audio-Modus..."
+        info "No graphical session detected — starting in audio-only mode."
         EXTRA_OPTS="--no-video"
     fi
 
-    # MPV Tastatur-Steuerung anzeigen
-    echo -e ""
-    echo -e "${PURPLE}${BOLD}  Steuerung für den Stream (mpv):${RESET}"
-    echo -e "    ${CYAN}Leertaste${RESET}  —  Pause / Wiedergabe"
-    echo -e "    ${CYAN}9 / 0${RESET}      —  Lautstärke leiser / lauter"
-    echo -e "    ${CYAN}m${RESET}          —  Stummschalten"
-    echo -e "    ${CYAN}<- / ->${RESET}    —  10 Sekunden zurück / vor"
-    echo -e "    ${CYAN}q${RESET}          —  Wiedergabe beenden"
-    echo -e ""
+    echo ""
+    echo -e "${PURPLE}${BOLD}  mpv controls:${RESET}"
+    echo -e "    ${CYAN}Space${RESET}       —  Pause / Play"
+    echo -e "    ${CYAN}9 / 0${RESET}       —  Volume down / up"
+    echo -e "    ${CYAN}m${RESET}           —  Mute"
+    echo -e "    ${CYAN}← / →${RESET}       —  10 seconds back / forward"
+    echo -e "    ${CYAN}q${RESET}           —  Quit"
+    echo ""
 
-    fox "Starte Stream..."
-    # --ytdl-raw-options: IPv4 erzwingen verhindert 403-Fehler bei IPv6
-    # yt-dlp als ytdl-Backend explizit setzen (neuere mpv-Versionen)
-    # VP9/H264 bevorzugen — AV1 (libdav1d) verursacht OBU-Decoder-Fehler
-    # auf älteren libdav1d-Versionen. VP9 ist stabil und überall unterstützt.
-    # Puffer-Optimierung: --cache=yes und demuxer-Größen verhindern Ruckeln bei langsamen Verbindungen.
+    fox "Starting stream..."
     mpv \
         --ytdl-raw-options="force-ipv4=,no-check-certificate=" \
         --ytdl-format="bestvideo[vcodec^=vp9][height<=1080]+bestaudio/bestvideo[vcodec^=avc1][height<=1080]+bestaudio/best[height<=1080]" \
