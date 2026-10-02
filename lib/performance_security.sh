@@ -1,7 +1,7 @@
 #!/bin/bash
-
 # ============================================================
 #  SnowFoxOS v3.0 — Performance & Security Optimizations
+#  Copyright (c) 2026 Alexander Valentin Ludwig (Xr7-Code)
 # ============================================================
 
 # Load utilities (assumes SCRIPT_DIR is set before sourcing)
@@ -10,25 +10,25 @@ source "$SCRIPT_DIR/lib/utils.sh"
 # Global variables from main script (assumed to be sourced/exported):
 # TARGET_USER, IS_LAPTOP
 
-step "8/10 — Performance & Sicherheit"
+step "8/10 — Performance & Security"
 
 wait_apt
 apt-get install -y zram-tools earlyoom ufw
 
-# ── TLP nur auf Laptops ausführen ────────────────────────────
-# Auf Desktops/Mini-PCs verursacht TLP aggressive xHCI-USB-Crashes
+# ── TLP only on laptops ──────────────────────────────────────
+# On desktops/mini-PCs, TLP causes aggressive xHCI USB crashes
 if $IS_LAPTOP; then
     command -v tlp &>/dev/null || apt-get install -y tlp tlp-rdw
     systemctl enable tlp 2>/dev/null || true
 else
-    # Falls TLP installiert ist, auf Desktops stoppen & USB-Powersave deaktivieren
+    # If TLP is installed, stop it on desktops & disable USB powersave
     systemctl disable --now tlp 2>/dev/null || true
     if [[ -f /etc/tlp.conf ]]; then
         sed -i 's/^USB_AUTOSUSPEND=.*/USB_AUTOSUSPEND=0/' /etc/tlp.conf
     fi
 fi
 
-# ── zRAM Konfiguration ───────────────────────────────────────
+# ── zRAM configuration ───────────────────────────────────────
 cat > /etc/default/zramswap << 'EOF'
 ALGO=lz4
 PERCENT=50
@@ -42,7 +42,7 @@ fi
 
 systemctl enable zramswap earlyoom 2>/dev/null || true
 
-# ── Kernel / Sysctl Tuning ───────────────────────────────────
+# ── Kernel / Sysctl tuning ───────────────────────────────────
 cat > /etc/sysctl.d/99-snowfox.conf << 'EOF'
 # RAM & Swap
 vm.swappiness=10
@@ -50,7 +50,7 @@ vm.vfs_cache_pressure=50
 vm.dirty_background_ratio=3
 vm.dirty_ratio=6
 
-# Netzwerk
+# Network
 net.core.default_qdisc=fq
 net.ipv4.tcp_congestion_control=bbr
 net.core.rmem_max=16777216
@@ -64,22 +64,22 @@ net.ipv6.conf.default.use_tempaddr=2
 kernel.nmi_watchdog=0
 EOF
 
-info "Optimiere fstab..."
+info "Optimizing fstab..."
 sed -i 's/errors=remount-ro/errors=remount-ro,noatime/g' /etc/fstab
 sed -i '/tmpfs \/tmp tmpfs/d' /etc/fstab
 echo "tmpfs /tmp tmpfs defaults,noatime,size=4G,mode=1777 0 0" >> /etc/fstab
-success "fstab optimiert (noatime, tmpfs einmalig)"
+success "fstab optimized (noatime, tmpfs once)"
 
 ufw default deny incoming  2>/dev/null || true
 ufw default allow outgoing 2>/dev/null || true
 ufw --force enable         2>/dev/null || true
-success "ufw Firewall aktiviert"
+success "ufw firewall enabled"
 
-# ── WLAN-Karte freigeben ──────────────────────────────────────
+# ── Release WiFi card from ifupdown ──────────────────────────
 if [[ -f /etc/network/interfaces ]]; then
     cp /etc/network/interfaces /etc/network/interfaces.snowfox-bak
     sed -i -E '/^[[:space:]]*(auto|allow-hotplug|iface)[[:space:]]+(wl|en|eth)/ s/^/#/' /etc/network/interfaces
-    success "ifupdown-Einträge für WLAN/LAN auskommentiert (Übergabe an NetworkManager)"
+    success "ifupdown entries for WiFi/LAN commented out (handed over to NetworkManager)"
 fi
 
 mkdir -p /etc/NetworkManager/conf.d
@@ -113,30 +113,42 @@ done
 systemctl mask NetworkManager-wait-online.service 2>/dev/null || true
 systemctl mask systemd-networkd-wait-online.service 2>/dev/null || true
 
-# ── Unnötige Programme & Dienste entfernen ────────────────────
+# ── Remove unnecessary programs & services ───────────────────
 apt-get purge -y zeitgeist zeitgeist-core zeitgeist-datahub 2>/dev/null || true
 apt-get purge -y diodon 2>/dev/null || true
 apt-get purge -y xterm uxterm 2>/dev/null || true
 apt-get autoremove -y 2>/dev/null || true
-success "Ballast entfernt (zeitgeist, diodon, xterm, uxterm)"
+success "Bloat removed (zeitgeist, diodon, xterm, uxterm)"
+
+# NOTE: xdg-desktop-portal is NOT masked.
+# It is required by browsers (Zen, Flatpak apps) and other GTK/GNOME
+# applications for ScreenSaver, FileChooser and Notification portals.
+# Masking it caused D-Bus blocking because portal requests were retried
+# every second. Only the GNOME-specific variant is masked, which does
+# nothing useful on i3 without a GNOME session — the GTK variant stays
+# active for apps that need it.
+if systemctl --user list-unit-files xdg-desktop-portal-gnome.service &>/dev/null; then
+    sudo -u "$TARGET_USER" systemctl --user mask \
+        xdg-desktop-portal-gnome.service 2>/dev/null || true
+fi
 
 sed -i 's/#HandlePowerKey=.*/HandlePowerKey=ignore/' /etc/systemd/logind.conf
 
-success "Performance & Sicherheit optimiert"
+success "Performance & security optimized"
 
-# ── Kernel-Härtung ────────────────────────────────────────────
-info "Setze Kernel-Sicherheitsparameter..."
+# ── Kernel hardening ─────────────────────────────────────────
+info "Applying kernel security parameters..."
 cat > /etc/sysctl.d/99-snowfox-security.conf << 'SYSCTLEOF'
-# SnowFoxOS Kernel-Härtung
+# SnowFoxOS kernel hardening
 
-# Kernel-Informationen verstecken
+# Hide kernel information
 kernel.dmesg_restrict=1
 kernel.kptr_restrict=2
 kernel.perf_event_paranoid=3
 kernel.unprivileged_bpf_disabled=1
 net.core.bpf_jit_harden=2
 
-# Netzwerk-Härtung
+# Network hardening
 net.ipv4.conf.all.rp_filter=1
 net.ipv4.conf.default.rp_filter=1
 net.ipv4.tcp_syncookies=1
@@ -148,26 +160,26 @@ net.ipv4.conf.all.log_martians=1
 net.ipv4.tcp_max_syn_backlog=2048
 net.ipv4.tcp_synack_retries=2
 
-# Core Dumps deaktivieren
+# Disable core dumps
 fs.suid_dumpable=0
 kernel.core_pattern=|/bin/false
 SYSCTLEOF
 sysctl -p /etc/sysctl.d/99-snowfox-security.conf &>/dev/null
-success "Kernel-Härtung gesetzt"
+success "Kernel hardening applied"
 
-# ── SSH deaktivieren ──────────────────────────────────────────
+# ── Disable SSH ──────────────────────────────────────────────
 if systemctl is-enabled ssh &>/dev/null 2>&1; then
     systemctl disable --now ssh 2>/dev/null || true
-    info "SSH deaktiviert (aktivieren: sudo systemctl enable --now ssh)"
+    info "SSH disabled (enable with: sudo systemctl enable --now ssh)"
 fi
 
-# ── UFW: SSH-Regel entfernen ──────────────────────────────────
+# ── UFW: remove SSH rule ─────────────────────────────────────
 if command -v ufw &>/dev/null; then
     ufw delete allow 22/tcp 2>/dev/null || true
     ufw delete allow ssh    2>/dev/null || true
     ufw --force enable      2>/dev/null || true
-    success "UFW: SSH-Regel entfernt"
+    success "UFW: SSH rule removed"
 fi
 
-# ── rfkill installieren (für snowfox airmode) ─────────────────
+# ── Install rfkill (for snowfox air) ─────────────────────────
 apt-get install -y rfkill 2>/dev/null || true
