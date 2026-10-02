@@ -1,7 +1,7 @@
 #!/bin/bash
-
 # ============================================================
 #  SnowFoxOS v3.0 — Mesh Module (Reticulum P2P Network)
+#  Copyright (c) 2026 Alexander Valentin Ludwig (Xr7-Code)
 # ============================================================
 
 # Load utilities (assumes SCRIPT_DIR is set before sourcing)
@@ -10,34 +10,34 @@ source "$SCRIPT_DIR/lib/utils.sh"
 # Global variables from main script (assumed to be sourced/exported):
 # TARGET_USER, TARGET_HOME, SCRIPT_DIR
 
-step "6b/10 — Mesh-Modul (Reticulum P2P-Netzwerk)"
+step "6b/10 — Mesh module (Reticulum P2P network)"
 
-if ask_install "Reticulum Mesh-Modul (autarkes P2P-Netzwerk)"; then
-    info "Installiere Reticulum Network Stack..."
+if ask_install "Reticulum Mesh module (self-contained P2P network)"; then
+    info "Installing Reticulum Network Stack..."
 
     if ! command -v pipx &>/dev/null; then
-        info "pipx wird installiert..."
+        info "Installing pipx..."
         apt-get update -qq
         apt-get install -y pipx
         pipx ensurepath
         export PATH="$PATH:$HOME/.local/bin"
-        success "pipx installiert"
+        success "pipx installed"
     else
-        success "pipx bereits installiert"
+        success "pipx already installed"
     fi
 
-    info "Installiere Reticulum in isolierter Umgebung via pipx..."
+    info "Installing Reticulum in an isolated environment via pipx..."
     if pipx install rns 2>/dev/null; then
-        success "Reticulum (rns) via pipx installiert"
+        success "Reticulum (rns) installed via pipx"
     else
-        warn "pipx Installation fehlgeschlagen, versuche Fallback..."
+        warn "pipx installation failed, trying fallback..."
         if command -v pip3 &>/dev/null; then
             pip3 install rns --break-system-packages
-            success "Reticulum via pip3 (--break-system-packages) installiert"
+            success "Reticulum installed via pip3 (--break-system-packages)"
         else
             apt-get install -y python3-pip
             pip3 install rns --break-system-packages
-            success "Reticulum via pip3 installiert"
+            success "Reticulum installed via pip3"
         fi
     fi
 
@@ -48,18 +48,18 @@ if ask_install "Reticulum Mesh-Modul (autarkes P2P-Netzwerk)"; then
         cp "$MESH_SCRIPT_SRC" "$MESH_SCRIPT_DST"
         chmod +x "$MESH_SCRIPT_DST"
         chown "$TARGET_USER:$TARGET_USER" "$MESH_SCRIPT_DST"
-        success "Mesh-Modul aus Repo kopiert ($(basename "$MESH_SCRIPT_SRC"))"
+        success "Mesh module copied from repo ($(basename "$MESH_SCRIPT_SRC"))"
     else
-        warn "Mesh-Skript nicht im Repo: $MESH_SCRIPT_SRC"
+        warn "Mesh script not found in repo: $MESH_SCRIPT_SRC"
     fi
 
     mkdir -p "$TARGET_HOME/.config/snowfox/mesh"
     mkdir -p "$TARGET_HOME/Downloads/MeshShare"
     chown -R "$TARGET_USER:$TARGET_USER" "$TARGET_HOME/.config/snowfox" 2>/dev/null || true
 
-    success "Mesh-Modul installiert"
-    info "  Starten: ${CYAN}snowfox mesh start --name \"Meine Node\"${RESET}"
-    info "  Hilfe:   ${CYAN}snowfox mesh help${RESET}"
+    success "Mesh module installed"
+    info "  Start: ${CYAN}snowfox mesh start --name \"My Node\"${RESET}"
+    info "  Help:  ${CYAN}snowfox mesh help${RESET}"
 else
-    info "Mesh-Modul übersprungen"
+    info "Mesh module skipped"
 fi
