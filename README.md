@@ -111,6 +111,8 @@ systemctl is-enabled ssh
 # Output: disabled
 ```
 
+**Tor mode** — `snowfox tor on` sets up a transparent proxy via iptables: all TCP and DNS traffic is routed through Tor. The setup is fail-closed — if Tor is not running, nothing leaves the machine. IPv6 is disabled and the MAC address is randomized. See the limits below.
+
 ### What you can verify yourself
 
 Show active network connections:
@@ -141,9 +143,9 @@ sysctl net.core.bpf_jit_harden
 
 **No AppArmor or SELinux.** Processes run without Mandatory Access Control. A compromised process has full user rights in its own home directory.
 
-**Tor mode is not full anonymity.** It routes traffic through Tor, but does not protect against malware, applications with hardcoded DNS resolvers (DoH/DoT), or browser fingerprinting. For real isolation, use Whonix or Tails.
+**Tor mode is not full anonymity.** It is a transparent proxy that routes traffic through Tor, but does not protect against malware, applications with hardcoded DNS resolvers (DoH/DoT), or browser fingerprinting. For real isolation, use Whonix or Tails.
 
-**No automatic security updates.** `snowfox update` must be run manually.
+**No automatic security updates.** `snowfox up` must be run manually.
 
 ---
 
@@ -160,7 +162,7 @@ smem -tk -s pss -r | tail -1
 
 PSS is the most accurate method — shared libraries are counted proportionally instead of double. The value from `free -h` is higher because it includes the page cache, which is immediately released when needed.
 
-**Running processes during measurement:** Xorg, i3, polybar, picom, pipewire, wireplumber, dunst, lxpolkit, xsettingsd, nm-applet, clip-saver, xss-lock, dbus
+**Running processes during measurement:** Xorg, i3, polybar, picom, pipewire, wireplumber, dunst, lxpolkit, xsettingsd, clip-saver, xss-lock, dbus
 
 | State | RAM (PSS) |
 |---|---|
@@ -209,6 +211,7 @@ For comparison (community benchmarks, `free -h` `used` value — not directly co
 - **Flameshot** — screenshot tool with area selection and annotation (replaces GIMP for the standard workflow)
 - **Geany + plugins** — lightweight code editor with Git integration, code navigation, project management
 - **WebApps** — `snowfox web add <name> <url>` creates isolated Zen Browser instances with app-like appearance
+- **Stash** — `snowfox stash` to find, inspect and install software by category
 - **Node modes** — `snowfox node d/s/c` switches between desktop, server and console mode
 - **Live network audit** — `snowfox audit live` refreshes active connections every 2 seconds
 - **fastfetch** — system info with SnowFox logo
@@ -225,7 +228,7 @@ For comparison (community benchmarks, `free -h` `used` value — not directly co
 - **SnowFox Console Launcher** — game hub for Steam, GOG, Retro
 - **Multiarch (i386)** — 32-bit support for Steam and older games
 - **Smart Lock** — does not lock when video is playing or fullscreen is active, blurred wallpaper as background
-- **Tor mode** — `snowfox tor on/off` routes all TCP and DNS through Tor via iptables (fail-closed, IPv6 disabled)
+- **Tor mode** — `snowfox tor on/off` — transparent proxy via iptables: all TCP and DNS through Tor, fail-closed, IPv6 disabled
 <!-- - **Mesh network** — P2P communication via Reticulum without ISP (experimental) -->
 - **Ollama** — local AI engine
 - **`yt-dlp`** — video/audio without browser
@@ -234,12 +237,13 @@ For comparison (community benchmarks, `free -h` `used` value — not directly co
 
 ## snowfox CLI
 
-`snowfox` is the central control. All functions are accessible via a single command. `snowfox <command> --help` shows details for a command.
+`snowfox` is the central control. All functions are accessible via a single command with short flat aliases. `snowfox h` shows the overview, `snowfox <command> --help` shows details for a command.
 
 ### System & Status
 
 | Command | Description |
 |---|---|
+| `snowfox h` | Help: overview of all commands |
 | `snowfox st` | System overview: RAM, disk, uptime, GPU mode, mic/camera status, network |
 | `snowfox bat` | Battery, consumption & health |
 | `snowfox up` | Update system & CLI (including yt-dlp) |
@@ -255,7 +259,7 @@ For comparison (community benchmarks, `free -h` `used` value — not directly co
 | `snowfox air [on\|off\|status]` | Disable all wireless interfaces |
 | `snowfox audit` | Active network connections with process and destination IP |
 | `snowfox audit live` | Live mode: refreshes active connections every 2 seconds |
-| `snowfox tor [on\|off\|status]` | Tor mode: all TCP and DNS through Tor via iptables, fail-closed, IPv6 off, MAC randomization |
+| `snowfox tor [on\|off\|status]` | Tor mode: transparent proxy via iptables, all TCP and DNS through Tor, fail-closed, IPv6 off, MAC randomization |
 
 ### Media
 
@@ -265,13 +269,23 @@ For comparison (community benchmarks, `free -h` `used` value — not directly co
 | `snowfox dl <URL>` | Download video or audio |
 | `snowfox fetch <URL>` | High-speed download via 16 parallel connections |
 
+### Software (Stash)
+
+| Command | Description |
+|---|---|
+| `snowfox stash` | Software stash: overview of categories |
+| `snowfox stash <category>` | List software in a category |
+| `snowfox stash find <term>` | Search for software |
+| `snowfox stash info <name>` | Show details about an entry |
+| `snowfox stash install <name>` | Install software |
+| `snowfox stash [list\|remove]` | List installed / remove entries (Rofi apps) |
+
 ### Desktop
 
 | Command | Description |
 |---|---|
 | `snowfox auto [list\|enable\|disable]` | Manage autostart |
 | `snowfox lay [tiling\|floating]` | Switch window mode |
-| `snowfox apps [list\|remove]` | Manage Rofi apps |
 | `snowfox web [add\|list\|open\|remove]` | Manage web apps |
 | `snowfox net` | Network manager |
 | `snowfox wall` | Wallpaper selector |
@@ -295,12 +309,12 @@ For comparison (community benchmarks, `free -h` `used` value — not directly co
 
 | Command | Description |
 |---|---|
-| `snowfox node [desktop\|server\|console]` | System mode (short forms `d`, `s`, `c` also work) |
+| `snowfox node [d\|s\|c]` | System mode (long forms `desktop`, `server`, `console` also work) |
 | `snowfox ai` | Offline AI (Ollama) |
 
-- `desktop` — standard desktop mode
-- `server` — server mode, minimal footprint
-- `console` — game hub for Steam, GOG, Retro
+- `d` / `desktop` — standard desktop mode
+- `s` / `server` — server mode, minimal footprint
+- `c` / `console` — game hub for Steam, GOG, Retro
 <!-- | `snowfox mesh` | P2P mesh network (Reticulum) | -->
 
 ### System Profiles
@@ -382,8 +396,8 @@ i3 starts automatically from TTY1.
 | `Super + R` | Resize mode |
 | `Super + Shift + R` | Reload i3 |
 | `Super + Shift + E` | Power menu |
-| `Print` | Screenshot (full screen → clipboard + saved) |
-| `Super + Print` | Area screenshot + annotation → clipboard |
+| `Print` | Screenshot (Flameshot, full screen → clipboard + saved) |
+| `Super + Print` | Flameshot area screenshot + annotation → clipboard |
 
 ---
 
