@@ -25,6 +25,7 @@ source "$CLI_DIR/hardware.sh"
 source "$CLI_DIR/media.sh"
 source "$CLI_DIR/security.sh"
 source "$CLI_DIR/desktop.sh"
+source "$CLI_DIR/stash.sh"
 source "$CLI_DIR/settings.sh"
 source "$CLI_DIR/doctor.sh"
 source "$CLI_DIR/mesh.sh"
@@ -69,7 +70,7 @@ case "$1" in
     # ── Desktop ──────────────────────────────────────────────
     auto|autostart) cmd_start "$2" "$3" ;;
     lay|layout)     cmd_layout "$2" ;;
-    apps)           cmd_apps "$2" "$3" ;;
+    stash)          shift; cmd_stash "$@" ;;
     web|webapp)     cmd_webapp "$2" "$3" "$4" ;;
     net|network)    exec ~/.config/snowfox-network.sh ;;
     wall|wallpaper) exec ~/.config/snowfox-wallpaper.sh ;;
