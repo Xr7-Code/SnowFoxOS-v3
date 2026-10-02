@@ -1,16 +1,17 @@
 # ============================================================
 #    SnowFoxOS v3 — GTK2 Override Config
-#    Ablegen unter: ~/.gtkrc-2.0
+#    Place at: ~/.gtkrc-2.0
+#    Copyright (c) 2026 Alexander Valentin Ludwig (Xr7-Code)
 # ============================================================
-# Reihenfolge-Regel: Bei gleicher Priorität gewinnt die SPÄTER
-# definierte Zuweisung. Deshalb: allgemein zuerst, speziell zuletzt.
+# Order rule: With equal priority, the LATER definition wins.
+# Therefore: general first, specific last.
 
 # ── Color Scheme Globals ───────────────────────────────────
 gtk-color-scheme = "bg_color:#1a1825\nbg_alt_color:#201e2e\nbg_surface:#2a2840\nbg_hover:#332f50\nfg_color:#e0d9f5\nfg_dim_color:#6e6a8a\nbase_color:#1a1825\ntext_color:#e0d9f5\nselected_bg_color:#9d6fe8\nselected_fg_color:#ffffff\npurple_hover:#b899ff\npurple_active:#5c3d99\nborder_color:#2a2840\ntooltip_bg_color:#2a2840\ntooltip_fg_color:#e0d9f5\nlink_color:#b899ff"
 
 # ── Global Base Style ──────────────────────────────────────
-# ACTIVE = Auswahl in einem Widget OHNE Fokus (z. B. Fenster im
-# Hintergrund). Vorher #332f50 -> kaum sichtbar. Jetzt purple_active.
+# ACTIVE = selection in a widget WITHOUT focus (e.g. window in
+# background). Previously #332f50 -> barely visible. Now purple_active.
 style "snowfox-colors" {
     base[NORMAL]      = "#1a1825"
     base[ACTIVE]      = "#5c3d99"
@@ -45,7 +46,7 @@ style "snowfox-colors" {
     }
 }
 
-# ── Listen / Dateiansichten (PCManFM Hauptbereich) ─────────
+# ── Lists / File views (PCManFM main area) ────────────────
 style "snowfox-view" {
     base[NORMAL]      = "#1a1825"
     base[ACTIVE]      = "#5c3d99"
@@ -61,7 +62,7 @@ style "snowfox-view" {
     GtkTreeView::horizontal-separator = 4
 }
 
-# ── Mehrzeilige Textfelder ─────────────────────────────────
+# ── Multi-line text fields ─────────────────────────────────
 style "snowfox-textview" {
     base[NORMAL]      = "#1a1825"
     base[ACTIVE]      = "#5c3d99"
@@ -71,7 +72,7 @@ style "snowfox-textview" {
     text[SELECTED]    = "#ffffff"
 }
 
-# ── Seitenleiste (PCManFM) ─────────────────────────────────
+# ── Sidebar (PCManFM) ──────────────────────────────────────
 style "snowfox-sidebar" {
     base[NORMAL]      = "#201e2e"
     base[ACTIVE]      = "#5c3d99"
@@ -103,8 +104,8 @@ style "snowfox-sidebar" {
     }
 }
 
-# ── Menü-/Werkzeugleisten ──────────────────────────────────
-style "snowfox-leisten" {
+# ── Menu / toolbar bars ────────────────────────────────────
+style "snowfox-bars" {
     bg[NORMAL]        = "#1a1825"
     bg[ACTIVE]        = "#201e2e"
     bg[PRELIGHT]      = "#2a2840"
@@ -124,7 +125,7 @@ style "snowfox-tabs" {
     bg[PRELIGHT]      = "#332f50"
 }
 
-# ── Eingabefelder ──────────────────────────────────────────
+# ── Entry fields ───────────────────────────────────────────
 style "snowfox-entry" {
     base[NORMAL]      = "#201e2e"
     base[ACTIVE]      = "#5c3d99"
@@ -176,8 +177,8 @@ style "snowfox-scrollbar" {
     }
 }
 
-# ── Trennlinie (Paned) ─────────────────────────────────────
-style "snowfox-trenner" {
+# ── Separator (Paned) ──────────────────────────────────────
+style "snowfox-separator" {
     bg[NORMAL]        = "#2a2840"
     bg[PRELIGHT]      = "#b899ff"
     bg[ACTIVE]        = "#9d6fe8"
@@ -190,7 +191,7 @@ style "snowfox-trenner" {
     }
 }
 
-# ── Menüs ──────────────────────────────────────────────────
+# ── Menus ──────────────────────────────────────────────────
 style "snowfox-menus" {
     base[NORMAL]      = "#2a2840"
     bg[NORMAL]        = "#2a2840"
@@ -216,24 +217,24 @@ style "snowfox-tooltip" {
 }
 
 # ============================================================
-#    Widget Assignments  (allgemein -> speziell)
+#    Widget Assignments  (general -> specific)
 # ============================================================
 
-# Basis für alles
+# Base for everything
 class "GtkWidget"                    style "snowfox-colors"
 
-# Listen, Textfelder
+# Lists, text fields
 class "GtkTreeView"                  style "snowfox-view"
 class "GtkIconView"                  style "snowfox-view"
 class "GtkTextView"                  style "snowfox-textview"
 
-# PCManFM-Hauptfenster / Dateiansicht
+# PCManFM main window / file view
 widget_class "*FmFolderView*"        style "snowfox-view"
 
-# Leisten (vor Buttons, damit Toolbar-Buttons ihren Button-Stil behalten)
-class "GtkMenuBar"                   style "snowfox-leisten"
-class "GtkToolbar"                   style "snowfox-leisten"
-widget_class "*<GtkToolbar>*"        style "snowfox-leisten"
+# Bars (before buttons, so toolbar buttons keep their button style)
+class "GtkMenuBar"                   style "snowfox-bars"
+class "GtkToolbar"                   style "snowfox-bars"
+widget_class "*<GtkToolbar>*"        style "snowfox-bars"
 
 # Controls
 class "GtkNotebook"                  style "snowfox-tabs"
@@ -241,18 +242,18 @@ class "GtkEntry"                     style "snowfox-entry"
 class "GtkButton"                    style "snowfox-widgets"
 class "GtkScrollbar"                 style "snowfox-scrollbar"
 
-# Seitenleiste (höchste Priorität, damit nichts darüber gewinnt)
+# Sidebar (highest priority, so nothing overrides it)
 widget_class "*FmSidePane*"          style:highest "snowfox-sidebar"
 widget_class "*FmPlacesView*"        style:highest "snowfox-sidebar"
 widget_class "*FmDirTreeView*"       style:highest "snowfox-sidebar"
 
-# Trennlinie: NUR das Paned selbst, nicht dessen Kinder
-class "GtkPaned"                     style:highest "snowfox-trenner"
+# Separator: only the Paned itself, not its children
+class "GtkPaned"                     style:highest "snowfox-separator"
 
-# Menüs
+# Menus
 widget_class "*<GtkMenu>*"           style:highest "snowfox-menus"
 widget_class "*<GtkMenuItem>*"       style:highest "snowfox-menus"
 
-# Tooltips (GTK2-Fenstername)
+# Tooltips (GTK2 window names)
 widget "gtk-tooltip*"                style "snowfox-tooltip"
 widget "gtk-tooltips*"               style "snowfox-tooltip"
