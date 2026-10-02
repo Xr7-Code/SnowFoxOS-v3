@@ -1,7 +1,7 @@
 #!/bin/bash
-
 # ============================================================
 #  SnowFoxOS v3.0 — Desktop Environment Setup
+#  Copyright (c) 2026 Alexander Valentin Ludwig (Xr7-Code)
 # ============================================================
 
 # Load utilities (assumes SCRIPT_DIR is set before sourcing)
@@ -46,31 +46,31 @@ apt-get install -y \
     cups cups-bsd cups-client \
     printer-driver-splix
 
-# Picom läuft mit backend = "glx" (nicht "xrender") und fading = false.
-# xrender hat keine native Synchronisation mit dem NVIDIA-Treiber und
-# verursachte Freezes beim Öffnen von Rofi-Menüs.
-# fading = false reduziert die Compositor-Last — v2.2-Verhalten.
-success "i3 Desktop-Pakete installiert"
+# picom runs with backend = "glx" (not "xrender") and fading = false.
+# xrender has no native synchronization with the NVIDIA driver and
+# caused freezes when opening Rofi menus.
+# fading = false reduces compositor load — v2.2 behavior.
+success "i3 desktop packages installed"
 
-# ── Clipnotify — aus Source bauen ────────────────────────────
-info "Installiere clipnotify..."
+# ── Clipnotify — build from source ───────────────────────────
+info "Installing clipnotify..."
 apt-get install -y libx11-dev libxfixes-dev
 git clone https://github.com/cdown/clipnotify.git /tmp/clipnotify
 make -C /tmp/clipnotify
 cp /tmp/clipnotify/clipnotify /usr/local/bin/clipnotify
 rm -rf /tmp/clipnotify
-success "clipnotify installiert"
+success "clipnotify installed"
 
-# clip-saver.sh installieren
+# Install clip-saver.sh
 if [[ -f "$SCRIPT_DIR/configs/i3/clip-saver.sh" ]]; then
     mkdir -p "$TARGET_HOME/.config/i3"
     cp "$SCRIPT_DIR/configs/i3/clip-saver.sh" "$TARGET_HOME/.config/i3/clip-saver.sh"
     chmod +x "$TARGET_HOME/.config/i3/clip-saver.sh"
-    success "clip-saver.sh installiert"
+    success "clip-saver.sh installed"
 fi
 
-# ── Bibata Cursor Theme installieren ─────────────────────────
-info "Installiere Bibata-Modern-Classic Cursor..."
+# ── Install Bibata cursor theme ──────────────────────────────
+info "Installing Bibata-Modern-Classic cursor..."
 BIBATA_DIR="/usr/share/icons/Bibata-Modern-Classic"
 if [ ! -d "$BIBATA_DIR" ]; then
     BIBATA_VERSION=$(curl -sf https://api.github.com/repos/ful1e5/Bibata_Cursor/releases/latest | python3 -c "import sys,json; print(json.load(sys.stdin).get('tag_name','v2.0.7'))" 2>/dev/null || echo "v2.0.7")
@@ -80,53 +80,53 @@ if [ ! -d "$BIBATA_DIR" ]; then
     curl -L "$BIBATA_URL" -o /tmp/Bibata-Modern-Classic.tar.xz 2>/dev/null && \
         tar -xf /tmp/Bibata-Modern-Classic.tar.xz -C /usr/share/icons/ 2>/dev/null && \
         rm -f /tmp/Bibata-Modern-Classic.tar.xz && \
-        success "Bibata-Modern-Classic Cursor installiert" || \
-        warn "Bibata Cursor Download fehlgeschlagen — manuell installieren"
+        success "Bibata-Modern-Classic cursor installed" || \
+        warn "Bibata cursor download failed — install manually"
 else
-    success "Bibata-Modern-Classic bereits vorhanden"
+    success "Bibata-Modern-Classic already present"
 fi
 
 # ── bluetui — Terminal Bluetooth Manager ─────────────────────
-# ── Bluetooth: BlueZ-Dienst aktivieren ───────────────────────
-# bluetooth.service muss laufen bevor bluetui oder bluetoothctl genutzt wird.
-# Timeout verhindert Aufhängen falls der Dienst nicht antwortet.
+# ── Bluetooth: enable BlueZ service ──────────────────────────
+# bluetooth.service must be running before bluetui or bluetoothctl can be used.
+# Timeout prevents hanging if the service does not respond.
 systemctl enable bluetooth 2>/dev/null || true
 systemctl start bluetooth 2>/dev/null &
 BT_PID=$!
 sleep 3
 if ! kill -0 $BT_PID 2>/dev/null; then
-    success "Bluetooth-Dienst gestartet"
+    success "Bluetooth service started"
 else
     kill $BT_PID 2>/dev/null || true
-    warn "Bluetooth-Dienst Timeout — wird nach Reboot aktiv"
+    warn "Bluetooth service timeout — will be active after reboot"
 fi
 
 if ask_install "bluetui (Bluetooth Terminal UI)"; then
-    info "Installiere bluetui Abhängigkeiten..."
-    # bluez-tools für vollständige Profil-Unterstützung
+    info "Installing bluetui dependencies..."
+    # bluez-tools for full profile support
     apt-get install -y bluez bluez-tools dbus pkg-config libdbus-1-dev 2>/dev/null
 
-    info "Lade vorkompiliertes bluetui Binary von GitHub..."
+    info "Downloading precompiled bluetui binary from GitHub..."
     BLUETUI_VERSION=$(curl -sf --max-time 10         https://api.github.com/repos/pythops/bluetui/releases/latest |         python3 -c "import sys,json; print(json.load(sys.stdin).get('tag_name','v0.8.1'))"         2>/dev/null || echo "v0.8.1")
     BLUETUI_URL="https://github.com/pythops/bluetui/releases/download/${BLUETUI_VERSION}/bluetui-x86_64-linux-musl"
 
     if curl -L --max-time 30 "$BLUETUI_URL" -o /usr/local/bin/bluetui 2>/dev/null; then
         chmod +x /usr/local/bin/bluetui
-        success "bluetui installiert (${BLUETUI_VERSION})"
+        success "bluetui installed (${BLUETUI_VERSION})"
     else
-        warn "bluetui Download fehlgeschlagen — versuche Cargo..."
+        warn "bluetui download failed — trying Cargo..."
         apt-get install -y cargo 2>/dev/null
-        cargo install bluetui --root /usr/local/ 2>/dev/null             && success "bluetui via Cargo installiert"             || warn "bluetui konnte nicht installiert werden"
+        cargo install bluetui --root /usr/local/ 2>/dev/null             && success "bluetui installed via Cargo"             || warn "bluetui could not be installed"
     fi
 fi
 
-# Desktop-Einträge — nmtui, bluetui, pcmanfm (für Rofi)
+# Desktop entries — nmtui, bluetui, pcmanfm (for Rofi)
 mkdir -p "$TARGET_HOME/.local/share/applications"
 
 cat > "$TARGET_HOME/.local/share/applications/nmtui.desktop" << 'EOF'
 [Desktop Entry]
-Name=Netzwerk
-Comment=Netzwerkverbindungen verwalten (nmtui)
+Name=Network
+Comment=Manage network connections (nmtui)
 Exec=kitty -e nmtui
 Icon=network-wireless
 Type=Application
@@ -136,7 +136,7 @@ EOF
 cat > "$TARGET_HOME/.local/share/applications/bluetui.desktop" << 'EOF'
 [Desktop Entry]
 Name=Bluetooth
-Comment=Bluetooth-Geräte verwalten (bluetui)
+Comment=Manage Bluetooth devices (bluetui)
 Exec=kitty -e bluetui
 Icon=bluetooth
 Type=Application
@@ -145,8 +145,8 @@ EOF
 
 cat > "$TARGET_HOME/.local/share/applications/pcmanfm.desktop" << 'EOF'
 [Desktop Entry]
-Name=Dateien
-Comment=Dateimanager
+Name=Files
+Comment=File manager
 Exec=pcmanfm %U
 Icon=system-file-manager
 Type=Application
@@ -154,13 +154,13 @@ Categories=System;FileManager;
 EOF
 
 chown -R "$TARGET_USER:$TARGET_USER" "$TARGET_HOME/.local/share/applications"
-success "Desktop-Einträge für Netzwerk, Bluetooth, Dateien installiert (Rofi-fähig)"
+success "Desktop entries for Network, Bluetooth, Files installed (Rofi-ready)"
 
-# Touchpad-Config
+# Touchpad config
 mkdir -p /etc/X11/xorg.conf.d
 if [[ -f "$SCRIPT_DIR/configs/xorg/30-touchpad.conf" ]]; then
     cp "$SCRIPT_DIR/configs/xorg/30-touchpad.conf" /etc/X11/xorg.conf.d/30-touchpad.conf
-    info "Touchpad-Config aus Repo kopiert"
+    info "Touchpad config copied from repo"
 else
     cat > /etc/X11/xorg.conf.d/30-touchpad.conf << 'EOF'
 Section "InputClass"
@@ -174,14 +174,14 @@ Section "InputClass"
     Option          "DisableWhileTyping" "on"
 EndSection
 EOF
-    info "Touchpad-Config erstellt"
+    info "Touchpad config created"
 fi
 
-# i3 Autostart
+# i3 autostart
 BASH_PROFILE="$TARGET_HOME/.bash_profile"
 if ! grep -q "startx" "$BASH_PROFILE" 2>/dev/null; then
     echo '' >> "$BASH_PROFILE"
-    echo '# SnowFoxOS — i3 automatisch starten' >> "$BASH_PROFILE"
+    echo '# SnowFoxOS — start i3 automatically' >> "$BASH_PROFILE"
     echo '[ "$(tty)" = "/dev/tty1" ] && exec startx' >> "$BASH_PROFILE"
 fi
 
@@ -210,10 +210,10 @@ EOF
 chown "$TARGET_USER:$TARGET_USER" "$TARGET_HOME/.xinitrc"
 chmod +x "$TARGET_HOME/.xinitrc"
 
-success "i3 Desktop & Autostart eingerichtet"
+success "i3 desktop & autostart configured"
 
 # ── Nerd Fonts ───────────────────────────────────────────────
-info "Installiere Nerd Fonts (JetBrainsMono)..."
+info "Installing Nerd Fonts (JetBrainsMono)..."
 NERD_VERSION=$(curl -sf https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin).get('tag_name','v3.2.1'))" 2>/dev/null || echo "v3.2.1")
 NERD_URL="https://github.com/ryanoasis/nerd-fonts/releases/download/${NERD_VERSION}/JetBrainsMono.zip"
 mkdir -p /usr/local/share/fonts/nerd-fonts
@@ -221,5 +221,5 @@ curl -L "$NERD_URL" -o /tmp/JetBrainsMono.zip 2>/dev/null && \
     unzip -o /tmp/JetBrainsMono.zip "*.ttf" -d /usr/local/share/fonts/nerd-fonts/ 2>/dev/null && \
     fc-cache -fv /usr/local/share/fonts/nerd-fonts/ 2>/dev/null && \
     rm -f /tmp/JetBrainsMono.zip && \
-    success "JetBrainsMono Nerd Font installiert" || \
-    warn "Nerd Fonts Download fehlgeschlagen — manuell installieren"
+    success "JetBrainsMono Nerd Font installed" || \
+    warn "Nerd Fonts download failed — install manually"
