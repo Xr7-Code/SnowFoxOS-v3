@@ -43,6 +43,7 @@ declare -A STASH_CATEGORIES=(
 
 # ── Spinner (Braille) ────────────────────────────────────────
 _STASH_SPINNER_FRAMES=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
+_STASH_SPINNER_PID=""
 
 _stash_spinner_start() {
     local msg="$1"
@@ -70,17 +71,14 @@ _stash_spinner_stop() {
 _stash_preview_size() {
     local pkg="$1"
     local output
-    output=$(apt-get --print-uris --assume-no install "$pkg" 2>/dev/null)
+    output=$(apt-get --print-uris --yes install "$pkg" 2>&1)
 
-    # Download size line
     local download_size
     download_size=$(echo "$output" | grep -oP "Need to get \K[0-9.,]+ ?[kMG]?B" | head -1)
 
-    # Number of newly installed packages
     local newly
     newly=$(echo "$output" | grep -oP "\K[0-9]+(?= newly installed)" | head -1)
 
-    # Number of dependencies = newly installed - 1 (the package itself)
     local deps="0"
     if [[ -n "$newly" && "$newly" -gt 1 ]]; then
         deps=$((newly - 1))
@@ -93,10 +91,20 @@ _stash_preview_size() {
 # snowfox stash — Main dispatcher
 # ============================================================
 cmd_stash() {
+    # ── No argument → category overview ──────────────────────
+    if [[ -z "$1" ]]; then
+        _stash_categories
+        return
+    fi
+
+    # ── Category check (before subcommand dispatch) ──────────
+    if [[ -n "${STASH_CATEGORIES[$1]}" ]]; then
+        _stash_show_category "$1"
+        return
+    fi
+
+    # ── Subcommands ──────────────────────────────────────────
     case "$1" in
-        ""|list-categories)
-            _stash_categories
-            ;;
         find)
             shift
             _stash_find "$*"
@@ -113,7 +121,7 @@ cmd_stash() {
         remove)
             _stash_remove "$2"
             ;;
-        help|*)
+        *)
             header "snowfox stash"
             info "  snowfox stash                — show curated categories"
             info "  snowfox stash <category>     — list packages in a category"
@@ -155,18 +163,11 @@ _stash_categories() {
 _stash_show_category() {
     local cat="$1"
 
-    if [[ -z "${STASH_CATEGORIES[$cat]}" ]]; then
-        err "Unknown category: $cat"
-        info "  Show all: snowfox stash"
-        exit 1
-    fi
-
     header "stash — $cat"
 
     local pkgs="${STASH_CATEGORIES[$cat]}"
     for pkg in $pkgs; do
-        local status=""
-        local status_color="$DGRAY"
+        local status status_color
         if dpkg -l "$pkg" 2>/dev/null | grep -q "^ii"; then
             status="installed"
             status_color="$GREEN"
@@ -285,7 +286,6 @@ _stash_install() {
 
     header "stash — Install: $pkg"
 
-    # ── Size preview ─────────────────────────────────────────
     info "Analyzing package and dependencies..."
     local preview
     preview=$(_stash_preview_size "$pkg")
@@ -295,7 +295,7 @@ _stash_install() {
 
     echo ""
     if [[ "$download_size" != "unknown" ]]; then
-        row "This package" "$download_size download"
+        row "Download size" "$download_size"
     fi
     row "Dependencies" "$deps"
     echo ""
@@ -306,7 +306,6 @@ _stash_install() {
         exit 0
     fi
 
-    # ── Install with spinner ─────────────────────────────────
     echo ""
     _stash_spinner_start "Installing $pkg..."
     sudo apt-get install -y "$pkg" > /tmp/stash-install.log 2>&1
