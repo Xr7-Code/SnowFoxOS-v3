@@ -116,6 +116,8 @@ systemctl is-enabled ssh
 Show active network connections:
 ```bash
 snowfox audit
+# Refresh every 2 seconds:
+snowfox audit live
 # Or directly:
 ss -tulpn
 ```
@@ -139,7 +141,7 @@ sysctl net.core.bpf_jit_harden
 
 **No AppArmor or SELinux.** Processes run without Mandatory Access Control. A compromised process has full user rights in its own home directory.
 
-**`snowfox pass` is not a password manager.** It is a GPG-encrypted text file — without clipboard clearing, without brute-force protection, without memory protection. For sensitive passwords: KeePassXC or `pass`.
+**Tor mode is not full anonymity.** It routes traffic through Tor, but does not protect against malware, applications with hardcoded DNS resolvers (DoH/DoT), or browser fingerprinting. For real isolation, use Whonix or Tails.
 
 **No automatic security updates.** `snowfox update` must be run manually.
 
@@ -199,11 +201,16 @@ For comparison (community benchmarks, `free -h` `used` value — not directly co
 - **Polybar** — status bar with RAM, battery, network, volume, Bluetooth and system tray
 - **Rofi** — app launcher with SnowFox theme
 - **Kitty** — GPU-accelerated terminal with SnowFox color palette, JetBrainsMono Nerd Font, 0.95 transparency
-- **picom** — compositor with rounded corners, soft shadows, fading animations
+- **picom** — compositor with rounded corners and soft shadows (fading disabled for stability)
 - **Zen Browser** — privacy-focused browser based on Firefox (optional)
 - **PipeWire** — modern audio stack with WirePlumber
 - **Dunst** — notification daemon, tuned to the SnowFox palette
 - **Clip-Saver** — keeps clipboard contents active even after closing the source window (`clipnotify` + `xclip`, no history bloat)
+- **Flameshot** — screenshot tool with area selection and annotation (replaces GIMP for the standard workflow)
+- **Geany + plugins** — lightweight code editor with Git integration, code navigation, project management
+- **WebApps** — `snowfox web add <name> <url>` creates isolated Zen Browser instances with app-like appearance
+- **Node modes** — `snowfox node d/s/c` switches between desktop, server and console mode
+- **Live network audit** — `snowfox audit live` refreshes active connections every 2 seconds
 - **fastfetch** — system info with SnowFox logo
 - **zram** — compressed swap in RAM (lz4, 50%)
 - **tlp** — battery optimization for laptops
@@ -218,7 +225,7 @@ For comparison (community benchmarks, `free -h` `used` value — not directly co
 - **SnowFox Console Launcher** — game hub for Steam, GOG, Retro
 - **Multiarch (i386)** — 32-bit support for Steam and older games
 - **Smart Lock** — does not lock when video is playing or fullscreen is active, blurred wallpaper as background
-- **Tor mode** — `snowfox tor on/off` with DNS protection, IPv6 deactivation, MAC randomization
+- **Tor mode** — `snowfox tor on/off` routes all TCP and DNS through Tor via iptables (fail-closed, IPv6 disabled)
 <!-- - **Mesh network** — P2P communication via Reticulum without ISP (experimental) -->
 - **Ollama** — local AI engine
 - **`yt-dlp`** — video/audio without browser
@@ -227,55 +234,74 @@ For comparison (community benchmarks, `free -h` `used` value — not directly co
 
 ## snowfox CLI
 
-`snowfox` is the central control. All functions are accessible via a single command.
+`snowfox` is the central control. All functions are accessible via a single command. `snowfox <command> --help` shows details for a command.
 
-### System
+### System & Status
 
 | Command | Description |
 |---|---|
-| `snowfox st` | RAM, disk, uptime, GPU mode, mic/camera status, network |
-| `snowfox bat` | Battery charge, power consumption, estimated runtime |
+| `snowfox st` | System overview: RAM, disk, uptime, GPU mode, mic/camera status, network |
+| `snowfox bat` | Battery, consumption & health |
+| `snowfox up` | Update system & CLI (including yt-dlp) |
 | `snowfox prof [name]` | Switch profile: balanced, performance, battery, privacy |
-| `snowfox up` | System update including yt-dlp |
-| `snowfox audit` | Active network connections with process and destination IP |
+| `snowfox doc` | Diagnostics: RAM, drivers, configs |
+| `snowfox rst` | Factory reset — resets to minimal Debian state, deletes all data |
 
-### Privacy & Hardware
+### Hardware & Privacy
 
 | Command | Description |
 |---|---|
-| `snowfox tor on/off` | Tor mode with DNS protection and MAC randomization |
-| `snowfox air on/off` | Disable all wireless interfaces |
-| `snowfox kill mic` | Disable microphone at kernel level |
-| `snowfox kill cam` | Disable webcam |
-| `snowfox kill all` | Microphone + camera + wireless at once |
-| `snowfox kill restore` | Reset all kill switches |
+| `snowfox kill [mic\|cam\|all\|restore]` | Hardware kill switches (microphone, webcam, or microphone + camera + wireless; `restore` resets all) |
+| `snowfox air [on\|off\|status]` | Disable all wireless interfaces |
+| `snowfox audit` | Active network connections with process and destination IP |
+| `snowfox audit live` | Live mode: refreshes active connections every 2 seconds |
+| `snowfox tor [on\|off\|status]` | Tor mode: all TCP and DNS through Tor via iptables, fail-closed, IPv6 off, MAC randomization |
 
 ### Media
 
 | Command | Description |
 |---|---|
-| `snowfox stream [search/URL]` | Stream video/audio directly in mpv — no browser, no tracking |
-| `snowfox dl [search/URL]` | Download video or audio |
+| `snowfox stream <search\|URL>` | Stream video/audio directly in mpv — no browser, no tracking |
+| `snowfox dl <URL>` | Download video or audio |
 | `snowfox fetch <URL>` | High-speed download via 16 parallel connections |
 
-### Tools
+### Desktop
 
 | Command | Description |
 |---|---|
 | `snowfox auto [list\|enable\|disable]` | Manage autostart |
 | `snowfox lay [tiling\|floating]` | Switch window mode |
+| `snowfox apps [list\|remove]` | Manage Rofi apps |
 | `snowfox web [add\|list\|open\|remove]` | Manage web apps |
-| `snowfox net` | Network manager (nmtui) |
-| `snowfox ai` | Local AI (Ollama) |
-<!-- | `snowfox mesh` | P2P mesh network (Reticulum) | -->
+| `snowfox net` | Network manager |
+| `snowfox wall` | Wallpaper selector |
+| `snowfox disp` | Display configuration |
+| `snowfox lock` | Lock screen |
 
-### Node Modes
+### Settings
 
 | Command | Description |
 |---|---|
-| `snowfox node c` | Game hub for Steam, GOG, Retro |
-| `snowfox node s` | Server mode, minimal footprint |
-| `snowfox node d` | Standard desktop mode |
+| `snowfox set` | Settings overview (terminal) |
+| `snowfox set gui` | Settings overview (Rofi menu) |
+| `snowfox bt [on\|off\|toggle]` | Bluetooth control |
+| `snowfox kb [layout]` | Keyboard layout (e.g. `de`, `us`) |
+| `snowfox lang [locale]` | System language (e.g. `en_US.UTF-8`) |
+| `snowfox tz [zone]` | Timezone (e.g. `Europe/Berlin`) |
+| `snowfox user [passwd\|add\|del]` | User management |
+| `snowfox def [set] <key> <val>` | Default applications |
+
+### Node & AI
+
+| Command | Description |
+|---|---|
+| `snowfox node [desktop\|server\|console]` | System mode (short forms `d`, `s`, `c` also work) |
+| `snowfox ai` | Offline AI (Ollama) |
+
+- `desktop` — standard desktop mode
+- `server` — server mode, minimal footprint
+- `console` — game hub for Steam, GOG, Retro
+<!-- | `snowfox mesh` | P2P mesh network (Reticulum) | -->
 
 ### System Profiles
 
@@ -356,8 +382,8 @@ i3 starts automatically from TTY1.
 | `Super + R` | Resize mode |
 | `Super + Shift + R` | Reload i3 |
 | `Super + Shift + E` | Power menu |
-| `Print` | Screenshot |
-| `Super + Print` | Area screenshot |
+| `Print` | Screenshot (full screen → clipboard + saved) |
+| `Super + Print` | Area screenshot + annotation → clipboard |
 
 ---
 
@@ -375,6 +401,7 @@ i3 starts automatically from TTY1.
 | Notifications | dunst |
 | Clipboard | clip-saver + clipnotify |
 | File manager | pcmanfm |
+| Code editor | geany + plugins |
 | System info | fastfetch |
 | Screen lock | i3lock + xss-lock (Smart Lock) |
 | Media player | mpv + yt-dlp |
@@ -387,10 +414,11 @@ i3 starts automatically from TTY1.
 | Bluetooth UI | bluetui |
 | Cursor | Bibata-Modern-Classic |
 | Night light | redshift |
-| Screenshot | scrot |
+| Screenshot | flameshot (+ scrot as fallback) |
 | Brightness | brightnessctl |
 | Media control | playerctl |
 | Printer | cups |
+| GPU tool | (none — BIOS only) |
 | GTK theme | Arc-Dark + SnowFox overrides |
 | Thermal | thermald |
 
