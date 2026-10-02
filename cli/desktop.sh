@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================================
 #  SnowFoxOS — CLI Module: Desktop
-#  Autostart, Layout, Apps, WebApps
+#  Autostart, Layout, WebApps
 #  Copyright (c) 2026 Alexander Valentin Ludwig (Xr7-Code)
 # ============================================================
 
@@ -34,7 +34,7 @@ cmd_start() {
 _auto_list() {
     header "Autostart"
 
-    # ── Custom autostart entries (snowfox-managed) ──────────
+    # ── User applications (snowfox-managed) ─────────────────
     local AUTO_DIR="$HOME/.config/autostart"
     section "User Applications"
 
@@ -42,9 +42,8 @@ _auto_list() {
         local found=false
         for desktop in "$AUTO_DIR"/*.desktop; do
             [[ -e "$desktop" ]] || continue
-            local name
+            local name hidden
             name=$(grep -m1 "^Name=" "$desktop" | cut -d= -f2-)
-            local hidden
             hidden=$(grep -m1 "^Hidden=" "$desktop" | cut -d= -f2-)
             [[ -z "$name" ]] && name=$(basename "$desktop" .desktop)
 
@@ -55,14 +54,12 @@ _auto_list() {
             fi
             found=true
         done
-        if ! $found; then
-            info "  No user autostart entries."
-        fi
+        $found || info "  No user autostart entries."
     else
         info "  No autostart directory found."
     fi
 
-    # ── i3 exec entries (system/desktop components) ────────
+    # ── i3 session components ───────────────────────────────
     section "i3 Session"
 
     local i3_entries
@@ -97,7 +94,6 @@ _auto_enable() {
     local target="$1"
     [[ -z "$target" ]] && err "Usage: snowfox auto enable <program>" && exit 1
 
-    # Try i3 config first
     if grep -q "^#exec.*$target" "$I3_CONFIG" 2>/dev/null; then
         sed -i "s|^#exec \(.*$target.*\)|exec \1|" "$I3_CONFIG"
         i3-msg reload &>/dev/null || true
@@ -105,7 +101,6 @@ _auto_enable() {
         return
     fi
 
-    # Try user autostart
     local desktop="$HOME/.config/autostart/$target.desktop"
     if [[ -f "$desktop" ]]; then
         sed -i 's/^Hidden=true/Hidden=false/' "$desktop"
@@ -120,7 +115,6 @@ _auto_disable() {
     local target="$1"
     [[ -z "$target" ]] && err "Usage: snowfox auto disable <program>" && exit 1
 
-    # Try i3 config first
     if grep -q "^exec.*$target" "$I3_CONFIG" 2>/dev/null; then
         sed -i "s|^exec \(.*$target.*\)|#exec \1|" "$I3_CONFIG"
         i3-msg reload &>/dev/null || true
@@ -128,7 +122,6 @@ _auto_disable() {
         return
     fi
 
-    # Try user autostart
     local desktop="$HOME/.config/autostart/$target.desktop"
     if [[ -f "$desktop" ]]; then
         sed -i 's/^Hidden=false/Hidden=true/' "$desktop"
@@ -148,17 +141,17 @@ cmd_layout() {
             i3-msg "workspace_layout default" &>/dev/null
             i3-msg "[class=\".*\"] floating disable" &>/dev/null || true
             sed -i 's/^for_window \[class=".*"\] floating enable/# for_window [class=".*"] floating enable/' \
-                ~/.config/i3/config 2>/dev/null || true
+                "$I3_CONFIG" 2>/dev/null || true
             i3-msg reload &>/dev/null
             ok "Layout: ${BOLD}Tiling${RESET}"
             info "  New windows are arranged side by side (i3 default)"
             ;;
         floating)
-            if grep -q 'for_window \[class=".*"\] floating enable' ~/.config/i3/config 2>/dev/null; then
+            if grep -q 'for_window \[class=".*"\] floating enable' "$I3_CONFIG" 2>/dev/null; then
                 sed -i 's/^# for_window \[class=".*"\] floating enable/for_window [class=".*"] floating enable/' \
-                    ~/.config/i3/config
+                    "$I3_CONFIG"
             else
-                echo 'for_window [class=".*"] floating enable' >> ~/.config/i3/config
+                echo 'for_window [class=".*"] floating enable' >> "$I3_CONFIG"
             fi
             i3-msg reload &>/dev/null
             ok "Layout: ${BOLD}Floating${RESET}"
@@ -166,7 +159,7 @@ cmd_layout() {
             ;;
         status|"")
             header "Window Layout"
-            if grep -q '^for_window \[class=".*"\] floating enable' ~/.config/i3/config 2>/dev/null; then
+            if grep -q '^for_window \[class=".*"\] floating enable' "$I3_CONFIG" 2>/dev/null; then
                 row "Current" "Floating (classic desktop)" "$CYAN"
             else
                 row "Current" "Tiling (i3 default)" "$CYAN"
@@ -184,168 +177,16 @@ cmd_layout() {
 }
 
 # ============================================================
-# snowfox apps — Installed applications (Rofi entries)
-# ============================================================
-cmd_apps() {
-    case "$1" in
-        list|"")
-            _apps_list
-            ;;
-        remove)
-            _apps_remove "$2"
-            ;;
-        find|install)
-            # Placeholder — not yet implemented
-            header "App Store"
-            warn "Not implemented yet."
-            info "  Planned: search and install packages from the terminal."
-            info "  Current workaround: sudo apt install <package>"
-            echo ""
-            ;;
-        *)
-            err "Usage: snowfox apps [list|remove|find]"
-            exit 1
-            ;;
-    esac
-}
-
-APPS_CACHE_DIR="$HOME/.cache/snowfox"
-APPS_LIST_FILE="$APPS_CACHE_DIR/apps.list"
-APPS_DESKTOP_DIRS=("/usr/share/applications" "$HOME/.local/share/applications")
-
-APPS_PROTECTED=(
-    i3 i3-wm i3status i3lock polybar rofi dunst
-    xorg xserver-xorg-core xinit x11-xserver-utils
-    network-manager bluez systemd dbus
-    pipewire pipewire-pulse wireplumber
-    kitty pcmanfm sudo
-)
-
-_apps_is_protected() {
-    local pkg="$1"
-    for p in "${APPS_PROTECTED[@]}"; do
-        [[ "$pkg" == "$p" ]] && return 0
-    done
-    return 1
-}
-
-_apps_build_list() {
-    mkdir -p "$APPS_CACHE_DIR"
-    > "$APPS_LIST_FILE"
-    local count=1
-
-    for dir in "${APPS_DESKTOP_DIRS[@]}"; do
-        [[ -d "$dir" ]] || continue
-        for file in "$dir"/*.desktop; do
-            [[ -e "$file" ]] || continue
-            grep -q "^NoDisplay=true" "$file" 2>/dev/null && continue
-
-            local app_name
-            app_name=$(grep -m1 "^Name=" "$file" | cut -d= -f2-)
-            [[ -z "$app_name" ]] && app_name="$(basename "$file" .desktop)"
-
-            local file_name package_name
-            file_name=$(basename "$file")
-            package_name=$(dpkg -S "applications/$file_name" 2>/dev/null | cut -d: -f1 | head -1)
-            [[ -z "$package_name" ]] && package_name="manual"
-
-            echo "${count}|${app_name}|${package_name}|${file}" >> "$APPS_LIST_FILE"
-            ((count++))
-        done
-    done
-}
-
-_apps_list() {
-    info "Reading installed applications..."
-    _apps_build_list
-
-    header "Installed Apps"
-
-    printf "  %-4s %-32s %s\n" "ID" "App" "Package"
-    divider
-
-    while IFS='|' read -r id name pkg _; do
-        if [[ "$pkg" == "manual" ]]; then
-            printf "  ${CYAN}%-4s${RESET} %-32s ${GRAY}(manual)${RESET}\n" "$id" "$name"
-        elif _apps_is_protected "$pkg"; then
-            printf "  ${CYAN}%-4s${RESET} %-32s ${ORANGE}%s [protected]${RESET}\n" "$id" "$name" "$pkg"
-        else
-            printf "  ${CYAN}%-4s${RESET} %-32s ${GRAY}%s${RESET}\n" "$id" "$name" "$pkg"
-        fi
-    done < "$APPS_LIST_FILE"
-
-    divider
-    info "Remove: snowfox apps remove <ID>"
-    echo ""
-}
-
-_apps_remove() {
-    local id="$1"
-    [[ -z "$id" ]] && err "Usage: snowfox apps remove <ID>" && exit 1
-
-    if [[ ! -f "$APPS_LIST_FILE" ]]; then
-        warn "No list cached — building..."
-        _apps_build_list
-    fi
-
-    local match
-    match=$(grep "^${id}|" "$APPS_LIST_FILE")
-    if [[ -z "$match" ]]; then
-        err "ID '$id' not found."
-        info "  Show list: snowfox apps list"
-        exit 1
-    fi
-
-    local app_name pkg desktop_file
-    app_name=$(echo "$match" | cut -d'|' -f2)
-    pkg=$(echo "$match" | cut -d'|' -f3)
-    desktop_file=$(echo "$match" | cut -d'|' -f4)
-
-    if [[ "$pkg" != "manual" ]] && _apps_is_protected "$pkg"; then
-        err "'$app_name' ($pkg) is a system component and cannot be removed."
-        exit 1
-    fi
-
-    fox "App: ${BOLD}$app_name${RESET}"
-    [[ "$pkg" != "manual" ]] && info "  Package: $pkg"
-    echo ""
-    read -rp "$(echo -e ${ORANGE}${BOLD}"Really remove? [y/N]: "${RESET})" CONFIRM
-
-    if [[ "$CONFIRM" =~ ^[yY]$ ]]; then
-        if [[ "$pkg" == "manual" ]]; then
-            rm -f "$desktop_file"
-            ok "Desktop entry removed: $app_name"
-        else
-            sudo apt-get purge -y "$pkg" && \
-                sudo apt-get autoremove -y && \
-                ok "'$app_name' uninstalled ($pkg)" || \
-                err "Uninstall failed"
-        fi
-        rm -f "$APPS_LIST_FILE"
-    else
-        info "Cancelled."
-    fi
-}
-
-# ============================================================
 # snowfox web — WebApps (Zen Browser, app mode)
 # ============================================================
 cmd_webapp() {
     mkdir -p "$WEBAPP_DIR" "$WEBAPP_DESK" "$WEBAPP_ICONS"
 
     case "$1" in
-        add)
-            _webapp_add "$2" "$3"
-            ;;
-        list)
-            _webapp_list
-            ;;
-        open)
-            _webapp_open "$2"
-            ;;
-        remove)
-            _webapp_remove "$2"
-            ;;
+        add)    _webapp_add "$2" "$3" ;;
+        list)   _webapp_list ;;
+        open)   _webapp_open "$2" ;;
+        remove) _webapp_remove "$2" ;;
         *)
             header "snowfox web"
             info "  snowfox web add <name> <url>  — create new web app"
@@ -397,14 +238,9 @@ _webapp_add() {
     [[ "$icon" == "web-browser" ]] && warn "No favicon found — using default icon"
 
     # ── Zen Browser app mode ─────────────────────────────────
-    # Zen has no native --app flag. We launch it as a separate instance
-    # with a dedicated profile directory and no browser UI via CSS.
-    # The custom profile ensures isolation from the main browser session.
     local profile_dir="$WEBAPP_DIR/$safe/zen-profile"
-    mkdir -p "$profile_dir"
-
-    # Create userChrome.css to hide all browser UI (tabs, URL bar, sidebar)
     mkdir -p "$profile_dir/chrome"
+
     cat > "$profile_dir/chrome/userChrome.css" << 'CSSEOF'
 /* SnowFox WebApp — hide all browser chrome */
 #navigator-toolbox,
@@ -416,13 +252,11 @@ _webapp_add() {
 #TabsToolbar {
     display: none !important;
 }
-/* Full window content */
 #browser {
     margin-top: 0 !important;
 }
 CSSEOF
 
-    # Preferences for app mode
     cat > "$profile_dir/user.js" << 'JSEOF'
 // SnowFox WebApp preferences
 user_pref("browser.tabs.drawInTitlebar", false);
@@ -475,9 +309,7 @@ _webapp_list() {
         found=true
     done
 
-    if ! $found; then
-        info "No WebApps found."
-    fi
+    $found || info "No WebApps found."
     echo ""
 }
 
