@@ -1,7 +1,7 @@
 #!/bin/bash
-
 # ============================================================
 #  SnowFoxOS v3.0 — Installer Utils
+#  Copyright (c) 2026 Alexander Valentin Ludwig (Xr7-Code)
 # ============================================================
 
 PURPLE='\033[0;35m'
@@ -16,22 +16,25 @@ RESET='\033[0m'
 info()    { echo -e "${PURPLE}${BOLD}[SnowFox]${RESET} $1"; }
 success() { echo -e "${GREEN}${BOLD}[  OK  ]${RESET} $1"; }
 warn()    { echo -e "${ORANGE}${BOLD}[ WARN ]${RESET} $1"; }
-error()   { echo -e "${RED}${BOLD}[FEHLER]${RESET} $1"; exit 1; }
-step()    { echo -e "\n${PURPLE}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}";
-            echo -e "${PURPLE}${BOLD}  $1${RESET}";
-            echo -e "${PURPLE}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}\n"; }
+error()   { echo -e "${RED}${BOLD}[FAILED]${RESET} $1"; exit 1; }
+
+step() {
+    echo -e "\n${PURPLE}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    echo -e "${PURPLE}${BOLD}  $1${RESET}"
+    echo -e "${PURPLE}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}\n"
+}
 
 ask_install() {
     echo ""
-    read -rp "$(echo -e ${PURPLE}${BOLD}"[SnowFox] $1 installieren? [j/n]: "${RESET})" choice
-    [[ "$choice" =~ ^[jJ]$ ]]
+    read -rp "$(echo -e ${PURPLE}${BOLD}"[SnowFox] Install $1? [y/N]: "${RESET})" choice
+    [[ "$choice" =~ ^[yY]$ ]]
 }
 
 wait_apt() {
     local i=0
     while fuser /var/lib/dpkg/lock-frontend /var/lib/apt/lists/lock > /dev/null 2>&1; do
-        [[ $i -eq 0 ]] && info "Warte auf apt-Lock..."
+        [[ $i -eq 0 ]] && info "Waiting for apt lock..."
         sleep 2; i=$((i+1))
-        [[ $i -gt 60 ]] && error "apt-Lock nach 120s nicht frei"
+        [[ $i -gt 60 ]] && error "apt lock not released after 120s"
     done
 }
