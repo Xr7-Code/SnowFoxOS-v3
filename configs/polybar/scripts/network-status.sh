@@ -1,24 +1,28 @@
 #!/bin/bash
+# ============================================================
+#  SnowFoxOS — Polybar Network Status Script
+#  Path: ~/.config/polybar/scripts/network-status.sh
+# ============================================================
 
-# Prüfe mit nmcli
+# Check via nmcli
 if command -v nmcli &> /dev/null; then
-    # WLAN SSID
-    SSID=$(nmcli -t -f ACTIVE,SSID dev wifi | grep '^ja:' | cut -d: -f2)
+    # WiFi SSID
+    SSID=$(nmcli -t -f ACTIVE,SSID dev wifi | grep '^yes:' | cut -d: -f2)
     if [ -n "$SSID" ]; then
         echo "󰤨 $SSID"
         exit 0
     fi
-    
-    # Prüfe LAN
-    CONNECTIONS=$(nmcli -t -f TYPE,STATE device status | grep '^ethernet:verbunden' || true)
+
+    # Check LAN
+    CONNECTIONS=$(nmcli -t -f TYPE,STATE device status | grep '^ethernet:connected' || true)
     if [ -n "$CONNECTIONS" ]; then
         echo "󰌘 LAN"
         exit 0
     fi
 fi
 
-# Fallback: manuelle Prüfung
-# Prüfe WLAN mit iwgetid
+# Fallback: manual check
+# Check WiFi via iwgetid
 if command -v iwgetid &> /dev/null; then
     SSID=$(iwgetid -r)
     if [ -n "$SSID" ]; then
@@ -27,7 +31,7 @@ if command -v iwgetid &> /dev/null; then
     fi
 fi
 
-# Prüfe LAN (Kabel)
+# Check LAN (cable)
 for iface in /sys/class/net/en*; do
     if [ -e "$iface/carrier" ]; then
         LAN_STATUS=$(cat "$iface/carrier" 2>/dev/null)
@@ -38,5 +42,5 @@ for iface in /sys/class/net/en*; do
     fi
 done
 
-# Keine Verbindung
+# No connection
 echo "󰤭 offline"
