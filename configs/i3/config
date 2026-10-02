@@ -1,11 +1,11 @@
 # ============================================================
-#   SnowFoxOS v3 — i3 Konfiguration (SnowFox Palette)
+#   SnowFoxOS v3 — i3 Configuration (SnowFox Palette)
 # ============================================================
 
 set $mod Mod4
 set $term kitty
 
-# ── Farben ──────────────────────────────────────────────────
+# ── Colors ──────────────────────────────────────────────────
 set $purple    #9d6fe8
 set $purple_lt #b899ff
 set $bg        #1a1825
@@ -14,12 +14,12 @@ set $fg        #e0d9f5
 set $gray      #6e6a8a
 set $orange    #ff79c6
 
-# ── Schrift ─────────────────────────────────────────────────
+# ── Font ────────────────────────────────────────────────────
 font pango:JetBrainsMono Nerd Font 10
 
-# ── Fenster-Dekoration ──────────────────────────────────────
-# Tiling: kein Rahmen, kein Titel — clean
-# Floating: schmale Titelleiste zum Anfassen + lila Rahmen
+# ── Window Decoration ───────────────────────────────────────
+# Tiling: no border, no title — clean
+# Floating: slim title bar to grab + purple border
 client.focused          $purple   $purple   $fg     $purple_lt $purple
 client.focused_inactive $bg2      $bg       $gray   $bg2       $bg2
 client.unfocused        $bg2      $bg       $gray   $bg2       $bg2
@@ -28,7 +28,7 @@ client.urgent           $orange   $bg2      $fg     $orange    $orange
 default_border none
 default_floating_border normal 2
 
-# Fenster-Regeln beim Start
+# Window rules on startup
 for_window [tiling] border none
 for_window [floating] border normal 2
 
@@ -64,27 +64,27 @@ bindsym $mod+p      exec ~/.config/snowfox-display.sh
 bindsym Print        exec --no-startup-id flameshot full -c -p ~/Pictures/Screenshots
 bindsym $mod+Print   exec --no-startup-id flameshot gui -c
 
-# ── Audio ────────────────────────────────────────────────────
+# ── Audio ───────────────────────────────────────────────────
 bindsym XF86AudioRaiseVolume exec wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+
 bindsym XF86AudioLowerVolume exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-
 bindsym XF86AudioMute        exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
 
-# ── Helligkeit ───────────────────────────────────────────────
+# ── Brightness ──────────────────────────────────────────────
 bindsym XF86MonBrightnessUp   exec brightnessctl set +5%
 bindsym XF86MonBrightnessDown exec brightnessctl set 5%-
 
-# ── Medien ───────────────────────────────────────────────────
+# ── Media ───────────────────────────────────────────────────
 bindsym XF86AudioPlay  exec playerctl play-pause
 bindsym XF86AudioNext  exec playerctl next
 bindsym XF86AudioPrev  exec playerctl previous
 
-# ── System ───────────────────────────────────────────────────
+# ── System ──────────────────────────────────────────────────
 bindsym $mod+q        kill
 bindsym $mod+Shift+r  reload
 bindsym $mod+Shift+e  exec ~/.config/powermenu.sh
 bindsym XF86PowerOff  exec --no-startup-id ~/.config/powermenu.sh
 
-# ── Fensterverwaltung ────────────────────────────────────────
+# ── Window Management ───────────────────────────────────────
 bindsym $mod+Left  focus left
 bindsym $mod+Right focus right
 bindsym $mod+Up    focus up
@@ -101,15 +101,15 @@ bindsym $mod+f fullscreen toggle
 bindsym $mod+s layout stacking
 bindsym $mod+t layout toggle split
 
-# Floating Toggle mit automatischer Rahmen- & Größenanpassung
+# Floating toggle with automatic border & size adjustment
 bindsym $mod+Shift+space floating toggle; [con_id="__focused__" floating] border normal 2, resize set 960 600, move position center; [con_id="__focused__" tiling] border none
 
 bindsym $mod+d           focus mode_toggle
 
-# Floating: Maus-Drag zum Verschieben (Titelleiste) + Mod+Klick als Fallback
+# Floating: mouse drag to move (title bar) + Mod+click as fallback
 floating_modifier $mod
 
-# ── Workspaces ───────────────────────────────────────────────
+# ── Workspaces ──────────────────────────────────────────────
 set $ws1 "1"
 set $ws2 "2"
 set $ws3 "3"
@@ -140,7 +140,7 @@ bindsym $mod+Shift+7 move container to workspace $ws7
 bindsym $mod+Shift+8 move container to workspace $ws8
 bindsym $mod+Shift+9 move container to workspace $ws9
 
-# ── Floating Regeln ──────────────────────────────────────────
+# ── Floating Rules ──────────────────────────────────────────
 for_window [class="Pavucontrol"]           floating enable, resize set 640 440
 for_window [class="Nm-connection-editor"]  floating enable
 for_window [class="System-config-printer"] floating enable
@@ -151,7 +151,7 @@ for_window [class="MEGAsync"]              floating enable, move position center
 for_window [title="MEGAsync"]              floating enable, move position center
 no_focus [class="MEGAsync"]
 
-# ── Resize Mode ──────────────────────────────────────────────
+# ── Resize Mode ─────────────────────────────────────────────
 mode "resize" {
     bindsym Left  resize shrink width  20px
     bindsym Right resize grow   width  20px
@@ -162,7 +162,7 @@ mode "resize" {
 }
 bindsym $mod+r mode "resize"
 
-# Polybar — kein i3bar
+# Polybar — no i3bar
 bar {
     i3bar_command :
 }
