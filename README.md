@@ -233,10 +233,10 @@ For comparison (community benchmarks, `free -h` `used` value — not directly co
 
 | Command | Description |
 |---|---|
-| `snowfox status` | RAM, disk, uptime, GPU mode, mic/camera status, network |
-| `snowfox battery` | Battery charge, power consumption, estimated runtime |
-| `snowfox profile [name]` | Switch profile: balanced, performance, battery, privacy |
-| `snowfox update` | System update including yt-dlp |
+| `snowfox st` | RAM, disk, uptime, GPU mode, mic/camera status, network |
+| `snowfox bat` | Battery charge, power consumption, estimated runtime |
+| `snowfox prof [name]` | Switch profile: balanced, performance, battery, privacy |
+| `snowfox up` | System update including yt-dlp |
 | `snowfox audit` | Active network connections with process and destination IP |
 
 ### Privacy & Hardware
@@ -244,29 +244,28 @@ For comparison (community benchmarks, `free -h` `used` value — not directly co
 | Command | Description |
 |---|---|
 | `snowfox tor on/off` | Tor mode with DNS protection and MAC randomization |
-| `snowfox airmode on/off` | Disable all wireless interfaces |
+| `snowfox air on/off` | Disable all wireless interfaces |
 | `snowfox kill mic` | Disable microphone at kernel level |
 | `snowfox kill cam` | Disable webcam |
 | `snowfox kill all` | Microphone + camera + wireless at once |
 | `snowfox kill restore` | Reset all kill switches |
-| `snowfox pass` | Local GPG-encrypted password storage |
 
 ### Media
 
 | Command | Description |
 |---|---|
 | `snowfox stream [search/URL]` | Stream video/audio directly in mpv — no browser, no tracking |
-| `snowfox download [search/URL]` | Download video or audio |
+| `snowfox dl [search/URL]` | Download video or audio |
 | `snowfox fetch <URL>` | High-speed download via 16 parallel connections |
 
 ### Tools
 
 | Command | Description |
 |---|---|
-| `snowfox autostart [list\|enable\|disable]` | Manage autostart |
-| `snowfox layout [tiling\|floating]` | Switch window mode |
-| `snowfox webapp [add\|list\|open\|remove]` | Manage web apps |
-| `snowfox network` | Network manager (nmtui) |
+| `snowfox auto [list\|enable\|disable]` | Manage autostart |
+| `snowfox lay [tiling\|floating]` | Switch window mode |
+| `snowfox web [add\|list\|open\|remove]` | Manage web apps |
+| `snowfox net` | Network manager (nmtui) |
 | `snowfox ai` | Local AI (Ollama) |
 <!-- | `snowfox mesh` | P2P mesh network (Reticulum) | -->
 
@@ -274,9 +273,9 @@ For comparison (community benchmarks, `free -h` `used` value — not directly co
 
 | Command | Description |
 |---|---|
-| `snowfox node console` | Game hub for Steam, GOG, Retro |
-| `snowfox node server` | Server mode, minimal footprint |
-| `snowfox node desktop` | Standard desktop mode |
+| `snowfox node c` | Game hub for Steam, GOG, Retro |
+| `snowfox node s` | Server mode, minimal footprint |
+| `snowfox node d` | Standard desktop mode |
 
 ### System Profiles
 
@@ -291,7 +290,7 @@ For comparison (community benchmarks, `free -h` `used` value — not directly co
 
 | Command | Description |
 |---|---|
-| `snowfox reset` | Resets to minimal Debian state — deletes all data |
+| `snowfox rst` | Resets to minimal Debian state — deletes all data |
 
 ---
 
