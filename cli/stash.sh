@@ -71,20 +71,19 @@ _stash_spinner_stop() {
 _stash_preview_size() {
     local pkg="$1"
 
-    # Download-Größe aus apt-cache (in Bytes)
+    # Paketgröße aus apt-cache (in Bytes)
     local size_bytes
     size_bytes=$(apt-cache show "$pkg" 2>/dev/null | grep -m1 '^Size:' | awk '{print $2}')
 
-    # Anzahl der Abhängigkeiten aus apt-get --print-uris (falls verfügbar)
-    local output deps="0"
-    output=$(apt-get --print-uris --yes install "$pkg" 2>&1)
-    local newly
+    # Abhängigkeitszahl aus apt-get -s Simulation
+    local output newly deps="0"
+    output=$(apt-get -s install "$pkg" 2>&1)
     newly=$(echo "$output" | grep -oP '\K[0-9]+(?= newly installed)' | head -1)
     if [[ -n "$newly" && "$newly" -gt 1 ]]; then
         deps=$((newly - 1))
     fi
 
-    # Größe in lesbares Format umwandeln
+    # Größe formatieren
     local size_str="unknown"
     if [[ -n "$size_bytes" && "$size_bytes" -gt 0 ]]; then
         if   [[ "$size_bytes" -ge 1073741824 ]]; then
