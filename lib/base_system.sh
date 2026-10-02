@@ -1,7 +1,7 @@
 #!/bin/bash
-
 # ============================================================
 #  SnowFoxOS v3.0 — Base System Setup
+#  Copyright (c) 2026 Alexander Valentin Ludwig (Xr7-Code)
 # ============================================================
 
 # Load utilities (assumes SCRIPT_DIR is set before sourcing)
@@ -10,10 +10,10 @@ source "$SCRIPT_DIR/lib/utils.sh"
 # Global variables from main script (assumed to be sourced/exported):
 # TARGET_USER, SCRIPT_DIR, DKMS_HOOKS
 
-info "Installiere für: ${BOLD}$TARGET_USER${RESET}"
+info "Installing for: ${BOLD}$TARGET_USER${RESET}"
 sleep 1
 
-step "1/10 — System aktualisieren"
+step "1/10 — System update"
 
 # DKMS_HOOKS is defined in the main script and assumed to be available
 DKMS_HOOKS=(
@@ -24,12 +24,12 @@ DKMS_HOOKS=(
 for hook in "${DKMS_HOOKS[@]}"; do
     [[ -f "$hook" ]] && mv "$hook" "${hook}.snowfox-bak"
 done
-info "DKMS-Hooks für Installer-Lauf deaktiviert"
+info "DKMS hooks disabled for installer run"
 
 systemctl disable apt-daily.service apt-daily.timer 2>/dev/null || true
 systemctl disable apt-daily-upgrade.service apt-daily-upgrade.timer 2>/dev/null || true
 systemctl stop apt-daily.service apt-daily-upgrade.service 2>/dev/null || true
-success "apt-daily deaktiviert"
+success "apt-daily disabled"
 
 cat > /etc/apt/sources.list << 'EOF'
 deb http://deb.debian.org/debian/ bookworm main contrib non-free non-free-firmware
@@ -77,41 +77,41 @@ apt-get install -y \
     qt5-style-plugins \
     qt6ct
 
-# ── dnsmasq deaktivieren (Konflikt mit systemd-resolved) ──
-info "Deaktiviere dnsmasq..."
+# ── Disable dnsmasq (conflicts with systemd-resolved) ────────
+info "Disabling dnsmasq..."
 systemctl stop dnsmasq 2>/dev/null || true
 systemctl disable dnsmasq 2>/dev/null || true
 systemctl mask dnsmasq 2>/dev/null || true
-success "dnsmasq deaktiviert"
+success "dnsmasq disabled"
 
-# ── systemd-resolved aktivieren ──────────────────────────────
-info "Aktiviere systemd-resolved..."
+# ── Enable systemd-resolved ──────────────────────────────────
+info "Enabling systemd-resolved..."
 systemctl enable --now systemd-resolved 2>/dev/null || true
 ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf 2>/dev/null || true
-success "systemd-resolved aktiviert"
+success "systemd-resolved enabled"
 
-# ── PATH-Erweiterung für /usr/sbin ────────────────────────────
-info "Füge /usr/sbin zum PATH hinzu..."
+# ── PATH extension for /usr/sbin ─────────────────────────────
+info "Adding /usr/sbin to PATH..."
 if ! grep -q "export PATH=\$PATH:/usr/sbin" /etc/profile; then
     echo 'export PATH=$PATH:/usr/sbin' >> /etc/profile
-    success "PATH-Erweiterung zu /etc/profile hinzugefügt"
+    success "PATH extension added to /etc/profile"
 else
-    info "PATH-Erweiterung bereits vorhanden"
+    info "PATH extension already present in /etc/profile"
 fi
 
-# Auch für den Benutzer in ~/.bashrc
+# Also for the user in ~/.bashrc
 if ! grep -q "export PATH=\$PATH:/usr/sbin" "/home/$TARGET_USER/.bashrc"; then
     echo 'export PATH=$PATH:/usr/sbin' >> "/home/$TARGET_USER/.bashrc"
-    success "PATH-Erweiterung zu ~/.bashrc hinzugefügt"
+    success "PATH extension added to ~/.bashrc"
 else
-    info "PATH-Erweiterung in ~/.bashrc bereits vorhanden"
+    info "PATH extension already present in ~/.bashrc"
 fi
 
 sudo -u "$TARGET_USER" xdg-user-dirs-update
-success "System aktualisiert"
+success "System updated"
 
-# ── fastfetch installieren ────────────────────────────────────
-info "Installiere fastfetch..."
+# ── Install fastfetch ────────────────────────────────────────
+info "Installing fastfetch..."
 FASTFETCH_DEB_URL=$(curl -sf https://api.github.com/repos/fastfetch-cli/fastfetch/releases/latest 2>/dev/null \
     | python3 -c "
 import sys, json
@@ -127,52 +127,52 @@ if [[ -n "$FASTFETCH_DEB_URL" ]]; then
     curl -L "$FASTFETCH_DEB_URL" -o /tmp/fastfetch.deb 2>/dev/null && \
         dpkg -i /tmp/fastfetch.deb 2>/dev/null && \
         rm -f /tmp/fastfetch.deb && \
-        success "fastfetch installiert" || \
-        warn "fastfetch Installation fehlgeschlagen"
+        success "fastfetch installed" || \
+        warn "fastfetch installation failed"
 else
-    # Fallback: direkter Download des bekannten Pakets
+    # Fallback: direct download of the known package
     curl -L "https://github.com/fastfetch-cli/fastfetch/releases/latest/download/fastfetch-linux-amd64.deb" \
         -o /tmp/fastfetch.deb 2>/dev/null && \
         dpkg -i /tmp/fastfetch.deb 2>/dev/null && \
         rm -f /tmp/fastfetch.deb && \
-        success "fastfetch installiert (Fallback)" || \
-        warn "fastfetch Installation fehlgeschlagen — manuell installieren"
+        success "fastfetch installed (fallback)" || \
+        warn "fastfetch installation failed — install manually"
 fi
 
-# ── X11 / startx ohne sudo ────────────────────────────────────
-# Debian 12 liefert Xorg ohne SUID-Bit (rootless Xorg).
-# Für "startx" direkt vom TTY ohne sudo sind zwei Dinge nötig:
+# ── X11 / startx without sudo ────────────────────────────────
+# Debian 12 ships Xorg without the SUID bit (rootless Xorg).
+# For "startx" directly from the TTY without sudo, two things are needed:
 #
 # 1. Xwrapper.config:
-#    allowed_users=anybody  → jeder darf X starten (nicht nur console-Owner)
-#    needs_root_rights=auto → Xorg fragt systemd-logind nach Geräte-Zugriff.
-#                             Bei echter TTY-Session (getty → PAM → logind)
-#                             bekommt Xorg ACLs auf /dev/dri/* und /dev/input/*.
-#                             Das ist sicherer als needs_root_rights=yes (SUID).
+#    allowed_users=anybody  → anyone may start X (not just console owner)
+#    needs_root_rights=auto → Xorg asks systemd-logind for device access.
+#                             In a real TTY session (getty → PAM → logind)
+#                             Xorg receives ACLs on /dev/dri/* and /dev/input/*.
+#                             This is safer than needs_root_rights=yes (SUID).
 #
-# 2. Gruppen:
+# 2. Groups:
 #    video  → /dev/dri/* (GPU/DRM)
-#    input  → /dev/input/* (Tastatur, Maus) — Debian vergibt das NICHT automatisch
-#    render → /dev/dri/renderD* (GPU-Rendering)
-#    tty    → /dev/tty* (TTY-Wechsel durch X)
-#    audio  → /dev/snd/* (PipeWire, zur Sicherheit)
+#    input  → /dev/input/* (keyboard, mouse) — Debian does NOT assign this automatically
+#    render → /dev/dri/renderD* (GPU rendering)
+#    tty    → /dev/tty* (TTY switching by X)
+#    audio  → /dev/snd/* (PipeWire, for safety)
 #
-# Ohne Gruppeneinträge schlägt startx mit "No screens found" oder
-# "Cannot open /dev/dri/card0" fehl — auch mit allowed_users=anybody.
+# Without group membership, startx fails with "No screens found" or
+# "Cannot open /dev/dri/card0" — even with allowed_users=anybody.
 
 mkdir -p /etc/X11
 cat > /etc/X11/Xwrapper.config << 'XWEOF'
 allowed_users=anybody
 needs_root_rights=auto
 XWEOF
-success "Xwrapper.config gesetzt (allowed_users=anybody, needs_root_rights=auto)"
+success "Xwrapper.config set (allowed_users=anybody, needs_root_rights=auto)"
 
-info "Setze Gruppen für $TARGET_USER (video, input, render, tty, audio)..."
+info "Setting groups for $TARGET_USER (video, input, render, tty, audio)..."
 for grp in video input render tty audio; do
     if getent group "$grp" > /dev/null 2>&1; then
         usermod -aG "$grp" "$TARGET_USER"
     else
-        warn "Gruppe '$grp' nicht gefunden — wird übersprungen"
+        warn "Group '$grp' not found — skipping"
     fi
 done
-success "Gruppen gesetzt — $TARGET_USER kann startx ohne sudo verwenden"
+success "Groups set — $TARGET_USER can use startx without sudo"
