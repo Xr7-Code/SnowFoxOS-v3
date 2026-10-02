@@ -1,6 +1,7 @@
 /* ============================================================
-   SnowFox — GTK3 Color Override (komplett, mit Polish)
-   Ablegen unter: ~/.config/gtk-3.0/gtk.css
+   SnowFox — GTK3 Color Override (complete, with polish)
+   Place at: ~/.config/gtk-3.0/gtk.css
+   Copyright (c) 2026 Alexander Valentin Ludwig (Xr7-Code)
    ============================================================ */
 
 /* ── Palette ───────────────────────────────────────────────── */
@@ -18,7 +19,7 @@
 @define-color warning_color    #e8c97a;
 @define-color border_color     #2a2840;
 
-/* Arc-Dark interne Tokens überschreiben */
+/* Override Arc-Dark internal tokens */
 @define-color theme_bg_color             #1a1825;
 @define-color theme_fg_color             #e0d9f5;
 @define-color theme_base_color           #201e2e;
@@ -51,7 +52,7 @@
 @define-color wm_button_hover_bg         #9d6fe8;
 @define-color wm_button_close_bg         #e87a7a;
 
-/* ── Basis-Flächen ─────────────────────────────────────────── */
+/* ── Base surfaces ─────────────────────────────────────────── */
 * {
     color:            @fg_color;
     background-color: transparent;
@@ -125,7 +126,7 @@ button.destructive-action {
     border-color:     @error_color;
 }
 
-/* ── Werkzeugleiste ────────────────────────────────────────── */
+/* ── Toolbar ───────────────────────────────────────────────── */
 toolbar, .toolbar {
     background-color: @bg_color;
     padding:          3px 4px;
@@ -156,7 +157,7 @@ toolbar separator {
     margin:           4px 4px;
 }
 
-/* ── Eingabefelder & Textflächen ───────────────────────────── */
+/* ── Entry fields & text views ─────────────────────────────── */
 entry, spinbutton {
     background-color: @bg_alt_color;
     background-image: none;
@@ -190,7 +191,7 @@ textview border {
     background-color: transparent;
 }
 
-/* ── TEXT-MARKIERUNG (Browser, Textfelder, Labels, Editoren) ─ */
+/* ── TEXT SELECTION (browser, text fields, labels, editors) ── */
 selection,
 entry selection,
 spinbutton selection,
@@ -202,7 +203,7 @@ label selection,
     color:            @selected_fg_color;
 }
 
-/* Fenster/Widget nicht aktiv: etwas dunkler, aber weiterhin sichtbar */
+/* Window/widget inactive: slightly darker, but still visible */
 selection:backdrop,
 entry selection:backdrop,
 textview text selection:backdrop,
@@ -213,7 +214,7 @@ label selection:backdrop,
     color:            @selected_fg_color;
 }
 
-/* ── Menü ──────────────────────────────────────────────────── */
+/* ── Menu ──────────────────────────────────────────────────── */
 menubar {
     background-color: @bg_color;
     color:            @fg_color;
@@ -278,7 +279,7 @@ menu separator {
     color:            @selected_fg_color;
 }
 
-/* ── TreeView / Listen / Dateimanager ──────────────────────── */
+/* ── TreeView / lists / file managers ──────────────────────── */
 treeview, treeview.view, .view {
     background-color: @bg_color;
     color:            @fg_color;
@@ -290,7 +291,7 @@ treeview row {
 }
 
 treeview.view cell {
-    padding: 2px 4px;   /* Zeilenabstand; von manchen Apps ignoriert */
+    padding: 2px 4px;   /* row spacing; ignored by some apps */
 }
 
 treeview.view:hover,
@@ -298,9 +299,9 @@ treeview row:hover {
     background-color: @bg_hover_color;
 }
 
-/* Ausgewählte Zeilen (Geany-Dateiliste, Nautilus, Thunar, etc.)
-   Kein !important – GTK3 unterstützt das nicht.
-   Höhere Spezifität + :focus/:backdrop/:hover-Varianten ersetzen es. */
+/* Selected rows (Geany file list, Nautilus, Thunar, etc.)
+   No !important — GTK3 does not support it.
+   Higher specificity + :focus/:backdrop/:hover variants replace it. */
 treeview.view:selected,
 treeview.view:selected:focus,
 treeview.view:selected:hover,
@@ -330,7 +331,7 @@ cell:selected:focus {
     color:            @selected_fg_color;
 }
 
-/* Selektierte Kinder-Widgets (Labels, Icons in Zeilen) */
+/* Selected child widgets (labels, icons in rows) */
 treeview row:selected label,
 list row:selected label,
 listbox row:selected label,
@@ -339,7 +340,7 @@ row:selected image {
     color: @selected_fg_color;
 }
 
-/* Fenster/Widget nicht aktiv */
+/* Window/widget inactive */
 treeview.view:selected:backdrop,
 treeview.view row:selected:backdrop,
 treeview row:selected:backdrop,
@@ -353,7 +354,7 @@ cell:selected:backdrop {
     color:            @selected_fg_color;
 }
 
-/* Baum-Pfeile (Expander) */
+/* Tree expander arrows */
 treeview.view.expander {
     -gtk-icon-source: -gtk-icontheme("pan-end-symbolic");
     color:            @fg_dim_color;
@@ -368,7 +369,7 @@ treeview.view.expander:checked {
     color:            @selected_bg_color;
 }
 
-/* Spaltenköpfe von Tabellen */
+/* Table column headers */
 treeview header button {
     background-color: @bg_alt_color;
     background-image: none;
@@ -393,7 +394,7 @@ treeview header button:checked {
     color:            @selected_fg_color;
 }
 
-/* ── Notebook (Tabs) ───────────────────────────────────────── */
+/* ── Notebook (tabs) ───────────────────────────────────────── */
 notebook > header {
     background-color: @bg_alt_color;
     border-color:     @border_color;
@@ -417,7 +418,7 @@ notebook > header > tabs > tab:hover {
     color:            @fg_color;
 }
 
-/* Farbige Linie am aktiven Tab, je nach Tab-Position */
+/* Colored line on active tab, depending on tab position */
 notebook > header.top > tabs > tab:checked {
     border-bottom: 2px solid @selected_bg_color;
 }
@@ -434,7 +435,7 @@ notebook > header.right > tabs > tab:checked {
     border-left: 2px solid @selected_bg_color;
 }
 
-/* ── Scrollfenster & Scrollbar ─────────────────────────────── */
+/* ── Scrolled window & scrollbar ───────────────────────────── */
 scrolledwindow.frame,
 scrolledwindow {
     border-color: alpha(@fg_dim_color, 0.35);
@@ -568,8 +569,8 @@ label:disabled  { color: @fg_dim_color; }
 *:link    { color: @purple_hover; }
 *:visited { color: @purple_active; }
 
-/* ── Abgerundete Ecken ─────────────────────────────────────── */
-/* (Tabs bewusst ausgenommen: sie haben eckige Form mit Akzentlinie) */
+/* ── Rounded corners ───────────────────────────────────────── */
+/* (tabs intentionally excluded: they are square with accent line) */
 button, entry, menu, menuitem, popover {
     border-radius: 5px;
 }
