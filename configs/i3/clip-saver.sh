@@ -1,10 +1,11 @@
 #!/bin/bash
 # ============================================================
 #   SnowFoxOS v3 — Clip-Saver
-#   Hält X11-Clipboard-Daten (Text/PNG) aktiv, auch wenn das
-#   Quellfenster geschlossen wird. Dateien (PCManFM, Thunar,
-#   Nautilus ...) werden bewusst NICHT angefasst.
+#   Keeps X11 clipboard data (text/PNG) alive even when the
+#   source window is closed. File operations (PCManFM, Thunar,
+#   Nautilus ...) are deliberately NOT touched.
 #   Requires: clipnotify, xclip
+#   Copyright (c) 2026 Alexander Valentin Ludwig (Xr7-Code)
 # ============================================================
 
 tmp=$(mktemp)
@@ -14,8 +15,8 @@ last_hash=""
 while clipnotify; do
     targets=$(xclip -selection clipboard -t TARGETS -o 2>/dev/null) || continue
 
-    # Datei-Kopieren/Ausschneiden: nie anfassen, sonst gehen
-    # x-special/gnome-copied-files und text/uri-list verloren.
+    # File copy/cut: never touch, otherwise x-special/gnome-copied-files
+    # and text/uri-list are lost.
     if grep -qE 'x-special/|text/uri-list|XdndDirectSave' <<<"$targets"; then
         last_hash=""
         continue
@@ -32,11 +33,11 @@ while clipnotify; do
     xclip -selection clipboard -t "$type" -o >"$tmp" 2>/dev/null || continue
     [ -s "$tmp" ] || continue
 
-    # Schleifenschutz: Unser eigenes xclip löst clipnotify erneut aus.
+    # Loop protection: our own xclip triggers clipnotify again.
     hash=$(sha256sum <"$tmp" | cut -d' ' -f1)
     [ "$hash" = "$last_hash" ] && continue
     last_hash="$hash"
 
-    # Inhalt neu verankern (xclip läuft im Hintergrund weiter)
+    # Re-anchor content (xclip keeps running in the background)
     xclip -selection clipboard -t "$type" -i <"$tmp" 2>/dev/null
 done
