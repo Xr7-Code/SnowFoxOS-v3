@@ -70,21 +70,35 @@ _stash_spinner_stop() {
 # ── Size preview via apt-get --print-uris ────────────────────
 _stash_preview_size() {
     local pkg="$1"
-    local output
+
+    # Download-Größe aus apt-cache (in Bytes)
+    local size_bytes
+    size_bytes=$(apt-cache show "$pkg" 2>/dev/null | grep -m1 '^Size:' | awk '{print $2}')
+
+    # Anzahl der Abhängigkeiten aus apt-get --print-uris (falls verfügbar)
+    local output deps="0"
     output=$(apt-get --print-uris --yes install "$pkg" 2>&1)
-
-    local download_size
-    download_size=$(echo "$output" | grep -oP "Need to get \K[0-9.,]+ ?[kMG]?B" | head -1)
-
     local newly
-    newly=$(echo "$output" | grep -oP "\K[0-9]+(?= newly installed)" | head -1)
-
-    local deps="0"
+    newly=$(echo "$output" | grep -oP '\K[0-9]+(?= newly installed)' | head -1)
     if [[ -n "$newly" && "$newly" -gt 1 ]]; then
         deps=$((newly - 1))
     fi
 
-    echo "${download_size:-unknown}|${deps}"
+    # Größe in lesbares Format umwandeln
+    local size_str="unknown"
+    if [[ -n "$size_bytes" && "$size_bytes" -gt 0 ]]; then
+        if   [[ "$size_bytes" -ge 1073741824 ]]; then
+            size_str=$(awk "BEGIN {printf \"%.1f GB\", $size_bytes/1073741824}")
+        elif [[ "$size_bytes" -ge 1048576 ]]; then
+            size_str=$(awk "BEGIN {printf \"%.1f MB\", $size_bytes/1048576}")
+        elif [[ "$size_bytes" -ge 1024 ]]; then
+            size_str=$(awk "BEGIN {printf \"%.0f KB\", $size_bytes/1024}")
+        else
+            size_str="${size_bytes} B"
+        fi
+    fi
+
+    echo "${size_str}|${deps}"
 }
 
 # ============================================================
