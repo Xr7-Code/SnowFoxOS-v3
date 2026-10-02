@@ -71,19 +71,9 @@ _stash_spinner_stop() {
 _stash_preview_size() {
     local pkg="$1"
 
-    # Paketgröße aus apt-cache (in Bytes)
     local size_bytes
     size_bytes=$(apt-cache show "$pkg" 2>/dev/null | grep -m1 '^Size:' | awk '{print $2}')
 
-    # Abhängigkeitszahl aus apt-get -s Simulation
-    local output newly deps="0"
-    output=$(apt-get -s install "$pkg" 2>&1)
-    newly=$(echo "$output" | grep -oP '\K[0-9]+(?= newly installed)' | head -1)
-    if [[ -n "$newly" && "$newly" -gt 1 ]]; then
-        deps=$((newly - 1))
-    fi
-
-    # Größe formatieren
     local size_str="unknown"
     if [[ -n "$size_bytes" && "$size_bytes" -gt 0 ]]; then
         if   [[ "$size_bytes" -ge 1073741824 ]]; then
@@ -97,7 +87,7 @@ _stash_preview_size() {
         fi
     fi
 
-    echo "${size_str}|${deps}"
+    echo "$size_str"
 }
 
 # ============================================================
@@ -299,18 +289,16 @@ _stash_install() {
 
     header "stash — Install: $pkg"
 
-    info "Analyzing package and dependencies..."
-    local preview
-    preview=$(_stash_preview_size "$pkg")
-
-    local download_size="${preview%|*}"
-    local deps="${preview#*|}"
+    info "Analyzing package..."
+    local download_size
+    download_size=$(_stash_preview_size "$pkg")
 
     echo ""
     if [[ "$download_size" != "unknown" ]]; then
         row "Download size" "$download_size"
+    else
+        row "Download size" "unknown" "$ORANGE"
     fi
-    row "Dependencies" "$deps"
     echo ""
 
     read -rp "$(echo -e ${PURPLE}${BOLD}"Install? [y/N]: "${RESET})" CONFIRM
