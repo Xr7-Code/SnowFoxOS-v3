@@ -1,10 +1,13 @@
 #!/bin/bash
-# SnowFoxOS — Netzwerk-Manager via Rofi
+# ============================================================
+#  SnowFoxOS — Network Manager via Rofi
+#  Copyright (c) 2026 Alexander Valentin Ludwig (Xr7-Code)
+# ============================================================
 
 ROFI_THEME="$HOME/.config/rofi/config.rasi"
 ROFI_WIDTH=520
 
-# ── Hilfsfunktionen ───────────────────────────────────────────
+# ── Helper functions ─────────────────────────────────────────
 
 notify() {
     notify-send "🦊 SnowFox" "$1"
@@ -23,10 +26,10 @@ active_connection() {
     nmcli -t -f NAME connection show --active 2>/dev/null | head -1
 }
 
-# ── Netzwerkliste aufbauen ────────────────────────────────────
+# ── Build network list ───────────────────────────────────────
 
 build_network_list() {
-    # Netzwerke neu scannen (asynchron)
+    # Rescan networks asynchronously
     nmcli device wifi rescan &>/dev/null &
 
     nmcli -t -f IN-USE,SSID,SIGNAL,SECURITY device wifi list 2>/dev/null \
@@ -34,16 +37,16 @@ build_network_list() {
         [[ -z "$SSID" || "$SSID" == "--" ]] && continue
         SSID_CLEAN=$(echo "$SSID" | sed 's/\\:/:/g')
 
-        # Icon je nach Status
+        # Icon based on status
         if [[ "$INUSE" == "*" ]]; then
-            ICON="󰤨"   # verbunden
+            ICON="󰤨"   # connected
         elif nmcli connection show "$SSID_CLEAN" &>/dev/null; then
-            ICON="󰤥"   # bekannt/gespeichert
+            ICON="󰤥"   # known/saved
         else
-            ICON="󰤢"   # neu
+            ICON="󰤢"   # new
         fi
 
-        # Signal-Balken
+        # Signal bars
         SIG=${SIGNAL:-0}
         if   (( SIG >= 75 )); then BAR="▂▄▆█"
         elif (( SIG >= 50 )); then BAR="▂▄▆_"
@@ -52,23 +55,22 @@ build_network_list() {
         fi
 
         SEC_LABEL=$([ -z "$SECURITY" ] && echo "OPEN" || echo "WPA")
-        
-        # Maximale Länge der SSID für die Ausrichtung begrenzen (z.B. 32 Zeichen)
-        # Falls die SSID länger ist, schneiden wir sie ab, damit das Layout nicht bricht.
+
+        # Limit SSID length for alignment (32 chars max)
         SSID_DISPLAY=$(echo "$SSID_CLEAN" | cut -c1-32)
 
-        # NEU: Das printf-Layout rechtsbündig formatiert:
-        # %-34s -> Zeigt Icon + SSID linksbündig an (34 Zeichen breit)
-        # %5s    -> Richtet den Signalbalken rechtsbündig aus
-        # %4s%%  -> Richtet die Prozentzahl rechtsbündig aus
-        # %5s    -> Richtet den Security-Typ rechtsbündig aus
-        # Danach folgen die unsichtbaren Daten (\t) für die Verarbeitung im Case-Block.
+        # printf layout:
+        # %-34s  -> Icon + SSID, left-aligned (34 chars wide)
+        # %5s    -> Signal bars, right-aligned
+        # %4s%%  -> Percentage, right-aligned
+        # %5s    -> Security type, right-aligned
+        # Then invisible data (\t) for parsing in the case block.
         printf "%-34s %5s %4s%%  %5s\t%s\t%s\n" \
             "$ICON  $SSID_DISPLAY" "$BAR" "$SIGNAL" "$SEC_LABEL" "$SSID_CLEAN" "$SEC_LABEL"
     done
 }
 
-# ── Verbindung herstellen ─────────────────────────────────────
+# ── Connect to network ───────────────────────────────────────
 
 connect_network() {
     local SSID="$1"
@@ -76,84 +78,84 @@ connect_network() {
 
     CURRENT=$(active_ssid)
     if [[ "$CURRENT" == "$SSID" ]]; then
-        # Versuche zuerst Google's Captive Portal Check
+        # Try Google's captive portal check first
         PORTAL=$(curl -s -o /dev/null -w "%{redirect_url}" --max-time 5 http://connectivitycheck.gstatic.com/generate_204)
-        # Wenn Google keinen Redirect liefert, versuche neverssl.com
+        # If Google returns no redirect, try neverssl.com
         if [[ -z "$PORTAL" ]]; then
             PORTAL=$(curl -s -o /dev/null -w "%{redirect_url}" --max-time 5 http://neverssl.com/)
         fi
 
         if [[ -n "$PORTAL" ]]; then
-            notify "Captive Portal erkannt — Browser wird geöffnet"
-            # xdg-open kann fehlschlagen, wenn kein Browser konfiguriert ist oder andere Probleme auftreten
-            xdg-open "$PORTAL" &>/dev/null || notify "Fehler: Browser konnte Captive Portal nicht öffnen. Bitte manuell 'http://neverssl.com/' im Browser öffnen."
+            notify "Captive portal detected — opening browser"
+            # xdg-open may fail if no browser is configured
+            xdg-open "$PORTAL" &>/dev/null || notify "Error: could not open captive portal. Manually open 'http://neverssl.com/' in your browser."
         else
-            notify "Bereits verbunden mit: $SSID"
+            notify "Already connected to: $SSID"
         fi
         return
     fi
 
-    # Gespeicherte Verbindung vorhanden?
+    # Saved connection available?
     if nmcli connection show "$SSID" &>/dev/null; then
-        notify "Verbinde mit: $SSID"
+        notify "Connecting to: $SSID"
         nmcli connection up "$SSID" &>/dev/null && \
-            notify "Verbunden mit: $SSID" || \
-            notify "Verbindung fehlgeschlagen"
+            notify "Connected to: $SSID" || \
+            notify "Connection failed"
         return
     fi
 
-    # Offenes Netzwerk
+    # Open network
     if [[ "$SECURITY" == "OPEN" ]]; then
-        notify "Verbinde mit: $SSID (offen)"
+        notify "Connecting to: $SSID (open)"
         nmcli device wifi connect "$SSID" &>/dev/null && \
-            notify "Verbunden mit: $SSID" || \
-            notify "Verbindung fehlgeschlagen"
+            notify "Connected to: $SSID" || \
+            notify "Connection failed"
         return
     fi
 
-    # Passwort abfragen
+    # Prompt for password
     PASS=$(rofi -dmenu \
-        -p "󰌋  Passwort für '$SSID'" \
+        -p "󰌋  Password for '$SSID'" \
         -theme "$ROFI_THEME" \
         -theme-str "window { width: 420px; } listview { lines: 0; }" \
         -password)
 
     [[ -z "$PASS" ]] && exit 0
 
-    notify "Verbinde mit: $SSID ..."
+    notify "Connecting to: $SSID ..."
 
-    # Direktes Capturen des Fehlers in eine Variable statt Datei
+    # Capture error directly into a variable instead of a file
     ERR=$(nmcli device wifi connect "$SSID" password "$PASS" 2>&1)
     if [[ $? -eq 0 ]]; then
-        notify "Verbunden mit: $SSID"
+        notify "Connected to: $SSID"
         sleep 2
         PORTAL=$(curl -s -o /dev/null -w "%{redirect_url}" \
             --max-time 5 http://connectivitycheck.gstatic.com/generate_204)
         if [[ -z "$PORTAL" ]]; then
             PORTAL=$(curl -s -o /dev/null -w "%{redirect_url}" --max-time 5 http://neverssl.com/)
         fi
-        [[ -n "$PORTAL" ]] && xdg-open "$PORTAL" &>/dev/null || notify "Fehler: Browser konnte Captive Portal nicht öffnen. Bitte manuell 'http://neverssl.com/' im Browser öffnen."
+        [[ -n "$PORTAL" ]] && xdg-open "$PORTAL" &>/dev/null || notify "Error: could not open captive portal. Manually open 'http://neverssl.com/' in your browser."
     else
-        notify "Fehlgeschlagen: $(echo "$ERR" | head -1)"
+        notify "Failed: $(echo "$ERR" | head -1)"
     fi
 }
 
-# ── Restliche Funktionen ──────────────────────────────────────
+# ── Other functions ──────────────────────────────────────────
 
 forget_network() {
     SAVED=$(nmcli -t -f NAME,TYPE connection show | grep wireless | cut -d: -f1)
-    [[ -z "$SAVED" ]] && notify "Keine gespeicherten Netzwerke" && return
+    [[ -z "$SAVED" ]] && notify "No saved networks" && return
 
     CHOICE=$(echo "$SAVED" | rofi -dmenu \
-        -p "󰆴  Netzwerk vergessen" \
+        -p "󰆴  Forget network" \
         -theme "$ROFI_THEME" \
         -theme-str "window { width: 400px; } listview { lines: 8; }")
 
     [[ -z "$CHOICE" ]] && return
 
     nmcli connection delete "$CHOICE" &>/dev/null && \
-        notify "Vergessen: $CHOICE" || \
-        notify "Fehler beim Löschen"
+        notify "Forgotten: $CHOICE" || \
+        notify "Failed to delete"
 }
 
 show_details() {
@@ -161,7 +163,7 @@ show_details() {
     IFACE=$(nmcli -t -f DEVICE,STATE device | grep ":connected" | cut -d: -f1 | head -1)
 
     if [[ -z "$IFACE" ]]; then
-        notify "Keine aktive Verbindung"
+        notify "No active connection"
         return
     fi
 
@@ -175,12 +177,12 @@ show_details() {
     notify -e "$INFO"
 }
 
-# ── Hauptmenü ─────────────────────────────────────────────────
+# ── Main menu ────────────────────────────────────────────────
 
 WIFI_ON=$(wifi_state)
-WIFI_LABEL=$([ "$WIFI_ON" == "enabled" ] && echo "󰤭  WiFi deaktivieren" || echo "󰤨  WiFi aktivieren")
+WIFI_LABEL=$([ "$WIFI_ON" == "enabled" ] && echo "󰤭  Disable WiFi" || echo "󰤨  Enable WiFi")
 ACTIVE=$(active_ssid)
-ACTIVE_LABEL=$([ -n "$ACTIVE" ] && echo "󰤮  Trennen ($ACTIVE)" || echo "󰤮  Verbindung trennen")
+ACTIVE_LABEL=$([ -n "$ACTIVE" ] && echo "󰤮  Disconnect ($ACTIVE)" || echo "󰤮  Disconnect")
 
 NETWORKS=$(build_network_list)
 
@@ -188,52 +190,52 @@ MENU="$NETWORKS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 $WIFI_LABEL
 $ACTIVE_LABEL
-󰆴  Netzwerk vergessen
-󰈀  Ethernet-Status
-󰋌  Netzwerk-Details"
+󰆴  Forget network
+󰈀  Ethernet status
+󰋌  Network details"
 
 CHOICE=$(echo -e "$MENU" | rofi -dmenu \
-    -p "󰤨  Netzwerk" \
+    -p "󰤨  Network" \
     -theme "$ROFI_THEME" \
     -theme-str "window { width: ${ROFI_WIDTH}px; } listview { lines: 14; }")
 
 [[ -z "$CHOICE" ]] && exit 0
 
-# ── Aktionen ──────────────────────────────────────────────────
+# ── Actions ──────────────────────────────────────────────────
 
 case "$CHOICE" in
-    *"WiFi aktivieren"*)
-        nmcli radio wifi on && notify "WiFi aktiviert"
+    *"Enable WiFi"*)
+        nmcli radio wifi on && notify "WiFi enabled"
         ;;
-    *"WiFi deaktivieren"*)
-        nmcli radio wifi off && notify "WiFi deaktiviert"
+    *"Disable WiFi"*)
+        nmcli radio wifi off && notify "WiFi disabled"
         ;;
-    *"Verbindung trennen"*|*"Trennen ("*)
+    *"Disconnect"*)
         CONN=$(active_connection)
         if [[ -n "$CONN" ]]; then
             nmcli connection down "$CONN" &>/dev/null && \
-                notify "Getrennt von: $CONN" || \
-                notify "Trennen fehlgeschlagen"
+                notify "Disconnected from: $CONN" || \
+                notify "Disconnect failed"
         else
-            notify "Keine aktive Verbindung"
+            notify "No active connection"
         fi
         ;;
-    *"Netzwerk vergessen"*)
+    *"Forget network"*)
         forget_network
         ;;
-    *"Ethernet-Status"*)
+    *"Ethernet status"*)
         ETH=$(nmcli device status | grep -i ethernet | awk '{print $1 ": " $3}')
-        [[ -z "$ETH" ]] && ETH="Kein Ethernet-Gerät gefunden"
+        [[ -z "$ETH" ]] && ETH="No Ethernet device found"
         notify "$ETH"
         ;;
-    *"Netzwerk-Details"*)
+    *"Network details"*)
         show_details
         ;;
     *"━━━"*)
         exit 0
         ;;
     *)
-        # Hier extrahieren wir die unsichtbaren Tab-Daten am Ende der Zeile!
+        # Extract invisible tab data from end of line
         SSID=$(echo "$CHOICE" | cut -f2)
         SECURITY=$(echo "$CHOICE" | cut -f3)
 
