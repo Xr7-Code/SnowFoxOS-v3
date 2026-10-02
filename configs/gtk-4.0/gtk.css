@@ -1,9 +1,10 @@
 /* ============================================================
    SnowFox — GTK4 / Libadwaita Color Override
-   Ablegen unter: ~/.config/gtk-4.0/gtk.css
+   Place at: ~/.config/gtk-4.0/gtk.css
+   Copyright (c) 2026 Alexander Valentin Ludwig (Xr7-Code)
    ============================================================ */
 
-/* ── Libadwaita Farb-Tokens ────────────────────────────────── */
+/* ── Libadwaita color tokens ───────────────────────────────── */
 :root {
     --accent-bg-color:       #9d6fe8;
     --accent-fg-color:       #ffffff;
