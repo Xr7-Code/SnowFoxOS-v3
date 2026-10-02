@@ -1,7 +1,7 @@
 #!/bin/bash
-
 # ============================================================
 #  SnowFoxOS v3.0 — Gaming & AI Setup
+#  Copyright (c) 2026 Alexander Valentin Ludwig (Xr7-Code)
 # ============================================================
 
 # Load utilities (assumes SCRIPT_DIR is set before sourcing)
@@ -19,20 +19,20 @@ if ask_install "Steam"; then
         libvulkan1 libvulkan1:i386 \
         vulkan-tools libgl1-mesa-dri:i386 \
         mesa-vulkan-drivers:i386 \
-        gamemode 2>/dev/null || warn "Steam teilweise fehlgeschlagen"
+        gamemode 2>/dev/null || warn "Steam partially failed"
     systemctl enable gamemoded 2>/dev/null || true
-    success "Steam + GameMode installiert"
+    success "Steam + GameMode installed"
 
-    # Fix: Steam-Freezes beim Workspace-Wechsel — dem Minimalsystem
-    # fehlten die 64-Bit-Intel-Medientreiber und Off-Screen-Rendering-Erweiterungen.
+    # Fix: Steam freezes on workspace switch — the minimal system
+    # was missing 64-bit Intel media drivers and off-screen rendering extensions.
     if $HAS_INTEL; then
-        info "Installiere Intel-Medientreiber & Off-Screen-Rendering für Steam..."
+        info "Installing Intel media drivers & off-screen rendering for Steam..."
         apt-get install -y intel-media-va-driver:amd64 libosmesa6 2>/dev/null || \
-            warn "Intel-Medientreiber teilweise fehlgeschlagen"
-        success "Intel-Medientreiber für Steam installiert (verhindert Workspace-Freezes)"
+            warn "Intel media drivers partially failed"
+        success "Intel media drivers for Steam installed (prevents workspace freezes)"
     fi
 
-    info "Installiere Proton GE..."
+    info "Installing Proton GE..."
     PROTON_GE_URL=""
     PROTON_GE_JSON=$(curl -sf https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest 2>/dev/null)
     if [[ -n "$PROTON_GE_JSON" ]]; then
@@ -53,56 +53,56 @@ except: pass
         tar -xzf /tmp/proton-ge.tar.gz -C "$TARGET_HOME/.steam/root/compatibilitytools.d/"
         rm -f /tmp/proton-ge.tar.gz
         chown -R "$TARGET_USER:$TARGET_USER" "$TARGET_HOME/.steam/root/compatibilitytools.d/"
-        success "Proton GE installiert"
+        success "Proton GE installed"
     else
-        warn "Proton GE URL nicht ermittelt — manuell installieren"
+        warn "Proton GE URL not found — install manually"
     fi
 fi
 
-step "7b/10 — Ollama (Lokale KI)"
+step "7b/10 — Ollama (Local AI)"
 
-if ask_install "Ollama (lokale KI, kein Modell — nur Engine)"; then
-    info "Installiere Ollama..."
-    curl -fsSL https://ollama.com/install.sh | sh 2>/dev/null || warn "Ollama Installation fehlgeschlagen"
+if ask_install "Ollama (local AI, no model — engine only)"; then
+    info "Installing Ollama..."
+    curl -fsSL https://ollama.com/install.sh | sh 2>/dev/null || warn "Ollama installation failed"
 
     systemctl disable ollama 2>/dev/null || true
     systemctl stop ollama 2>/dev/null || true
 
-    success "Ollama installiert (nicht aktiv — starten mit: ollama serve)"
-    info "Modelle installieren mit: ollama pull <modell> (z.B. ollama pull mistral)"
+    success "Ollama installed (not active — start with: ollama serve)"
+    info "Install models with: ollama pull <model> (e.g. ollama pull mistral)"
 fi
 
 # ── SnowFox Console Launcher ─────────────────────────────────
 LAUNCHER_DIR="$TARGET_HOME/SnowFox-Console-Launcher"
-if ask_install "SnowFox Console Launcher (Game Hub für Steam & GOG)"; then
+if ask_install "SnowFox Console Launcher (game hub for Steam & GOG)"; then
     if command -v git &>/dev/null; then
-        info "Klone SnowFox Console Launcher..."
+        info "Cloning SnowFox Console Launcher..."
         if [[ -d "$LAUNCHER_DIR" ]]; then
-            info "Bereits vorhanden — aktualisiere..."
+            info "Already present — updating..."
             if git -C "$LAUNCHER_DIR" pull 2>/dev/null; then
-                success "Console Launcher aktualisiert"
+                success "Console Launcher updated"
             else
-                warn "Update fehlgeschlagen — manuell prüfen"
+                warn "Update failed — check manually"
             fi
         else
             if sudo -u "$TARGET_USER" git clone \
                 https://github.com/Xr7-Code/SnowFox-Console-Launcher.git \
                 "$LAUNCHER_DIR" 2>/dev/null; then
-                success "Console Launcher installiert → $LAUNCHER_DIR"
+                success "Console Launcher installed → $LAUNCHER_DIR"
             else
-                warn "Clone fehlgeschlagen — Netzwerk prüfen"
+                warn "Clone failed — check network"
             fi
         fi
 
-        # Execute-Bit setzen
+        # Set execute bit
         if [[ -f "$LAUNCHER_DIR/snowfox_launcher" ]]; then
             chmod +x "$LAUNCHER_DIR/snowfox_launcher"
             chown "$TARGET_USER:$TARGET_USER" "$LAUNCHER_DIR/snowfox_launcher"
-            success "snowfox_launcher ist ausführbar"
+            success "snowfox_launcher is executable"
         fi
     else
-        warn "git nicht gefunden — Console Launcher nicht installiert"
-        info "Nachinstallieren:"
+        warn "git not found — Console Launcher not installed"
+        info "Install manually:"
         info "  git clone https://github.com/Xr7-Code/SnowFox-Console-Launcher.git ~/SnowFox-Console-Launcher"
     fi
 fi
