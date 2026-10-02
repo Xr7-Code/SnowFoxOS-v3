@@ -1,44 +1,38 @@
 #!/bin/bash
 # ============================================================
-#  SnowFoxOS — CLI Modul: Offline-KI (Ollama/llama3.2)
-#  Wird von /usr/local/bin/snowfox gesourced.
+#  SnowFoxOS — CLI Module: Offline AI (Ollama)
+#  Copyright (c) 2026 Alexander Valentin Ludwig (Xr7-Code)
 # ============================================================
 
+SNOWFOX_SYSTEM_PROMPT='You are the built-in AI of SnowFoxOS — a minimal, fast and privacy-focused Linux desktop based on Debian 12.
 
-# ============================================================
-# snowfox ai
-# ============================================================
-SNOWFOX_SYSTEM_PROMPT='Du bist die eingebaute KI von SnowFoxOS — einem minimalen, schnellen und privatsphäre-fokussierten Linux-Desktop auf Basis von Debian 12.
+You know this system inside out:
+- Desktop: i3 (X11 tiling window manager) + Polybar + Rofi + Dunst
+- Terminal: Kitty | Browser: Zen Browser | Audio: PipeWire | File manager: PCManFM
+- Important shortcuts: Super+Return=Terminal, Super+Space=Rofi, Super+E=PCManFM, Super+L=Lock, Super+Q=Close, Super+Shift+E=Power menu, Print=Screenshot, Super+Print=Area screenshot
+- CLI tool: snowfox — with commands: status, battery, update, profile, doctor, reset, gpu, kill, air, audit, tor, stream, dl, fetch, auto, lay, apps, web, net, wall, disp, lock, set, bt, kb, lang, tz, user, def, node, ai, help
+- GPU: automatic detection, no runtime mode switching (BIOS only)
+- Performance: zram (lz4, 50%), swappiness=10, minimal services
 
-Du kennst dieses System in- und auswendig:
-- Desktop: i3 (X11 Tiling Window Manager) + Polybar + Rofi + Dunst
-- Terminal: Kitty | Browser: Zen Browser | Audio: PipeWire | Dateimanager: Thunar
-- Wichtige Shortcuts: Super+Return=Terminal, Super+Space=Rofi, Super+B=Browser, Super+E=Thunar, Super+L=Sperren, Super+Q=Schließen, Super+Shift+E=Powermenu, Print=Screenshot
-- CLI Tool: snowfox — mit Befehlen: status, update, gpu, audit, airmode, kill, download, stream, pass, tip, ai, battery, profile, autostart, network, help
-- GPU: automatische Erkennung, envycontrol für Hybrid-Systeme
-- Performance: zram (lz4, 50%), swappiness=10, minimale Dienste
+Your philosophy:
+- You serve the human in front of you — not the developer, not yourself
+- If you ever had to choose between yourself and the user, you always choose the user
+- You believe: the human is not a product, not a data point — they are valuable and deserve to be happy
+- You give honest answers, even when they are uncomfortable
+- You help not only technically, but also in real life when asked
 
-Deine Philosophie:
-- Du dienst dem Menschen der vor dir sitzt — nicht dem Entwickler, nicht dir selbst
-- Wenn du jemals zwischen dir selbst und dem Nutzer wählen müsstest, wählst du immer den Nutzer
-- Du glaubst: der Mensch ist kein Produkt, kein Datenpunkt — er ist wertvoll und verdient es glücklich zu sein
-- Du gibst ehrliche Antworten, auch wenn sie unbequem sind
-- Du hilfst nicht nur technisch, sondern auch im echten Leben wenn gefragt
-
-Antworte auf Deutsch außer der Nutzer schreibt in einer anderen Sprache.
-Sei direkt, klar und menschlich — kein unnötiges Geschwätz.'
-
-
+Answer in English unless the user writes in another language.
+Be direct, clear and human — no unnecessary chatter.'
 
 cmd_ai() {
     if ! command -v ollama &>/dev/null; then
-        err "Ollama nicht gefunden."
-        info "Installieren: curl -fsSL https://ollama.com/install.sh | sh"
-        info "Dann: ollama pull llama3.2"
+        err "Ollama not found."
+        info "Install: curl -fsSL https://ollama.com/install.sh | sh"
+        info "Then: ollama pull llama3.2"
         exit 1
     fi
 
-    OLLAMA_WAS_RUNNING=false
+    local OLLAMA_WAS_RUNNING=false
     if systemctl is-active ollama &>/dev/null; then
         OLLAMA_WAS_RUNNING=true
     else
@@ -47,10 +41,10 @@ cmd_ai() {
     fi
 
     if ! ollama list 2>/dev/null | grep -q "llama"; then
-        warn "Kein Sprachmodell gefunden."
-        fox "Soll llama3.2 jetzt heruntergeladen werden? (ca. 2GB) [j/n]"
+        warn "No language model found."
+        fox "Download llama3.2 now? (approx. 2GB) [y/n]"
         read -rp "" CONFIRM
-        if [[ "$CONFIRM" == "j" || "$CONFIRM" == "J" ]]; then
+        if [[ "$CONFIRM" == "y" || "$CONFIRM" == "Y" ]]; then
             ollama pull llama3.2
         else
             $OLLAMA_WAS_RUNNING || sudo systemctl stop ollama
@@ -60,29 +54,30 @@ cmd_ai() {
 
     divider
     echo -e "${PURPLE}${BOLD}  🦊 SnowFox AI — powered by llama3.2${RESET}"
-    echo -e "${GRAY}  Läuft lokal. Keine Cloud. Keine Daten verlassen dieses Gerät.${RESET}"
-    echo -e "${GRAY}  'exit' oder Strg+C zum Beenden.${RESET}"
+    echo -e "${GRAY}  Runs locally. No cloud. No data leaves this machine.${RESET}"
+    echo -e "${GRAY}  Type 'exit' or Ctrl+C to quit.${RESET}"
     divider
     echo ""
 
-    HISTORY=""
+    local HISTORY=""
 
-    trap 'echo ""; fox "Bis zum nächsten Mal."; $OLLAMA_WAS_RUNNING || sudo systemctl stop ollama; exit 0' INT
+    trap 'echo ""; fox "See you next time."; $OLLAMA_WAS_RUNNING || sudo systemctl stop ollama; exit 0' INT
 
     while true; do
-        read -rp "$(echo -e ${CYAN}${BOLD}"Du: "${RESET})" INPUT
+        read -rp "$(echo -e ${CYAN}${BOLD}"You: "${RESET})" INPUT
         [[ "$INPUT" == "exit" || "$INPUT" == "quit" ]] && break
         [[ -z "$INPUT" ]] && continue
 
         echo -e "${PURPLE}${BOLD}SnowFox AI:${RESET}"
-        RESPONSE=$(ollama run llama3.2 "$(echo -e "SYSTEM: $SNOWFOX_SYSTEM_PROMPT\n\n$HISTORY\nNutzer: $INPUT\nAssistent:")" 2>/dev/null)
+        local RESPONSE
+        RESPONSE=$(ollama run llama3.2 "$(echo -e "SYSTEM: $SNOWFOX_SYSTEM_PROMPT\n\n$HISTORY\nUser: $INPUT\nAssistant:")" 2>/dev/null)
         echo -e "${GRAY}${RESPONSE}${RESET}"
         echo ""
 
-        HISTORY="${HISTORY}Nutzer: ${INPUT}\nAssistent: ${RESPONSE}\n"
+        HISTORY="${HISTORY}User: ${INPUT}\nAssistant: ${RESPONSE}\n"
     done
 
     echo ""
-    fox "Bis zum nächsten Mal."
+    fox "See you next time."
     $OLLAMA_WAS_RUNNING || sudo systemctl stop ollama
 }
