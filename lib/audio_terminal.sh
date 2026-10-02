@@ -1,7 +1,7 @@
 #!/bin/bash
-
 # ============================================================
 #  SnowFoxOS v3.0 — Audio and Terminal Setup
+#  Copyright (c) 2026 Alexander Valentin Ludwig (Xr7-Code)
 # ============================================================
 
 # Load utilities (assumes SCRIPT_DIR is set before sourcing)
@@ -26,8 +26,8 @@ apt-get install -y \
 
 apt-get remove --purge -y pulseaudio pulseaudio-bluetooth 2>/dev/null || true
 
-# PipeWire-Bluetooth-Profil: verhindert "br-connection-profile-unavailable"
-# BlueZ braucht explizit die Policy für alle Profile inkl. A2DP und HFP/HSP.
+# PipeWire Bluetooth profile: prevents "br-connection-profile-unavailable"
+# BlueZ explicitly needs the policy for all profiles including A2DP and HFP/HSP.
 mkdir -p /etc/pipewire/wireplumber.conf.d
 cat > /etc/pipewire/wireplumber.conf.d/51-bluez-config.conf << 'BTWEOF'
 monitor.bluez.properties = {
@@ -39,8 +39,8 @@ monitor.bluez.properties = {
 }
 BTWEOF
 
-# BlueZ-Hauptkonfiguration: verhindert Aufhängen bei A2DP-Verbindungen
-# AutoEnable=true startet BT nach Boot automatisch ohne manuelles "power on"
+# BlueZ main configuration: prevents hanging on A2DP connections
+# AutoEnable=true starts BT automatically after boot without manual "power on"
 mkdir -p /etc/bluetooth
 cat > /etc/bluetooth/main.conf << 'BZEOF'
 [Policy]
@@ -54,11 +54,11 @@ ReconnectAttempts=7
 ReconnectIntervals=1,2,4,8,16,32,64
 BZEOF
 
-# systemctl --user in einem sudo-Kontext ist unzuverlässig (kein DBUS_SESSION_BUS_ADDRESS).
-# Stattdessen loginctl-linger aktivieren damit User-Services beim Boot starten.
+# systemctl --user in a sudo context is unreliable (no DBUS_SESSION_BUS_ADDRESS).
+# Instead, enable loginctl-linger so user services start at boot.
 loginctl enable-linger "$TARGET_USER" 2>/dev/null || true
 
-# Symlinks für PipeWire-Autostart im User-Systemd anlegen
+# Create symlinks for PipeWire autostart in user systemd
 sudo -u "$TARGET_USER" mkdir -p "$TARGET_HOME/.config/systemd/user/default.target.wants"
 for svc in pipewire.service pipewire-pulse.service wireplumber.service; do
     src="/usr/lib/systemd/user/$svc"
@@ -66,10 +66,10 @@ for svc in pipewire.service pipewire-pulse.service wireplumber.service; do
     [[ -f "$src" ]] && sudo -u "$TARGET_USER" ln -sf "$src" "$dst" 2>/dev/null || true
 done
 
-success "PipeWire + Bluetooth-Audio installiert (A2DP, HFP, HSP)"
+success "PipeWire + Bluetooth audio installed (A2DP, HFP, HSP)"
 
-# ── Kitty Terminal Konfiguration ──────────────────────────────
-info "Konfiguriere Kitty Terminal..."
+# ── Kitty Terminal Configuration ─────────────────────────────
+info "Configuring Kitty terminal..."
 mkdir -p "$TARGET_HOME/.config/kitty"
 cat > "$TARGET_HOME/.config/kitty/kitty.conf" << 'KITTYEOF'
 # SnowFox Kitty Theme
@@ -81,11 +81,11 @@ window_padding_width 8
 cursor            #8139e8
 cursor_text_color #11111b
 
-# Auswahl
+# Selection
 selection_background #8139e8
 selection_foreground #ffffff
 
-# Farben (passend zur SnowFox-Palette)
+# Colors (matching the SnowFox palette)
 color0  #1e1e2e
 color1  #e05555
 color2  #5faf5f
@@ -107,4 +107,4 @@ color15 #ffffff
 font_family      JetBrainsMono Nerd Font
 font_size        11.0
 KITTYEOF
-success "Kitty konfiguriert"
+success "Kitty configured"
