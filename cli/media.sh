@@ -7,6 +7,47 @@
 COOKIE_FILE="$HOME/.config/snowfox/cookies.txt"
 DOWNLOAD_DIR="$HOME/Downloads"
 
+# ── Cookie helper ────────────────────────────────────────────
+# Returns an array in COOKIE_OPT suitable for yt-dlp.
+# Order: existing file → browser extraction → empty (no cookies).
+_prepare_cookies() {
+    COOKIE_OPT=()
+
+    # 1. Existing cookie file (no browser needed)
+    if [[ -f "$COOKIE_FILE" && -s "$COOKIE_FILE" ]]; then
+        # Refresh if older than 1 day AND a browser is available
+        if [[ $(find "$COOKIE_FILE" -mtime +1 2>/dev/null) ]]; then
+            for browser in firefox chromium chrome brave; do
+                if command -v "$browser" &>/dev/null; then
+                    yt-dlp --cookies-from-browser "$browser" \
+                        --cookies "$COOKIE_FILE" \
+                        --simulate --skip-download 2>/dev/null && break || true
+                fi
+            done
+        fi
+        COOKIE_OPT=(--cookies "$COOKIE_FILE")
+        return 0
+    fi
+
+    # 2. No cookie file → try browser extraction (optional, silent failure)
+    for browser in firefox chromium chrome brave; do
+        if command -v "$browser" &>/dev/null; then
+            mkdir -p "$(dirname "$COOKIE_FILE")"
+            if yt-dlp --cookies-from-browser "$browser" \
+                --cookies "$COOKIE_FILE" \
+                --simulate --skip-download 2>/dev/null; then
+                if [[ -f "$COOKIE_FILE" && -s "$COOKIE_FILE" ]]; then
+                    COOKIE_OPT=(--cookies "$COOKIE_FILE")
+                    return 0
+                fi
+            fi
+        fi
+    done
+
+    # 3. No cookies available — continue without them
+    return 0
+}
+
 # ============================================================
 # snowfox fetch — High-speed download via aria2
 # ============================================================
@@ -70,22 +111,17 @@ cmd_download() {
     fi
 
     local URL="$1"
-    mkdir -p "$(dirname "$COOKIE_FILE")"
 
-    # Refresh cookies if older than 1 day
-    if [[ ! -f "$COOKIE_FILE" ]] || [[ $(find "$COOKIE_FILE" -mtime +1 2>/dev/null) ]]; then
-        if command -v firefox &>/dev/null; then
-            yt-dlp --cookies-from-browser firefox --cookies "$COOKIE_FILE" 2>/dev/null || true
-        fi
-    fi
-
-    local COOKIE_OPT=()
-    if [[ -f "$COOKIE_FILE" && -s "$COOKIE_FILE" ]]; then
-        COOKIE_OPT=(--cookies "$COOKIE_FILE")
-    fi
+    _prepare_cookies
 
     header "Download"
     row "URL" "$URL"
+
+    if [[ ${#COOKIE_OPT[@]} -eq 0 ]]; then
+        row "Cookies" "none (public access only)" "$ORANGE"
+    else
+        row "Cookies" "loaded" "$GREEN"
+    fi
     echo ""
 
     echo -e "  ${CYAN}1${RESET}) Video (best quality)"
@@ -99,6 +135,7 @@ cmd_download() {
     local BASE_OPTS=(
         --force-ipv4
         --user-agent "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        --extractor-args "youtube:player_client=web,android"
         "${COOKIE_OPT[@]}"
     )
 
@@ -173,6 +210,8 @@ cmd_stream() {
         [[ -z "$QUERY" ]] && exit 0
     fi
 
+    _prepare_cookies
+
     local URL
     if [[ "$QUERY" =~ ^http ]]; then
         URL="$QUERY"
@@ -182,6 +221,8 @@ cmd_stream() {
 
         local -a RESULTS
         mapfile -t RESULTS < <(yt-dlp --force-ipv4 \
+            --extractor-args "youtube:player_client=web,android" \
+            "${COOKIE_OPT[@]}" \
             --print "%(title)s|%(id)s" \
             --flat-playlist "ytsearch5:$QUERY" 2>/dev/null)
 
