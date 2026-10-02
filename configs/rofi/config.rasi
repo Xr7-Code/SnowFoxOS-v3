@@ -1,5 +1,6 @@
 /* ============================================================
    SnowFoxOS v3 — Rofi Theme (SnowFox Palette Enhanced)
+   Copyright (c) 2026 Alexander Valentin Ludwig (Xr7-Code)
    ============================================================ */
 
 configuration {
@@ -46,7 +47,7 @@ mainbox {
     children:         [inputbar, listview];
 }
 
-/* ── Suchleiste ─────────────────────────────────────────── */
+/* ── Search bar ─────────────────────────────────────────── */
 inputbar {
     background-color: rgba(32, 30, 46, 0.80);
     border-radius:    10px;
@@ -66,12 +67,12 @@ prompt {
 entry {
     background-color: transparent;
     text-color:       @fg;
-    placeholder:      "Anwendung suchen...";
+    placeholder:      "Search applications...";
     placeholder-color: @fg-alt;
     cursor:           text;
 }
 
-/* ── Ergebnisliste ──────────────────────────────────────── */
+/* ── Result list ────────────────────────────────────────── */
 listview {
     background-color: transparent;
     lines:            7;
