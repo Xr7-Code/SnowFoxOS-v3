@@ -1,8 +1,8 @@
 #!/bin/bash
 # ============================================================
-#  SnowFoxOS — CLI Module: stash (Package Manager)
-#  Curated categories + apt-cache search + size preview.
-#  Copyright (c) 2026 Alexander Valentin Ludwig (Xr7-Code)
+#   SnowFoxOS — CLI Module: stash (Package Manager)
+#   Curated categories + apt-cache search + size preview.
+#   Copyright (c) 2026 Alexander Valentin Ludwig (Xr7-Code)
 # ============================================================
 
 STASH_CACHE_DIR="$HOME/.cache/snowfox"
@@ -67,12 +67,20 @@ _stash_spinner_stop() {
     fi
 }
 
-# ── Size preview via apt-get --print-uris ────────────────────
+# ── Size preview via apt simulation / cache ──────────────────
 _stash_preview_size() {
     local pkg="$1"
-
     local size_bytes
+    
+    # Try apt-cache first
     size_bytes=$(apt-cache show "$pkg" 2>/dev/null | grep -m1 '^Size:' | awk '{print $2}')
+    
+    # Fallback: parse from apt-get simulation if size is missing
+    if [[ -z "$size_bytes" || "$size_bytes" -eq 0 ]]; then
+        size_bytes=$(apt-get install --simulate "$pkg" 2>/dev/null | grep -i "need to get" | grep -oE '[0-9.,]+ [kMG]?B' | head -1)
+        echo "${size_bytes:-unknown}"
+        return
+    fi
 
     local size_str="unknown"
     if [[ -n "$size_bytes" && "$size_bytes" -gt 0 ]]; then
@@ -94,19 +102,16 @@ _stash_preview_size() {
 # snowfox stash — Main dispatcher
 # ============================================================
 cmd_stash() {
-    # ── No argument → category overview ──────────────────────
     if [[ -z "$1" ]]; then
         _stash_categories
         return
     fi
 
-    # ── Category check (before subcommand dispatch) ──────────
     if [[ -n "${STASH_CATEGORIES[$1]}" ]]; then
         _stash_show_category "$1"
         return
     fi
 
-    # ── Subcommands ──────────────────────────────────────────
     case "$1" in
         find)
             shift
@@ -126,13 +131,13 @@ cmd_stash() {
             ;;
         *)
             header "snowfox stash"
-            info "  snowfox stash                — show curated categories"
-            info "  snowfox stash <category>     — list packages in a category"
-            info "  snowfox stash find <query>   — search apt repositories"
-            info "  snowfox stash info <package> — show package details"
-            info "  snowfox stash install <pkg>  — install a package"
-            info "  snowfox stash list           — list installed apps"
-            info "  snowfox stash remove <pkg>   — remove a package"
+            info "  snowfox stash              — show curated categories"
+            info "  snowfox stash <category>   — list packages in a category"
+            info "  snowfox stash find <query> — search apt repositories"
+            info "  snowfox stash info <pkg>   — show package details"
+            info "  snowfox stash install <pkg>— install a package"
+            info "  snowfox stash list         — list installed apps"
+            info "  snowfox stash remove <pkg> — remove a package"
             echo ""
             divider
             info "Categories: internet, office, ide, media, gaming, games,"
