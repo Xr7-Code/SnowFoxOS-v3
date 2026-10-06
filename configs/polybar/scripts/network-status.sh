@@ -7,7 +7,7 @@
 # Check via nmcli
 if command -v nmcli &> /dev/null; then
     # WiFi SSID
-    SSID=$(nmcli -t -f ACTIVE,SSID dev wifi | grep '^yes:' | cut -d: -f2)
+    SSID=$(LC_ALL=C nmcli -t -f ACTIVE,SSID dev wifi | grep '^yes:' | cut -d: -f2)
     if [ -n "$SSID" ]; then
         echo "󰤨 $SSID"
         exit 0
