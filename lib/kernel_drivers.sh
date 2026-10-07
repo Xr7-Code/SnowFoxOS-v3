@@ -21,15 +21,24 @@ update-locale LANG=de_AT.UTF-8
 success "Locales set (de_AT.UTF-8, en_US.UTF-8)"
 
 info "Checking CPU & system compatibility..."
-# HP EliteDesk 705 G4 forces the stable Debian kernel due to xHCI instability in XanMod
-if lspci | grep -qi "AMD" && DMI_SYS=$(cat /sys/class/dmi/id/product_name 2>/dev/null); [[ "$DMI_SYS" =~ "EliteDesk" ]]; then
-    warn "HP EliteDesk AMD system detected — using stable Debian default kernel"
-    USE_XANMOD=false
-elif ! grep -q "avx2" /proc/cpuinfo; then
+DMI_SYS=$(cat /sys/class/dmi/id/product_name 2>/dev/null)
+
+if ! grep -q "avx2" /proc/cpuinfo; then
     warn "CPU does not support AVX2 — using standard Debian kernel"
     USE_XANMOD=false
 else
     USE_XANMOD=true
+fi
+
+# HP EliteDesk AMD Raven/Renoir xHCI USB Fix
+if lspci | grep -qi "AMD" && [[ "$DMI_SYS" =~ "EliteDesk" ]]; then
+    info "HP EliteDesk AMD detected — applying Raven xHCI PM fix (XanMod allowed)..."
+    cat > /etc/udev/rules.d/99-xhci-raven-fix.rules << 'EOF'
+# SnowFoxOS — Disable PCI runtime suspend for AMD Raven/Renoir xHCI host controllers
+ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x1022", ATTR{device}=="0x15e0", ATTR{power/control}="on"
+ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x1022", ATTR{device}=="0x15e1", ATTR{power/control}="on"
+EOF
+    success "Raven xHCI udev rule installed (/etc/udev/rules.d/99-xhci-raven-fix.rules)"
 fi
 
 info "Installing DKMS tools..."
