@@ -1,13 +1,82 @@
 #!/bin/bash
 # ============================================================
 #  SnowFoxOS v3 — System Setup Library
-#  Functions for system versioning and GRUB theme installation.
+#  Functions for system versioning, locale and GRUB theme.
 #  Copyright (c) 2026 Alexander Valentin Ludwig (Xr7-Code)
 # ============================================================
 
 # NOTE: No `set -e` here — this file is sourced by install.sh,
 # and `set -e` would make the entire installer fragile. Errors
 # must be handled explicitly where they matter.
+
+# ────────────────────────────────────────────────────────────
+# set_system_language — Switch default locale from de_AT to en_US
+# ────────────────────────────────────────────────────────────
+set_system_language() {
+    # Require root
+    if [ "$EUID" -ne 0 ]; then
+        echo "[FAILED] Please run this function as root (e.g. sudo bash -c 'source lib/system_setup.sh && set_system_language')."
+        return 1
+    fi
+
+    # Configuration — change here if you ever want another locale
+    TARGET_LANG="en_US.UTF-8"
+    TARGET_LANGUAGE="en_US:en"
+    TARGET_KBLAYOUT="us"
+
+    echo "[SnowFoxOS] Switching default system language to ${TARGET_LANG}..."
+
+    # 1. Ensure required packages are present
+    if ! command -v locale-gen >/dev/null 2>&1; then
+        echo "[INFO] Installing locales package..."
+        apt-get update && apt-get install -y locales
+    fi
+
+    # 2. Enable the target locale in /etc/locale.gen
+    echo "[INFO] Enabling ${TARGET_LANG} in /etc/locale.gen..."
+    if [ -f /etc/locale.gen ]; then
+        sed -i 's/^# *en_US\.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen
+        sed -i 's/^# *en_US ISO-8859-1/en_US ISO-8859-1/' /etc/locale.gen
+        grep -q '^en_US\.UTF-8 UTF-8' /etc/locale.gen || \
+            echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
+    else
+        echo "en_US.UTF-8 UTF-8" > /etc/locale.gen
+    fi
+
+    # 3. Generate locales
+    echo "[INFO] Generating locales..."
+    locale-gen
+
+    # 4. Set system-wide default locale
+    echo "[INFO] Writing system default locale (update-locale)..."
+    update-locale LANG="${TARGET_LANG}" \
+                  LANGUAGE="${TARGET_LANGUAGE}" \
+                  LC_ALL="${TARGET_LANG}"
+
+    # 5. Fallback: also write /etc/default/locale directly
+    cat << EOF > /etc/default/locale
+LANG="${TARGET_LANG}"
+LANGUAGE="${TARGET_LANGUAGE}"
+LC_ALL="${TARGET_LANG}"
+EOF
+
+    # 6. Set console keyboard layout (Debian/Ubuntu)
+    if [ -f /etc/default/keyboard ]; then
+        echo "[INFO] Setting keyboard layout to ${TARGET_KBLAYOUT}..."
+        sed -i "s/^XKBLAYOUT=.*/XKBLAYOUT=\"${TARGET_KBLAYOUT}\"/" /etc/default/keyboard
+        grep -q '^XKBLAYOUT=' /etc/default/keyboard || \
+            echo "XKBLAYOUT=\"${TARGET_KBLAYOUT}\"" >> /etc/default/keyboard
+        setupcon 2>/dev/null || true
+    fi
+
+    # 7. Apply for the current shell too
+    export LANG="${TARGET_LANG}"
+    export LANGUAGE="${TARGET_LANGUAGE}"
+    export LC_ALL="${TARGET_LANG}"
+
+    echo "[SUCCESS] Default system language is now ${TARGET_LANG}."
+    echo "Note: A re-login (or reboot) is required for all sessions to pick it up."
+}
 
 # ────────────────────────────────────────────────────────────
 # set_system_version — Update system identification
