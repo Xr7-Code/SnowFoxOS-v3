@@ -103,6 +103,14 @@ lb config \
 
 success "live-build configured"
 
+# ── apt: no recommends ───────────────────────────────────────
+# live-build ignores --apt-options for this — must be set via apt.conf
+mkdir -p "$LB_DIR/config/apt"
+cat > "$LB_DIR/config/apt/apt.conf.chroot" << 'APTEOF'
+APT::Install-Recommends "false";
+APT::Install-Suggests "false";
+APTEOF
+
 # ── Package list ─────────────────────────────────────────────
 step "Writing package list"
 
@@ -374,4 +382,3 @@ echo -e "  Log    : $BUILD_DIR/build.log"
 echo ""
 info "Flash to USB: sudo dd if=$ISO_OUT of=/dev/sdX bs=4M status=progress && sync"
 echo ""
-PKGEOF
