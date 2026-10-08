@@ -118,174 +118,41 @@ step "Writing package list"
 # Covers: base system, X11, i3 stack, audio, fonts, tools.
 # Hardware-specific (NVIDIA CUDA, XanMod) are downloaded live.
 cat > "$LB_DIR/config/package-lists/snowfox.list.chroot" << 'PKGEOF'
-# ── Base system ──────────────────────────────────────────────
-sudo
+# ── Minimal installer environment ────────────────────────────
+# Only what the TUI installer itself needs.
+# ALL SnowFoxOS packages are installed by install.sh on the
+# target system — not here.
+
+# Installer UI
+dialog
+
+# Partitioning
+parted
+gdisk
+dosfstools
+e2fsprogs
+
+# Base install
+debootstrap
+
+# Bootloader (for installing onto target)
+grub-efi-amd64
+grub-pc
+
+# Network (to reach Debian mirrors during debootstrap)
+network-manager
 curl
 wget
-git
-unzip
-build-essential
 ca-certificates
-aria2
-fzf
-lz4
-gnupg
-pciutils
-usbutils
-htop
-btop
-irqbalance
-bash-completion
-xdg-utils
-xdg-user-dirs
-rfkill
-systemd-resolved
-iw
-wireless-tools
-imagemagick
-bc
-locales
-dkms
-libdw-dev
+
+# Essentials
+sudo
+git
 python3
-python3-pip
-pipx
-
-# ── Firmware ─────────────────────────────────────────────────
-firmware-linux
-firmware-misc-nonfree
-firmware-amd-graphics
-firmware-iwlwifi
-firmware-realtek
-firmware-atheros
-firmware-brcm80211
-amd64-microcode
-intel-microcode
-
-# ── X11 ──────────────────────────────────────────────────────
-xorg
-xinit
-x11-utils
-x11-xserver-utils
-xclip
-xdotool
-dbus-x11
-lm-sensors
-qt5ct
-qt5-style-plugins
-qt6ct
-xserver-xorg-input-libinput
-
-# ── i3 desktop stack ─────────────────────────────────────────
-i3
-i3lock
-picom
-polybar
-rofi
-dunst
-libnotify-bin
-libappindicator3-1
-libayatana-appindicator3-1
-feh
-libdbusmenu-gtk3-4
-redshift
-scrot
-brightnessctl
-playerctl
-xsettingsd
-lxpolkit
-lxappearance
-xss-lock
-flameshot
-
-# ── Network & Bluetooth ──────────────────────────────────────
-network-manager
-bluez
-bluez-tools
-bluez-obexd
-
-# ── Audio (PipeWire) ─────────────────────────────────────────
-pipewire
-pipewire-pulse
-pipewire-alsa
-pipewire-audio
-wireplumber
-pavucontrol
-pulseaudio-utils
-libspa-0.2-bluetooth
-
-# ── Terminal & Shell ─────────────────────────────────────────
-kitty
-mc
-
-# ── File manager & tools ─────────────────────────────────────
-pcmanfm
-gvfs
-gvfs-backends
-ristretto
-file-roller
-mpv
-ffmpeg
-
-# ── Code editor ──────────────────────────────────────────────
-geany
-geany-plugin-addons
-geany-plugin-autoclose
-geany-plugin-codenav
-geany-plugin-ctags
-geany-plugin-git-changebar
-geany-plugin-projectorganizer
-geany-plugin-spellcheck
-geany-plugin-treebrowser
-
-# ── Fonts & Icons ────────────────────────────────────────────
-fonts-inter
-fonts-noto
-fonts-noto-color-emoji
-papirus-icon-theme
-arc-theme
-gtk2-engines-murrine
-qt5-style-kvantum
-
-# ── GTK / Qt theming ─────────────────────────────────────────
-libx11-dev
-libxfixes-dev
-
-# ── Performance & Security ───────────────────────────────────
-zram-tools
-earlyoom
-ufw
-tlp
-tlp-rdw
-thermald
-
-# ── Mesa / GPU base (AMD + Intel — NVIDIA is live) ───────────
-mesa-vulkan-drivers
-mesa-va-drivers
-libvulkan1
-vulkan-tools
-libgl1-mesa-dri
-
-# ── i386 multiarch base (Steam) ──────────────────────────────
-libvulkan1:i386
-mesa-vulkan-drivers:i386
-mesa-va-drivers:i386
-libgl1-mesa-dri:i386
-
-# ── Boot ─────────────────────────────────────────────────────
-plymouth
-plymouth-themes
-grub2
-
-# ── Printer support ──────────────────────────────────────────
-cups
-cups-bsd
-cups-client
-printer-driver-splix
-
-# ── Misc ─────────────────────────────────────────────────────
-nodejs
-yt-dlp
+rsync
+pciutils
+lsblk
+util-linux
 PKGEOF
 
 success "Package list written"
