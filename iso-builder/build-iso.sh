@@ -55,8 +55,6 @@ apt-get install -y \
     debootstrap \
     squashfs-tools \
     xorriso \
-    isolinux \
-    syslinux-common \
     grub-efi-amd64-bin \
     grub-pc-bin \
     mtools \
@@ -91,18 +89,16 @@ lb config \
     --distribution bookworm \
     --architectures amd64 \
     --binary-images iso-hybrid \
-    --bootloaders "grub-efi,isolinux" \
+    --bootloaders "grub-efi" \
     --debian-installer none \
     --archive-areas "main contrib non-free non-free-firmware" \
-    --apt-options "--yes --no-install-recommends" \
+    --apt-options "--yes" \
     --apt-indices false \
     --memtest none \
     --win32-loader false \
     --iso-volume "SnowFoxOS-v3" \
     --iso-publisher "Alexander Valentin Ludwig (Xr7-Code)" \
     --iso-application "SnowFoxOS v3 Installer" \
-    --firmware-binary true \
-    --firmware-chroot true \
     --zsync false
 
 success "live-build configured"
