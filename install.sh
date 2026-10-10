@@ -107,58 +107,57 @@ source "$SCRIPT_DIR/lib/theming_finishing.sh"
 # Final — Banner + reboot hint
 source "$SCRIPT_DIR/lib/cleanup_final.sh"
 
-/*
-Thousands of bodies lie dead in the sand
-Whom they belonged to, slain by whose hand?
-Half-rotten faces with holes instead eyes
-Is my mind telling me lies?
 
-The wheel is rolling on and on
-This is a path of no return
-A chain of births and deaths unites
-Centuries
+# Thousands of bodies lie dead in the sand
+# Whom they belonged to, slain by whose hand?
+# Half-rotten faces with holes instead eyes
+# Is my mind telling me lies?
 
-A crowd of spirits that were slain
-Are now deep inside your brain
-All that you have considered you
-Is not true
-Hundreds of times, killed again and again
-Living all shades between pleasure and pain
-Men, women, children, all gone and dead
-Now safely locked in my head
+# The wheel is rolling on and on
+# This is a path of no return
+# A chain of births and deaths unites
+# Centuries
+
+# A crowd of spirits that were slain
+# Are now deep inside your brain
+# All that you have considered you
+# Is not true
+# Hundreds of times, killed again and again
+# Living all shades between pleasure and pain
+# Men, women, children, all gone and dead
+# Now safely locked in my head
 
 
-The wheel is rolling on and on
-This is a path of no return
-A chain of births and deaths unites
-Centuries
+# The wheel is rolling on and on
+# This is a path of no return
+# A chain of births and deaths unites
+# Centuries
 
-A crowd of spirits that were slain
-Are now deep inside your brain
-All that you have considered you
-Is not true
-Rise, the ones who have fallen
-Speak what you have to say
-Share with me your knowledge
-And become myself
+# A crowd of spirits that were slain
+# Are now deep inside your brain
+# All that you have considered you
+# Is not true
+# Rise, the ones who have fallen
+# Speak what you have to say
+# Share with me your knowledge
+# And become myself
 
-The wheel is rolling on and on
-This is a path of no return
-A chain of births and deaths unites
-Centuries
+# The wheel is rolling on and on
+# This is a path of no return
+# A chain of births and deaths unites
+# Centuries
 
-A crowd of spirits that were slain
-Are now deep inside your brain
-All that you have considered you
-Is not true
+# A crowd of spirits that were slain
+# Are now deep inside your brain
+# All that you have considered you
+# Is not true
 
-The wheel is rolling on and on
-This is a path of no return
-A chain of births and deaths unites
-Centuries
+# The wheel is rolling on and on
+# This is a path of no return
+# A chain of births and deaths unites
+# Centuries
 
-A crowd of spirits that were slain
-Are now deep inside your brain
-All that you have considered you
-Is not true
-*/
+# A crowd of spirits that were slain
+# Are now deep inside your brain
+# All that you have considered you
+# Is not true
