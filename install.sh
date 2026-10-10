@@ -107,7 +107,7 @@ source "$SCRIPT_DIR/lib/theming_finishing.sh"
 # Final — Banner + reboot hint
 source "$SCRIPT_DIR/lib/cleanup_final.sh"
 
-<!--
+/*
 Thousands of bodies lie dead in the sand
 Whom they belonged to, slain by whose hand?
 Half-rotten faces with holes instead eyes
@@ -161,4 +161,4 @@ A crowd of spirits that were slain
 Are now deep inside your brain
 All that you have considered you
 Is not true
--->
+*/
