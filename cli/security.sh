@@ -1,98 +1,236 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # ============================================================
-#  SnowFoxOS — CLI Module: Security (Network Audit)
-#  Copyright (c) 2026 Alexander Valentin Ludwig (Xr7-Code)
+#  SnowFoxOS v4 — CLI: security (network audit)
+#  (v3 hardened parser, v4 design system)
 # ============================================================
 
-# ============================================================
-# snowfox audit — Active network connections
-# ============================================================
+if [[ -n "${_SNOWFOX_CLI_SECURITY_LOADED:-}" ]]; then return 0 2>/dev/null || true; fi
+_SNOWFOX_CLI_SECURITY_LOADED=1
+
+export PATH="/usr/sbin:/usr/bin:/sbin:/bin"
+unset SHELL 2>/dev/null || true
+unset LD_PRELOAD LD_LIBRARY_PATH 2>/dev/null || true
+
+readonly SS_BIN="/usr/sbin/ss"
+readonly TIMEOUT_BIN="/usr/bin/timeout"
+readonly AWK_BIN="/usr/bin/awk"
+readonly GREP_BIN="/usr/bin/grep"
+readonly TR_BIN="/usr/bin/tr"
+readonly SED_BIN="/usr/bin/sed"
+readonly SLEEP_BIN="/usr/bin/sleep"
+
+[[ -x "$SS_BIN" ]]      || SS_BIN="/bin/ss"
+[[ -x "$TIMEOUT_BIN" ]] || TIMEOUT_BIN="/bin/timeout"
+[[ -x "$AWK_BIN" ]]     || AWK_BIN="/usr/bin/gawk"
+[[ -x "$AWK_BIN" ]]     || AWK_BIN="/bin/awk"
+[[ -x "$GREP_BIN" ]]    || GREP_BIN="/bin/grep"
+[[ -x "$TR_BIN" ]]      || TR_BIN="/bin/tr"
+[[ -x "$SED_BIN" ]]     || SED_BIN="/bin/sed"
+[[ -x "$SLEEP_BIN" ]]   || SLEEP_BIN="/bin/sleep"
+
+readonly SS_TIMEOUT=10
+
 cmd_audit() {
-    case "$1" in
-        live|ongoing|l)
-            _audit_live
-            ;;
-        ""|once|snapshot)
-            _audit_snapshot
-            ;;
-        *)
-            err "Usage: snowfox audit [live]"
-            exit 1
-            ;;
+    case "${1:-}" in
+        live|ongoing|l) _audit_live; return $? ;;
+        ""|once|snapshot) _audit_snapshot; return $? ;;
+        -h|--help|help) _audit_usage; return 0 ;;
+        *) err "unknown audit mode: $1"; _audit_usage; return "$SNOWFOX_EXIT_ERROR" ;;
     esac
 }
 
-# ─── One-shot snapshot ───────────────────────────────────────
-_audit_snapshot() {
-    header "Network Audit"
+_audit_usage() {
+    cat <<'EOF'
+Usage: snowfox audit [mode]
 
-    if ! command -v ss &>/dev/null; then
-        err "ss not found — install iproute2"
-        exit 1
+Modes:
+  (none) | once | snapshot   One-shot snapshot of active connections
+  live | ongoing | l         Live refresh (Ctrl+C to exit)
+  help                       Show this help
+EOF
+}
+
+_audit_preflight() {
+    if [[ ! -x "$SS_BIN" ]]; then
+        err "ss not found at $SS_BIN — install iproute2"
+        return 1
     fi
+    if ! "$SS_BIN" -h >/dev/null 2>&1; then
+        err "ss is not executable or broken: $SS_BIN"
+        return 1
+    fi
+    return 0
+}
 
-    local has_root=false
-    [[ $EUID -eq 0 ]] && has_root=true
+_audit_can_see_processes() {
+    local out
+    out=$("$TIMEOUT_BIN" "$SS_TIMEOUT" "$SS_BIN" -tunpH 2>/dev/null) || return 1
+    [[ -n "$out" ]] || return 1
+    printf '%s\n' "$out" | "$GREP_BIN" -q 'users:('
+}
 
-    if ! $has_root; then
-        info "Running without root — some process names may be hidden."
+_audit_parse_line() {
+    local line="$1"
+    local netid state recvq sendq local_addr peer_addr proc_field
+    local proc ip
+
+    _p_proto=""
+    _p_remote=""
+    _p_proc=""
+
+    read -r netid state recvq sendq local_addr peer_addr proc_field <<< "$line"
+
+    _p_proto="$netid"
+    _p_remote="$peer_addr"
+
+    [[ -z "$_p_remote" ]] && return 1
+    [[ "$_p_remote" == "*" || "$_p_remote" == "*:*" ]] && return 1
+    [[ "$_p_remote" == "0.0.0.0:*" ]] && return 1
+    [[ "$_p_remote" == "[::]:*" ]] && return 1
+
+    if [[ -n "$proc_field" ]]; then
+        proc_field=$("$TR_BIN" -cd '[:print:]' <<< "$proc_field")
+        proc=$("$GREP_BIN" -oP 'users:\(\(\("\K[^"]+' <<< "$proc_field" 2>/dev/null \
+               | "$AWK_BIN" '!seen[$0]++' \
+               | "$AWK_BIN" 'BEGIN{sep=""} {printf "%s%s", sep, $0; sep=","}')
+    fi
+    [[ -z "$proc" ]] && proc="unknown"
+
+    _p_proc="$proc"
+
+    ip=$(printf '%s' "$_p_remote" \
+         | "$SED_BIN" -E 's/^\[([^]]+)\]:[0-9]+$/\1/; s/^([^:]+):[0-9]+$/\1/')
+    _p_remote="$ip"
+
+    return 0
+}
+
+_audit_classify_ip() {
+    local ip="$1"
+    if printf '%s' "$ip" | "$GREP_BIN" -qE '^(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.|127\.|169\.254\.|::1|fe80:|fc|fd)'; then
+        _p_color="$FG_DIM"
+    else
+        _p_color="$YELLOW"
+    fi
+}
+
+_audit_render_row() {
+    local proc="$1" proto="$2" ip="$3" color="$4"
+    printf "  %s%-24s%s %-6s %s%s%s\n" "$ACCENT" "$proc" "$RESET" "$proto" "$color" "$ip" "$RESET"
+}
+
+_audit_render_snapshot_body() {
+    local ss_out="$1"
+    local line count=0
+    _p_count=0
+
+    while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        _audit_parse_line "$line" || continue
+        _audit_classify_ip "$_p_remote"
+        _audit_render_row "$_p_proc" "$_p_proto" "$_p_remote" "$_p_color"
+        count=$((count + 1))
+    done <<< "$ss_out"
+
+    _p_count=$count
+}
+
+_audit_snapshot() {
+    header "snowfox audit"
+
+    _audit_preflight || return 1
+
+    if ! _audit_can_see_processes; then
+        info "Process names are not visible (need root or CAP_NET_ADMIN)."
         info "For full output: sudo snowfox audit"
         echo ""
     fi
 
     divider
-    printf "  ${BOLD}%-24s %-6s %s${RESET}\n" "Process" "Proto" "Destination"
+    printf "  %s%-24s %-6s %s%s\n" "$BOLD" "Process" "Proto" "Destination" "$RESET"
     divider
 
-    local count=0
-    while IFS= read -r line; do
-        local PROTO REMOTE PROC IP IP_COLOR
+    local ss_out ss_rc
+    ss_out=$("$TIMEOUT_BIN" "$SS_TIMEOUT" "$SS_BIN" -tunpH 2>/dev/null)
+    ss_rc=$?
 
-        PROTO=$(echo "$line" | awk '{print $1}')
-        REMOTE=$(echo "$line" | awk '{print $6}')
-        PROC=$(echo "$line" | grep -oP 'users:\(\("\K[^"]+' || echo "unknown")
+    if [[ $ss_rc -ne 0 ]]; then
+        divider
+        err "ss failed (exit $ss_rc) — cannot audit connections."
+        err "Try: sudo snowfox audit"
+        echo ""
+        return 1
+    fi
 
-        # Skip empty / listening on all interfaces
-        [[ "$REMOTE" == "*" || "$REMOTE" == "0.0.0.0:*" || -z "$REMOTE" ]] && continue
-
-        IP=$(echo "$REMOTE" | sed 's/:[0-9]*$//' | tr -d '[]')
-
-        # Color code: local networks gray, external orange
-        if echo "$IP" | grep -qE '^(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.|127\.|::1|fe80)'; then
-            IP_COLOR="${GRAY}"
-        else
-            IP_COLOR="${ORANGE}"
-        fi
-
-        printf "  ${CYAN}%-24s${RESET} %-6s ${IP_COLOR}%s${RESET}\n" "$PROC" "$PROTO" "$IP"
-        ((count++))
-    done < <(ss -tunp 2>/dev/null | tail -n +2)
-
+    _audit_render_snapshot_body "$ss_out"
     divider
 
-    if [[ $count -eq 0 ]]; then
+    if [[ $_p_count -eq 0 ]]; then
         info "No active connections."
     else
-        info "$count active connection(s)."
+        info "$_p_count active connection(s)."
     fi
     echo ""
+    return 0
 }
 
-# ─── Live mode (Ctrl+C to exit) ──────────────────────────────
 _audit_live() {
-    if ! command -v ss &>/dev/null; then
-        err "ss not found — install iproute2"
-        exit 1
-    fi
+    _audit_preflight || return 1
 
-    if ! command -v watch &>/dev/null; then
-        err "watch not found — install procps"
-        exit 1
+    if ! _audit_can_see_processes; then
+        info "Process names are not visible (need root or CAP_NET_ADMIN)."
+        info "For full output: sudo snowfox audit live"
+        echo ""
     fi
 
     info "Live audit — press Ctrl+C to exit."
-    sleep 1
+    "$SLEEP_BIN" 1
 
-    watch -n 2 -t \
-        'ss -tunp 2>/dev/null | tail -n +2 | grep -vE "^(udp|tcp).*\*" || echo "  No active connections."'
+    local _prev_int _prev_term _prev_exit
+    _prev_int=$(trap -p INT)
+    _prev_term=$(trap -p TERM)
+    _prev_exit=$(trap -p EXIT)
+
+    _audit_live_cleanup() {
+        printf '\033[?25h\033[?1049l'
+    }
+
+    printf '\033[?1049h\033[?25l'
+    trap '_audit_live_cleanup; return 0' INT TERM EXIT
+
+    local ss_out ss_rc line
+    while true; do
+        printf '\033[H\033[2J'
+        printf "  %sSnowFoxOS Network Audit — live (Ctrl+C to exit)%s\n" "$BOLD" "$RESET"
+        divider
+        printf "  %s%-24s %-6s %s%s\n" "$BOLD" "Process" "Proto" "Destination" "$RESET"
+        divider
+
+        ss_out=$("$TIMEOUT_BIN" "$SS_TIMEOUT" "$SS_BIN" -tunpH 2>/dev/null)
+        ss_rc=$?
+
+        if [[ $ss_rc -ne 0 ]]; then
+            err "ss failed (exit $ss_rc) — cannot audit."
+        elif [[ -z "$ss_out" ]]; then
+            info "No active connections."
+        else
+            local live_count=0
+            while IFS= read -r line; do
+                [[ -z "$line" ]] && continue
+                _audit_parse_line "$line" || continue
+                _audit_classify_ip "$_p_remote"
+                _audit_render_row "$_p_proc" "$_p_proto" "$_p_remote" "$_p_color"
+                live_count=$((live_count + 1))
+            done <<< "$ss_out"
+
+            divider
+            info "$live_count active connection(s)."
+        fi
+
+        "$SLEEP_BIN" 2
+    done
+
+    eval "${_prev_int:-trap - INT}"
+    eval "${_prev_term:-trap - TERM}"
+    eval "${_prev_exit:-trap - EXIT}"
 }
