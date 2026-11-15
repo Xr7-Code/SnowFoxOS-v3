@@ -77,7 +77,12 @@ if ! $USE_XANMOD; then
     success "Standard Debian kernel installed"
 fi
 
-# GRUB: fallback preserved via GRUB_DEFAULT=0 + timeout=3
+# GRUB: fallback preserved via GRUB_DEFAULT=0 + timeout=5.
+# This file owns: GRUB_CMDLINE_LINUX_DEFAULT, GRUB_DEFAULT,
+# GRUB_TIMEOUT (only when unset), and (if a fallback is needed)
+# GRUB_DEFAULT. GRUB_THEME/GRUB_TERMINAL_OUTPUT/GRUB_GFXMODE are
+# written by set_grub_theme() in lib/system_setup.sh. No key is
+# owned by two files (idempotency rule from §0c 11).
 if [[ -f /etc/default/grub ]]; then
     GRUB_PARAMS="quiet splash pci=noaer usbcore.autosuspend=-1"
     lspci 2>/dev/null | grep -qi nvidia && GRUB_PARAMS="$GRUB_PARAMS nvidia-drm.modeset=1"
@@ -86,7 +91,14 @@ if [[ -f /etc/default/grub ]]; then
 
     sed -i "s|GRUB_CMDLINE_LINUX_DEFAULT=.*|GRUB_CMDLINE_LINUX_DEFAULT=\"$GRUB_PARAMS\"|" /etc/default/grub
     sed -i 's|^GRUB_DEFAULT=.*|GRUB_DEFAULT=0|' /etc/default/grub
-    sed -i 's|^GRUB_TIMEOUT=.*|GRUB_TIMEOUT=3|' /etc/default/grub
+
+    # GRUB_TIMEOUT: only write if not already present, so
+    # set_grub_theme (which runs later in iso-base) can decide
+    # the final value without fighting this module.
+    if ! grep -q '^GRUB_TIMEOUT=' /etc/default/grub; then
+        sed -i 's|^GRUB_TIMEOUT=.*|GRUB_TIMEOUT=5|' /etc/default/grub 2>/dev/null || \
+            echo "GRUB_TIMEOUT=5" >> /etc/default/grub
+    fi
 fi
 update-grub 2>/dev/null || true
 success "Boot configuration updated (fallback entry preserved)"
