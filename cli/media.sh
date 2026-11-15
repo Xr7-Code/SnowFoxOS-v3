@@ -1,21 +1,18 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # ============================================================
-#  SnowFoxOS — CLI Module: Media (Download & Stream)
-#  Copyright (c) 2026 Alexander Valentin Ludwig (Xr7-Code)
+#  SnowFoxOS v4 — CLI: media (download & stream)
+#  (v3 logic, v4 design, immersion removed per §1)
 # ============================================================
+
+if [[ -n "${_SNOWFOX_CLI_MEDIA_LOADED:-}" ]]; then return 0 2>/dev/null || true; fi
+_SNOWFOX_CLI_MEDIA_LOADED=1
 
 COOKIE_FILE="$HOME/.config/snowfox/cookies.txt"
 DOWNLOAD_DIR="$HOME/Downloads"
 
-# ── Cookie helper ────────────────────────────────────────────
-# Returns an array in COOKIE_OPT suitable for yt-dlp.
-# Order: existing file → browser extraction → empty (no cookies).
 _prepare_cookies() {
     COOKIE_OPT=()
-
-    # 1. Existing cookie file (no browser needed)
     if [[ -f "$COOKIE_FILE" && -s "$COOKIE_FILE" ]]; then
-        # Refresh if older than 1 day AND a browser is available
         if [[ $(find "$COOKIE_FILE" -mtime +1 2>/dev/null) ]]; then
             for browser in firefox chromium chrome brave; do
                 if command -v "$browser" &>/dev/null; then
@@ -29,7 +26,6 @@ _prepare_cookies() {
         return 0
     fi
 
-    # 2. No cookie file → try browser extraction (optional, silent failure)
     for browser in firefox chromium chrome brave; do
         if command -v "$browser" &>/dev/null; then
             mkdir -p "$(dirname "$COOKIE_FILE")"
@@ -43,30 +39,24 @@ _prepare_cookies() {
             fi
         fi
     done
-
-    # 3. No cookies available — continue without them
     return 0
 }
 
-# ============================================================
-# snowfox fetch — High-speed download via aria2
-# ============================================================
 cmd_fetch() {
     if ! command -v aria2c &>/dev/null; then
         err "aria2c not found. Install: sudo apt install aria2"
-        exit 1
+        return "$SNOWFOX_EXIT_ERROR"
     fi
-
-    if [[ -z "$1" ]]; then
+    if [[ -z "${1:-}" ]]; then
         err "Usage: snowfox fetch <URL>"
-        exit 1
+        return "$SNOWFOX_EXIT_ERROR"
     fi
 
     local URL="$1"
     local OUTDIR="${2:-$DOWNLOAD_DIR}"
     mkdir -p "$OUTDIR"
 
-    header "Fetch"
+    header "snowfox fetch"
     row "URL" "$URL"
     row "Destination" "$OUTDIR"
     row "Connections" "16 parallel"
@@ -92,33 +82,28 @@ cmd_fetch() {
     else
         echo ""
         err "Download failed."
-        exit 1
+        return "$SNOWFOX_EXIT_ERROR"
     fi
 }
 
-# ============================================================
-# snowfox dl — Download video/audio via yt-dlp
-# ============================================================
 cmd_download() {
     if ! command -v yt-dlp &>/dev/null; then
         err "yt-dlp not found. Install: sudo apt install yt-dlp"
-        exit 1
+        return "$SNOWFOX_EXIT_ERROR"
     fi
-
-    if [[ -z "$1" ]]; then
-        err "Usage: snowfox dl <URL>"
-        exit 1
+    if [[ -z "${1:-}" ]]; then
+        err "Usage: snowfox download <URL>"
+        return "$SNOWFOX_EXIT_ERROR"
     fi
 
     local URL="$1"
-
     _prepare_cookies
 
-    header "Download"
+    header "snowfox download"
     row "URL" "$URL"
 
     if [[ ${#COOKIE_OPT[@]} -eq 0 ]]; then
-        row "Cookies" "none (public access only)" "$ORANGE"
+        row "Cookies" "none (public access only)" "$YELLOW"
     else
         row "Cookies" "loaded" "$GREEN"
     fi
@@ -128,7 +113,7 @@ cmd_download() {
     echo -e "  ${CYAN}2${RESET}) Audio only (mp3)"
     echo -e "  ${CYAN}3${RESET}) Audio only (opus, smaller)"
     echo ""
-    read -rp "$(echo -e ${PURPLE}${BOLD}"Format [1-3]: "${RESET})" FORMAT
+    read -rp "  Format [1-3]: " FORMAT
 
     mkdir -p "$DOWNLOAD_DIR"
 
@@ -170,7 +155,7 @@ cmd_download() {
             ;;
         *)
             err "Invalid selection."
-            exit 1
+            return "$SNOWFOX_EXIT_ERROR"
             ;;
     esac
 
@@ -180,34 +165,30 @@ cmd_download() {
     else
         echo ""
         err "Download failed. Try: yt-dlp --update"
-        exit 1
+        return "$SNOWFOX_EXIT_ERROR"
     fi
 }
 
-# ============================================================
-# snowfox stream — Stream video/audio via mpv
-# ============================================================
 cmd_stream() {
     if ! command -v mpv &>/dev/null; then
         err "mpv not found. Install: sudo apt install mpv"
-        exit 1
+        return "$SNOWFOX_EXIT_ERROR"
     fi
-
     if ! command -v yt-dlp &>/dev/null; then
         err "yt-dlp not found. Install: sudo apt install yt-dlp"
-        exit 1
+        return "$SNOWFOX_EXIT_ERROR"
     fi
 
     local AUDIO_ONLY=false
-    if [[ "$1" == "-a" || "$1" == "--audio" ]]; then
+    if [[ "${1:-}" == "-a" || "${1:-}" == "--audio" ]]; then
         AUDIO_ONLY=true
         shift
     fi
 
     local QUERY="$*"
     if [[ -z "$QUERY" ]]; then
-        read -rp "$(echo -e ${PURPLE}${BOLD}"Search (video/music): "${RESET})" QUERY
-        [[ -z "$QUERY" ]] && exit 0
+        read -rp "  Search (video/music): " QUERY
+        [[ -z "$QUERY" ]] && return 0
     fi
 
     _prepare_cookies
@@ -216,8 +197,8 @@ cmd_stream() {
     if [[ "$QUERY" =~ ^http ]]; then
         URL="$QUERY"
     else
-        header "Stream"
-        fox "Searching YouTube: ${BOLD}$QUERY${RESET}"
+        header "snowfox stream"
+        info "Searching YouTube: $QUERY"
 
         local -a RESULTS
         mapfile -t RESULTS < <(yt-dlp --force-ipv4 \
@@ -228,7 +209,7 @@ cmd_stream() {
 
         if [[ ${#RESULTS[@]} -eq 0 ]]; then
             err "No results found."
-            exit 1
+            return "$SNOWFOX_EXIT_ERROR"
         fi
 
         divider
@@ -239,9 +220,9 @@ cmd_stream() {
         divider
         echo ""
 
-        read -rp "$(echo -e ${PURPLE}${BOLD}"Select [1-${#RESULTS[@]}]: "${RESET})" CHOICE
-        [[ -z "$CHOICE" || ! "$CHOICE" =~ ^[0-9]+$ ]] && exit 0
-        [[ "$CHOICE" -lt 1 || "$CHOICE" -gt "${#RESULTS[@]}" ]] && exit 0
+        read -rp "  Select [1-${#RESULTS[@]}]: " CHOICE
+        [[ -z "$CHOICE" || ! "$CHOICE" =~ ^[0-9]+$ ]] && return 0
+        [[ "$CHOICE" -lt 1 || "$CHOICE" -gt "${#RESULTS[@]}" ]] && return 0
 
         local ID="${RESULTS[$((CHOICE-1))]##*|}"
         if [[ ! "$ID" =~ ^[A-Za-z0-9_-]{11}$ ]]; then
@@ -262,7 +243,7 @@ cmd_stream() {
     fi
 
     echo ""
-    echo -e "${PURPLE}${BOLD}  mpv controls:${RESET}"
+    echo -e "  ${ACCENT}${BOLD}mpv controls:${RESET}"
     echo -e "    ${CYAN}Space${RESET}       —  Pause / Play"
     echo -e "    ${CYAN}9 / 0${RESET}       —  Volume down / up"
     echo -e "    ${CYAN}m${RESET}           —  Mute"
@@ -270,7 +251,7 @@ cmd_stream() {
     echo -e "    ${CYAN}q${RESET}           —  Quit"
     echo ""
 
-    fox "Starting stream..."
+    info "Starting stream..."
     mpv \
         --ytdl-raw-options="force-ipv4=,no-check-certificate=" \
         --ytdl-format="bestvideo[vcodec^=vp9][height<=1080]+bestaudio/bestvideo[vcodec^=avc1][height<=1080]+bestaudio/best[height<=1080]" \
