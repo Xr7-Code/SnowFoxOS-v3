@@ -1,142 +1,209 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # ============================================================
-#  SnowFoxOS v4 — CLI: status
+#  SnowFoxOS — CLI Module: System Status & Battery
+#  Copyright (c) 2026 Alexander Valentin Ludwig (Xr7-Code)
 # ============================================================
-
-if [[ -n "${_SNOWFOX_CLI_STATUS_LOADED:-}" ]]; then return 0 2>/dev/null || true; fi
-_SNOWFOX_CLI_STATUS_LOADED=1
 
 cmd_status() {
-    case "${1:-}" in
-        battery|bat) _status_battery ;;
-        ""|overview) _status_overview ;;
-        -h|--help)   info "usage: snowfox status [battery]" ;;
-        *)           err "unknown status mode: $1"; return 1 ;;
+    header "System Status"
+
+    # ── Uptime ───────────────────────────────────────────────
+    local UPTIME
+    UPTIME=$(uptime -p | sed 's/up //')
+    row "Uptime" "$UPTIME"
+
+    # ── RAM ──────────────────────────────────────────────────
+    local RAM_TOTAL RAM_FREE RAM_USED RAM_PCT
+    RAM_TOTAL=$(awk '/^MemTotal:/     {print int($2/1024)}' /proc/meminfo)
+    RAM_FREE=$(awk  '/^MemAvailable:/ {print int($2/1024)}' /proc/meminfo)
+    RAM_USED=$((RAM_TOTAL - RAM_FREE))
+    RAM_PCT=$(( RAM_USED * 100 / RAM_TOTAL ))
+    row "RAM" "${RAM_USED} MB / ${RAM_TOTAL} MB"
+    bar "$RAM_PCT" 100
+
+    # ── Disk ─────────────────────────────────────────────────
+    local DISK_USED DISK_TOTAL DISK_PCT
+    DISK_USED=$(df -h / | awk 'NR==2 {print $3}')
+    DISK_TOTAL=$(df -h / | awk 'NR==2 {print $2}')
+    DISK_PCT=$(df / | awk 'NR==2 {print $5}' | tr -d '%')
+    row "Disk" "${DISK_USED} / ${DISK_TOTAL}"
+    bar "$DISK_PCT" 100
+
+    divider
+
+    # ── CPU ──────────────────────────────────────────────────
+    local CPU
+    CPU=$(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2 | xargs)
+    row "CPU" "$CPU"
+
+    # ── GPU ──────────────────────────────────────────────────
+    local GPU_NAMES
+    GPU_NAMES=$(lspci 2>/dev/null | grep -iE "VGA|3D|Display" | sed 's/^[0-9a-f:.]* [^:]*: //' | paste -sd ", " -)
+    [[ -n "$GPU_NAMES" ]] && row "GPU" "$GPU_NAMES"
+
+    # ── Network ──────────────────────────────────────────────
+    local IP IFACE
+    IP=$(ip route get 1.1.1.1 2>/dev/null | awk '{print $7; exit}')
+    IFACE=$(ip route get 1.1.1.1 2>/dev/null | awk '{print $5; exit}')
+    if [[ -n "$IP" ]]; then
+        row "Network" "${IP}  (${IFACE})" "$GREEN"
+    else
+        row "Network" "not connected" "$RED"
+    fi
+
+    divider
+
+    # ── Air mode ─────────────────────────────────────────────
+    if rfkill list all 2>/dev/null | grep -q "blocked: yes"; then
+        row "Air mode" "ACTIVE — wireless off" "$RED"
+    else
+        row "Air mode" "off" "$GREEN"
+    fi
+
+    # ── Microphone ───────────────────────────────────────────
+    local MIC_ID
+    MIC_ID=$(pactl list sources short 2>/dev/null | grep -v monitor | awk '{print $1}' | head -1)
+    if [[ -n "$MIC_ID" ]]; then
+        local MIC_MUTE
+        MIC_MUTE=$(pactl get-source-mute "$MIC_ID" 2>/dev/null | awk '{print $2}')
+        if [[ "$MIC_MUTE" == "yes" ]]; then
+            row "Microphone" "disabled" "$RED"
+        else
+            row "Microphone" "active" "$GREEN"
+        fi
+    else
+        row "Microphone" "none found" "$DGRAY"
+    fi
+
+    # ── Camera ───────────────────────────────────────────────
+    if ls /dev/video* &>/dev/null; then
+        if v4l2-ctl --list-devices &>/dev/null; then
+            row "Camera" "available" "$GREEN"
+        else
+            row "Camera" "disabled" "$RED"
+        fi
+    else
+        row "Camera" "none found" "$DGRAY"
+    fi
+
+    divider
+
+    # ── Profile ──────────────────────────────────────────────
+    local PROFILE
+    PROFILE=$(cat "$HOME/.config/snowfox/profile" 2>/dev/null || echo "balanced")
+    row "Profile" "$PROFILE" "$CYAN"
+
+    # ── Node mode ────────────────────────────────────────────
+    local NODE_MODE
+    NODE_MODE=$(cat "$HOME/.config/snowfox/node-mode" 2>/dev/null || echo "desktop")
+    row "Mode" "$NODE_MODE" "$CYAN"
+
+    echo ""
+}
+
+cmd_battery() {
+    header "Battery Status"
+
+    local BAT_PATH=""
+    for p in /sys/class/power_supply/BAT*; do
+        [[ -d "$p" ]] && BAT_PATH="$p" && break
+    done
+
+    if [[ -z "$BAT_PATH" ]]; then
+        warn "No battery found — desktop system?"
+        echo ""
+        return
+    fi
+
+    local STATUS CAPACITY
+    STATUS=$(cat "$BAT_PATH/status" 2>/dev/null || echo "Unknown")
+    CAPACITY=$(cat "$BAT_PATH/capacity" 2>/dev/null || echo "0")
+
+    # Status label & color
+    local STATUS_LABEL STATUS_COLOR
+    case "$STATUS" in
+        Charging)    STATUS_LABEL="⚡  Charging"  ; STATUS_COLOR="$GREEN"  ;;
+        Discharging) STATUS_LABEL="🔋  Discharging" ; STATUS_COLOR="$ORANGE" ;;
+        Full)        STATUS_LABEL="✓  Full"       ; STATUS_COLOR="$GREEN"  ;;
+        *)           STATUS_LABEL="$STATUS"       ; STATUS_COLOR="$DGRAY"  ;;
     esac
-}
 
-_status_overview() {
-    header "snowfox status"
-    row "Host" "$(hostname 2>/dev/null || echo unknown)"
-
-    local os="SnowFoxOS v4"
-    [[ -r /etc/os-release ]] && os="$(. /etc/os-release && echo "$PRETTY_NAME")"
-    row "OS" "$os"
-    row "Kernel" "$(uname -r)"
-
-    if [[ -r /proc/uptime ]]; then
-        local up_s
-        up_s=$(awk '{printf "%d", $1}' /proc/uptime)
-        row "Uptime" "$(printf '%dd %02dh %02dm' $((up_s/86400)) $((up_s%86400/3600)) $((up_s%3600/60)))"
+    # Capacity color
+    local CAP_COLOR
+    if   [[ "$CAPACITY" -ge 60 ]]; then CAP_COLOR="$GREEN"
+    elif [[ "$CAPACITY" -ge 30 ]]; then CAP_COLOR="$ORANGE"
+    else                                CAP_COLOR="$RED"
     fi
 
-    if [[ -r /proc/meminfo ]]; then
-        local total_kb avail_kb used_kb
-        total_kb=$(awk '/MemTotal/ {print $2}' /proc/meminfo)
-        avail_kb=$(awk '/MemAvailable/ {print $2}' /proc/meminfo)
-        used_kb=$(( total_kb - avail_kb ))
-        row "Memory" "$(human_bytes $((used_kb * 1024))) / $(human_bytes $((total_kb * 1024)))"
+    row "Status" "$STATUS_LABEL" "$STATUS_COLOR"
+    row "Charge" "${CAPACITY}%" "$CAP_COLOR"
+    bar "$CAPACITY" 100
+
+    divider
+
+    # Power draw
+    local POWER_UW=0
+    if [[ -f "$BAT_PATH/power_now" ]]; then
+        POWER_UW=$(cat "$BAT_PATH/power_now" 2>/dev/null || echo 0)
+    elif [[ -f "$BAT_PATH/current_now" && -f "$BAT_PATH/voltage_now" ]]; then
+        local CURRENT VOLTAGE
+        CURRENT=$(cat "$BAT_PATH/current_now")
+        VOLTAGE=$(cat "$BAT_PATH/voltage_now")
+        POWER_UW=$(echo "$CURRENT * $VOLTAGE / 1000000" | bc 2>/dev/null || echo 0)
+    fi
+    if [[ "$POWER_UW" -gt 0 ]]; then
+        local POWER_W
+        POWER_W=$(echo "scale=1; $POWER_UW / 1000000" | bc 2>/dev/null || echo "?")
+        row "Power draw" "${POWER_W} W"
     fi
 
-    if command -v df >/dev/null 2>&1; then
-        local df_out
-        df_out=$(df -h --output=used,size,pcent / 2>/dev/null | tail -n1)
-        [[ -n "$df_out" ]] && row "Disk /" "$(echo "$df_out" | awk '{print $1 " / " $2 " (" $3 ")"}')"
+    # Energy
+    local ENERGY_FULL=0 ENERGY_NOW=0
+    if [[ -f "$BAT_PATH/energy_full" && -f "$BAT_PATH/energy_now" ]]; then
+        ENERGY_FULL=$(cat "$BAT_PATH/energy_full")
+        ENERGY_NOW=$(cat "$BAT_PATH/energy_now")
+    elif [[ -f "$BAT_PATH/charge_full" && -f "$BAT_PATH/charge_now" && -f "$BAT_PATH/voltage_now" ]]; then
+        local VOLTAGE
+        VOLTAGE=$(cat "$BAT_PATH/voltage_now")
+        ENERGY_FULL=$(echo "$(cat "$BAT_PATH/charge_full") * $VOLTAGE / 1000000" | bc 2>/dev/null || echo 0)
+        ENERGY_NOW=$(echo "$(cat "$BAT_PATH/charge_now") * $VOLTAGE / 1000000" | bc 2>/dev/null || echo 0)
+    fi
+    if [[ "$ENERGY_FULL" -gt 0 ]]; then
+        local EF EN
+        EF=$(echo "scale=1; $ENERGY_FULL / 1000000" | bc)
+        EN=$(echo "scale=1; $ENERGY_NOW  / 1000000" | bc)
+        row "Energy" "${EN} Wh / ${EF} Wh"
     fi
 
-    [[ -r /proc/loadavg ]] && row "Load" "$(awk '{print $1, $2, $3}' /proc/loadavg)"
-
-    section "Status"
-    _dot_ufw
-    _dot_ssh
-    _dot_dot
-    _dot_unattended
-    _dot_foxdock
-
-    if _is_laptop; then
-        section "Battery"
-        _status_battery
-    fi
-}
-
-_status_battery() {
-    header "snowfox status battery"
-
-    if ! _is_laptop; then
-        info "not a laptop — no battery"
-        return 0
+    # Remaining time
+    if [[ "$POWER_UW" -gt 0 && "$ENERGY_NOW" -gt 0 ]]; then
+        if [[ "$STATUS" == "Discharging" ]]; then
+            local MINS
+            MINS=$(echo "scale=0; ($ENERGY_NOW * 60) / $POWER_UW" | bc 2>/dev/null || echo 0)
+            row "Remaining" "~$((MINS/60))h $((MINS%60))m" "$ORANGE"
+        elif [[ "$STATUS" == "Charging" && "$ENERGY_FULL" -gt 0 ]]; then
+            local MISSING MINS
+            MISSING=$((ENERGY_FULL - ENERGY_NOW))
+            MINS=$(echo "scale=0; ($MISSING * 60) / $POWER_UW" | bc 2>/dev/null || echo 0)
+            row "Full in" "~$((MINS/60))h $((MINS%60))m" "$GREEN"
+        fi
     fi
 
-    local bat
-    bat=$(ls /sys/class/power_supply/ 2>/dev/null | grep -E '^BAT' | head -n1)
-    if [[ -z "$bat" ]]; then
-        info "no battery device"
-        return 0
+    divider
+
+    # Health
+    if [[ -f "$BAT_PATH/energy_full" && -f "$BAT_PATH/energy_full_design" ]]; then
+        local FULL DESIGN HEALTH H_COLOR
+        FULL=$(cat "$BAT_PATH/energy_full")
+        DESIGN=$(cat "$BAT_PATH/energy_full_design")
+        HEALTH=$(echo "scale=0; ($FULL * 100) / $DESIGN" | bc 2>/dev/null || echo "?")
+        if   [[ "$HEALTH" -ge 80 ]]; then H_COLOR="$GREEN"
+        elif [[ "$HEALTH" -ge 60 ]]; then H_COLOR="$ORANGE"
+        else                              H_COLOR="$RED"
+        fi
+        row "Health" "${HEALTH}%" "$H_COLOR"
+        bar "$HEALTH" 100
     fi
 
-    local cap status
-    cap=$(cat "/sys/class/power_supply/$bat/capacity" 2>/dev/null || echo 0)
-    status=$(cat "/sys/class/power_supply/$bat/status"  2>/dev/null || echo Unknown)
-    row "Capacity" "$cap%"
-    row "Status"   "$status"
-    bar "$cap" 100
-
-    local health="unknown"
-    if [[ -r "/sys/class/power_supply/$bat/energy_full" ]] \
-       && [[ -r "/sys/class/power_supply/$bat/energy_full_design" ]]; then
-        local full design
-        full=$(cat "/sys/class/power_supply/$bat/energy_full")
-        design=$(cat "/sys/class/power_supply/$bat/energy_full_design")
-        [[ "$design" -gt 0 ]] && health=$(( full * 100 / design ))
-    fi
-    row "Health" "${health}%"
-}
-
-_is_laptop() {
-    local chassis
-    chassis=$(cat /sys/class/dmi/id/chassis_type 2>/dev/null || echo 0)
-    [[ "$chassis" =~ ^(8|9|10|14)$ ]] && return 0
-    compgen -G "/sys/class/power_supply/BAT*" >/dev/null && return 0
-    return 1
-}
-
-_dot_ufw() {
-    if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -q "Status: active"; then
-        row_dot "Firewall (ufw)" ok "active"
-    else
-        row_dot "Firewall (ufw)" err "inactive"
-    fi
-}
-
-_dot_ssh() {
-    if systemctl is-active ssh >/dev/null 2>&1; then
-        row_dot "SSH server" warn "running"
-    else
-        row_dot "SSH server" ok "disabled"
-    fi
-}
-
-_dot_dot() {
-    if [[ -r /etc/systemd/resolved.conf.d/snowfox.conf ]] \
-       && grep -q '^DNSOverTLS=yes' /etc/systemd/resolved.conf.d/snowfox.conf; then
-        row_dot "DNS over TLS" ok "enabled"
-    else
-        row_dot "DNS over TLS" warn "not configured"
-    fi
-}
-
-_dot_unattended() {
-    if systemctl is-active unattended-upgrades >/dev/null 2>&1; then
-        row_dot "Auto updates" ok "security only"
-    else
-        row_dot "Auto updates" warn "inactive"
-    fi
-}
-
-_dot_foxdock() {
-    if pgrep -x foxdock >/dev/null 2>&1; then
-        row_dot "foxdock" ok "running"
-    else
-        row_dot "foxdock" warn "not running"
-    fi
+    echo ""
 }
