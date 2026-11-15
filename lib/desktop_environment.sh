@@ -1,129 +1,87 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # ============================================================
-#  SnowFoxOS v3.0 — Desktop Environment Setup
+#  SnowFoxOS v4 — Desktop Environment
 #  Copyright (c) 2026 Alexander Valentin Ludwig (Xr7-Code)
 # ============================================================
 
-# Load utilities (assumes SCRIPT_DIR is set before sourcing)
 source "$SCRIPT_DIR/lib/utils.sh"
-
-# Global variables from main script (assumed to be sourced/exported):
-# TARGET_USER, TARGET_HOME, SCRIPT_DIR
+source "$SCRIPT_DIR/lib/checksums.sh"
 
 step "3/10 — i3 + Polybar + Rofi + Dunst + i3lock"
 
 wait_apt
 apt-get install -y \
-    i3 \
-    i3lock \
-    picom \
-    polybar \
-    rofi \
-    dunst \
-    libnotify-bin \
-    libappindicator3-1 \
-    libayatana-appindicator3-1 \
-    feh \
-    libdbusmenu-gtk3-4 \
-    redshift \
-    scrot \
-    brightnessctl \
-    playerctl \
-    network-manager \
-    bluez \
-    fonts-inter \
-    fonts-noto \
-    fonts-noto-color-emoji \
-    papirus-icon-theme \
-    arc-theme \
-    gtk2-engines-murrine \
-    qt5-style-kvantum \
-    xsettingsd \
-    lxpolkit \
-    lxappearance \
-    xss-lock \
-    xserver-xorg-input-libinput \
-    cups cups-bsd cups-client \
-    printer-driver-splix
-
-# picom runs with backend = "glx" (not "xrender") and fading = false.
-# xrender has no native synchronization with the NVIDIA driver and
-# caused freezes when opening Rofi menus.
-# fading = false reduces compositor load — v2.2 behavior.
+    i3 i3lock picom polybar rofi dunst \
+    libnotify-bin libayatana-appindicator3-1 feh \
+    libdbusmenu-gtk3-4 redshift scrot brightnessctl playerctl \
+    network-manager bluez \
+    fonts-inter fonts-dejavu fonts-liberation fonts-noto-color-emoji \
+    papirus-icon-theme arc-theme gtk2-engines-murrine \
+    qt5-style-kvantum xsettingsd lxpolkit lxappearance \
+    xss-lock xserver-xorg-input-libinput rxvt-unicode \
+    cups cups-bsd cups-client printer-driver-splix
 success "i3 desktop packages installed"
 
-# ── Clipnotify — build from source ───────────────────────────
-info "Installing clipnotify..."
-apt-get install -y libx11-dev libxfixes-dev
-git clone https://github.com/cdown/clipnotify.git /tmp/clipnotify
-make -C /tmp/clipnotify
-cp /tmp/clipnotify/clipnotify /usr/local/bin/clipnotify
+# clipnotify (pinned commit)
+if [[ "${SNOWFOX_PHASE:-full}" != "full" && "${SNOWFOX_NETWORK:-online}" == "offline" ]]; then
+    warn "Offline ISO install: clipnotify needs a git clone — skipping"
+elif [[ -z "${CLIPNOTIFY_COMMIT:-}" || "$CLIPNOTIFY_COMMIT" == "UNPINNED" ]]; then
+    warn "CLIPNOTIFY_COMMIT unpinned — skipping clipnotify"
+elif rm -rf /tmp/clipnotify && \
+     git clone https://github.com/cdown/clipnotify.git /tmp/clipnotify 2>/dev/null; then
+    (
+        cd /tmp/clipnotify || exit 1
+        git checkout --detach "$CLIPNOTIFY_COMMIT" || exit 1
+        make || exit 1
+        install -m 0755 clipnotify /usr/local/bin/clipnotify
+    ) && success "clipnotify installed (commit ${CLIPNOTIFY_COMMIT:0:12})" \
+      || warn "clipnotify build failed"
+fi
 rm -rf /tmp/clipnotify
-success "clipnotify installed"
 
-# Install clip-saver.sh
 if [[ -f "$SCRIPT_DIR/configs/i3/clip-saver.sh" ]]; then
     mkdir -p "$TARGET_HOME/.config/i3"
     cp "$SCRIPT_DIR/configs/i3/clip-saver.sh" "$TARGET_HOME/.config/i3/clip-saver.sh"
     chmod +x "$TARGET_HOME/.config/i3/clip-saver.sh"
-    success "clip-saver.sh installed"
 fi
 
-# ── Install Bibata cursor theme ──────────────────────────────
-info "Installing Bibata-Modern-Classic cursor..."
-BIBATA_DIR="/usr/share/icons/Bibata-Modern-Classic"
-if [ ! -d "$BIBATA_DIR" ]; then
-    BIBATA_VERSION=$(curl -sf https://api.github.com/repos/ful1e5/Bibata_Cursor/releases/latest | python3 -c "import sys,json; print(json.load(sys.stdin).get('tag_name','v2.0.7'))" 2>/dev/null || echo "v2.0.7")
+# Bibata cursor
+if [[ "${SNOWFOX_PHASE:-full}" != "full" && "${SNOWFOX_NETWORK:-online}" == "offline" ]]; then
+    warn "Offline ISO install: skipping Bibata cursor download"
+elif [[ ! -d /usr/share/icons/Bibata-Modern-Classic ]]; then
     BIBATA_URL="https://github.com/ful1e5/Bibata_Cursor/releases/download/${BIBATA_VERSION}/Bibata-Modern-Classic.tar.xz"
-
-    mkdir -p /usr/share/icons
-    curl -L "$BIBATA_URL" -o /tmp/Bibata-Modern-Classic.tar.xz 2>/dev/null && \
-        tar -xf /tmp/Bibata-Modern-Classic.tar.xz -C /usr/share/icons/ 2>/dev/null && \
-        rm -f /tmp/Bibata-Modern-Classic.tar.xz && \
-        success "Bibata-Modern-Classic cursor installed" || \
-        warn "Bibata cursor download failed — install manually"
-else
-    success "Bibata-Modern-Classic already present"
+    _tmp_bibata=$(mktemp --suffix=.tar.xz)
+    if _fetch_verified "$BIBATA_URL" "$_tmp_bibata" "$CHECKSUM_BIBATA" "Bibata-Modern-Classic"; then
+        mkdir -p /usr/share/icons
+        tar -xf "$_tmp_bibata" -C /usr/share/icons/ 2>/dev/null \
+            && success "Bibata-Modern-Classic cursor installed" \
+            || warn "Bibata archive extraction failed"
+    fi
+    rm -f "$_tmp_bibata"
 fi
 
-# ── bluetui — Terminal Bluetooth Manager ─────────────────────
-# ── Bluetooth: enable BlueZ service ──────────────────────────
-# bluetooth.service must be running before bluetui or bluetoothctl can be used.
-# Timeout prevents hanging if the service does not respond.
-systemctl enable bluetooth 2>/dev/null || true
-systemctl start bluetooth 2>/dev/null &
-BT_PID=$!
-sleep 3
-if ! kill -0 $BT_PID 2>/dev/null; then
-    success "Bluetooth service started"
-else
-    kill $BT_PID 2>/dev/null || true
-    warn "Bluetooth service timeout — will be active after reboot"
-fi
+systemd_safe enable bluetooth
+systemd_safe start bluetooth
 
-if ask_install "bluetui (Bluetooth Terminal UI)"; then
-    info "Installing bluetui dependencies..."
-    # bluez-tools for full profile support
-    apt-get install -y bluez bluez-tools dbus pkg-config libdbus-1-dev 2>/dev/null
-
-    info "Downloading precompiled bluetui binary from GitHub..."
-    BLUETUI_VERSION=$(curl -sf --max-time 10         https://api.github.com/repos/pythops/bluetui/releases/latest |         python3 -c "import sys,json; print(json.load(sys.stdin).get('tag_name','v0.8.1'))"         2>/dev/null || echo "v0.8.1")
-    BLUETUI_URL="https://github.com/pythops/bluetui/releases/download/${BLUETUI_VERSION}/bluetui-x86_64-linux-musl"
-
-    if curl -L --max-time 30 "$BLUETUI_URL" -o /usr/local/bin/bluetui 2>/dev/null; then
-        chmod +x /usr/local/bin/bluetui
-        success "bluetui installed (${BLUETUI_VERSION})"
+# bluetui (pinned)
+if [[ "${SNOWFOX_PHASE:-full}" != "full" ]]; then
+    info "ISO install: bluetui stays optional (snowfox stash)"
+elif ask_install "bluetui (Bluetooth Terminal UI)" no; then
+    apt-get install -y bluez bluez-tools dbus 2>/dev/null
+    if [[ -z "${CHECKSUM_BLUETUI:-}" || "$CHECKSUM_BLUETUI" == "UNPINNED" ]]; then
+        warn "bluetui skipped — pin CHECKSUM_BLUETUI in lib/checksums.sh"
     else
-        warn "bluetui download failed — trying Cargo..."
-        apt-get install -y cargo 2>/dev/null
-        cargo install bluetui --root /usr/local/ 2>/dev/null             && success "bluetui installed via Cargo"             || warn "bluetui could not be installed"
+        BLUETUI_URL="https://github.com/pythops/bluetui/releases/download/${BLUETUI_VERSION}/bluetui-x86_64-linux-musl"
+        if _fetch_verified "$BLUETUI_URL" /usr/local/bin/bluetui "$CHECKSUM_BLUETUI" "bluetui"; then
+            chmod 0755 /usr/local/bin/bluetui
+            success "bluetui installed"
+        fi
     fi
 fi
 
-# Desktop entries — nmtui, bluetui, pcmanfm (for Rofi)
 mkdir -p "$TARGET_HOME/.local/share/applications"
 
-cat > "$TARGET_HOME/.local/share/applications/nmtui.desktop" << 'EOF'
+cat > "$TARGET_HOME/.local/share/applications/nmtui.desktop" <<'EOF'
 [Desktop Entry]
 Name=Network
 Comment=Manage network connections (nmtui)
@@ -133,7 +91,7 @@ Type=Application
 Categories=Network;System;
 EOF
 
-cat > "$TARGET_HOME/.local/share/applications/bluetui.desktop" << 'EOF'
+cat > "$TARGET_HOME/.local/share/applications/bluetui.desktop" <<'EOF'
 [Desktop Entry]
 Name=Bluetooth
 Comment=Manage Bluetooth devices (bluetui)
@@ -143,7 +101,7 @@ Type=Application
 Categories=System;
 EOF
 
-cat > "$TARGET_HOME/.local/share/applications/pcmanfm.desktop" << 'EOF'
+cat > "$TARGET_HOME/.local/share/applications/pcmanfm.desktop" <<'EOF'
 [Desktop Entry]
 Name=Files
 Comment=File manager
@@ -154,15 +112,13 @@ Categories=System;FileManager;
 EOF
 
 chown -R "$TARGET_USER:$TARGET_USER" "$TARGET_HOME/.local/share/applications"
-success "Desktop entries for Network, Bluetooth, Files installed (Rofi-ready)"
+success "Desktop entries installed (Rofi-ready)"
 
-# Touchpad config
 mkdir -p /etc/X11/xorg.conf.d
 if [[ -f "$SCRIPT_DIR/configs/xorg/30-touchpad.conf" ]]; then
     cp "$SCRIPT_DIR/configs/xorg/30-touchpad.conf" /etc/X11/xorg.conf.d/30-touchpad.conf
-    info "Touchpad config copied from repo"
 else
-    cat > /etc/X11/xorg.conf.d/30-touchpad.conf << 'EOF'
+    cat > /etc/X11/xorg.conf.d/30-touchpad.conf <<'EOF'
 Section "InputClass"
     Identifier      "libinput touchpad"
     MatchIsTouchpad "on"
@@ -174,21 +130,30 @@ Section "InputClass"
     Option          "DisableWhileTyping" "on"
 EndSection
 EOF
-    info "Touchpad config created"
 fi
 
-# i3 autostart
+# First-login setup + autostart
 BASH_PROFILE="$TARGET_HOME/.bash_profile"
-if ! grep -q "startx" "$BASH_PROFILE" 2>/dev/null; then
-    echo '' >> "$BASH_PROFILE"
-    echo '# SnowFoxOS — start i3 automatically' >> "$BASH_PROFILE"
-    echo '[ "$(tty)" = "/dev/tty1" ] && exec startx' >> "$BASH_PROFILE"
+if ! grep -q "SnowFoxOS — first-login setup" "$BASH_PROFILE" 2>/dev/null; then
+    {
+        echo ''
+        echo '# SnowFoxOS — first-login setup (tty1, once)'
+        echo 'if [ -x /usr/local/bin/snowfox-setup ] && [ ! -f "$HOME/.config/snowfox/setup-done" ] && [ "$(tty)" = "/dev/tty1" ]; then'
+        echo '    /usr/local/bin/snowfox-setup || true'
+        echo 'fi'
+    } >> "$BASH_PROFILE"
+fi
+if ! grep -q "SnowFoxOS — start i3 automatically" "$BASH_PROFILE" 2>/dev/null; then
+    {
+        echo ''
+        echo '# SnowFoxOS — start i3 automatically'
+        echo '[ "$(tty)" = "/dev/tty1" ] && exec startx'
+    } >> "$BASH_PROFILE"
 fi
 
-cat > "$TARGET_HOME/.xinitrc" << 'EOF'
+cat > "$TARGET_HOME/.xinitrc" <<'EOF'
 #!/bin/sh
-export PATH=/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games
-
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/games:/usr/games
 export GTK_THEME=Arc-Dark
 export QT_QPA_PLATFORMTHEME=qt5ct
 export QT_STYLE_OVERRIDE=gtk2
@@ -212,14 +177,34 @@ chmod +x "$TARGET_HOME/.xinitrc"
 
 success "i3 desktop & autostart configured"
 
-# ── Nerd Fonts ───────────────────────────────────────────────
-info "Installing Nerd Fonts (JetBrainsMono)..."
-NERD_VERSION=$(curl -sf https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin).get('tag_name','v3.2.1'))" 2>/dev/null || echo "v3.2.1")
-NERD_URL="https://github.com/ryanoasis/nerd-fonts/releases/download/${NERD_VERSION}/JetBrainsMono.zip"
-mkdir -p /usr/local/share/fonts/nerd-fonts
-curl -L "$NERD_URL" -o /tmp/JetBrainsMono.zip 2>/dev/null && \
-    unzip -o /tmp/JetBrainsMono.zip "*.ttf" -d /usr/local/share/fonts/nerd-fonts/ 2>/dev/null && \
-    fc-cache -fv /usr/local/share/fonts/nerd-fonts/ 2>/dev/null && \
-    rm -f /tmp/JetBrainsMono.zip && \
-    success "JetBrainsMono Nerd Font installed" || \
-    warn "Nerd Fonts download failed — install manually"
+# Nerd Fonts (verified)
+if [[ "${SNOWFOX_PHASE:-full}" != "full" && "${SNOWFOX_NETWORK:-online}" == "offline" ]]; then
+    warn "Offline ISO install: skipping Nerd Font download"
+else
+    NERD_URL="https://github.com/ryanoasis/nerd-fonts/releases/download/${NERD_VERSION}/JetBrainsMono.zip"
+    _tmp_nerd=$(mktemp --suffix=.zip)
+    if _fetch_verified "$NERD_URL" "$_tmp_nerd" "$CHECKSUM_JETBRAINSMONO" "JetBrainsMono Nerd Font"; then
+        _tmp_extract=$(mktemp -d)
+        if unzip -q "$_tmp_nerd" "*.ttf" -d "$_tmp_extract" 2>/dev/null; then
+            mkdir -p /usr/local/share/fonts/nerd-fonts
+            mv "$_tmp_extract"/*.ttf /usr/local/share/fonts/nerd-fonts/
+            chmod 0644 /usr/local/share/fonts/nerd-fonts/*.ttf
+            fc-cache -f /usr/local/share/fonts/nerd-fonts/ >/dev/null 2>&1 || true
+            success "JetBrainsMono Nerd Font installed"
+        fi
+        rm -rf "$_tmp_extract"
+    fi
+    rm -f "$_tmp_nerd"
+fi
+
+# foxdock build (§0c 21)
+if [[ -d "$SCRIPT_DIR/foxdock" && -f "$SCRIPT_DIR/foxdock/Makefile" ]]; then
+    info "Building foxdock..."
+    if make -C "$SCRIPT_DIR/foxdock" -j"$(nproc)" 2>/dev/null; then
+        make -C "$SCRIPT_DIR/foxdock" install 2>/dev/null \
+            && success "foxdock built and installed" \
+            || warn "foxdock install failed — dock will not start"
+    else
+        warn "foxdock build failed — libx11-dev/libimlib2-dev missing?"
+    fi
+fi
